@@ -1,0 +1,1521 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons for the left-side icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  
+  <style>
+    /* Custom gradients and specific states not easily handled by pure Tailwind */
+    body {
+      background: linear-gradient(180deg, #f6f8fc 0%, #edf4f3 100%);
+    }
+    
+    /* Border loading animation */
+    @keyframes borderLoad {
+      0% { clip-path: inset(100% 0 0 0); }
+      100% { clip-path: inset(0 0 0 0); }
+    }
+    
+    .border-loading {
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .border-loading::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border: 2px solid currentColor;
+      border-radius: 12px;
+      animation: borderLoad 2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+      pointer-events: none;
+    }
+    
+    #step2ApplicantsList::-webkit-scrollbar {
+      width: 4px;
+    }
+    #step2ApplicantsList::-webkit-scrollbar-thumb {
+      background: #d1d5db;
+      border-radius: 10px;
+    }
+    /* The line connecting the steps */
+    .step-container {
+      position: relative;
+    }
+
+    .step-container::before {
+      content: "";
+      position: absolute;
+      left: 28px; /* Centers the line under the 8x8 (32px) circle */
+      top: 40px;
+      bottom: -20px;
+      width: 2px;
+      background-color: #e2e8f0; /* slate-200 */
+      z-index: 0;
+    }
+
+    .step-container button {
+      justify-content: flex-start;
+      text-align: left;
+    }
+
+    .step-container button span,
+    .step-container button p {
+      text-align: left;
+    }
+
+    /* Hide the line on the very last step */
+    .step-container:last-child::before {
+      display: none;
+    }
+  </style>
+</head>
+<body class="m-0 p-3 font-sans text-gray-800 min-h-screen overflow-x-hidden">
+
+  <!-- Landing Page -->
+  <div id="landingPage" class="bg-white border border-gray-300 rounded-xl p-4 shadow-lg w-full max-w-md mx-auto flex flex-col">
+    <div class="w-full text-center">
+      <h2 class="text-xl font-semibold mb-2 text-gray-900">ACTIONS</h2>
+      <p class="text-xs italic text-gray-600 mb-4">Select an action to be performed</p>
+      
+      <div class="flex flex-col gap-3">
+
+      <!-- For Exam -->
+      <button id="forExamBtn" class="group flex flex-col w-full px-4 py-3 bg-[#3b82f6] hover:bg-blue-600 text-white rounded-[24px] transition-colors duration-300 ease-in-out shadow-sm hover:shadow-md border-none outline-none">
+        <div class="flex items-center w-full">
+          <i data-lucide="file-pen-line" class="w-5 h-5 mr-3 flex-shrink-0"></i>
+          <span class="font-semibold text-sm flex-1 text-left">For Exam</span>
+          <i data-lucide="chevron-right" class="w-4 h-4 transition-transform duration-300 group-hover:rotate-90"></i>
+        </div>
+        <div class="grid grid-rows-[0fr] transition-[grid-template-rows] duration-300 ease-in-out group-hover:grid-rows-[1fr]">
+          <div class="overflow-hidden">
+            <p class="pt-2 text-xs text-blue-100 opacity-0 transition-opacity duration-300 delay-100 group-hover:opacity-100 text-left">
+              Generate google drive file link for exam letters and send them to applicants. 
+            </p>
+          </div>
+        </div>
+      </button>
+
+      <button id="unqualifiedBtn" class="group flex flex-col w-full px-4 py-3 bg-[#ff4f4f] hover:bg-red-600 text-white rounded-[24px] transition-colors duration-300 ease-in-out shadow-sm hover:shadow-md border-none outline-none">
+        <div class="flex items-center w-full">
+          <i data-lucide="user-x" class="w-5 h-5 mr-3 flex-shrink-0"></i>
+          <span class="font-semibold text-sm flex-1 text-left">Unqualified</span>
+          <i data-lucide="chevron-right" class="w-4 h-4 transition-transform duration-300 group-hover:rotate-90"></i>
+        </div>
+        <div class="grid grid-rows-[0fr] transition-[grid-template-rows] duration-300 ease-in-out group-hover:grid-rows-[1fr]">
+          <div class="overflow-hidden">
+            <p class="pt-2 text-xs text-blue-100 opacity-0 transition-opacity duration-300 delay-100 group-hover:opacity-100 text-left">
+              Generate google drive file link for unqualified applicant letters and send it to them. 
+            </p>
+          </div>
+        </div>
+      </button>
+
+      <button id="forInterviewBtn" class="group flex flex-col w-full px-4 py-3 bg-[#10b981] hover:bg-emerald-600 text-white rounded-[24px] transition-colors duration-300 ease-in-out shadow-sm hover:shadow-md border-none outline-none">
+        <div class="flex items-center w-full">
+          <i data-lucide="messages-square" class="w-5 h-5 mr-3 flex-shrink-0"></i>
+          <span class="font-semibold text-sm flex-1 text-left">For Interview</span>
+          <i data-lucide="chevron-right" class="w-4 h-4 transition-transform duration-300 group-hover:rotate-90"></i>
+        </div>
+        <div class="grid grid-rows-[0fr] transition-[grid-template-rows] duration-300 ease-in-out group-hover:grid-rows-[1fr]">
+          <div class="overflow-hidden">
+            <p class="pt-2 text-xs text-blue-100 opacity-0 transition-opacity duration-300 delay-100 group-hover:opacity-100 text-left">
+              Generate google drive file link for applicants for interview and send it to them.
+            </p>
+          </div>
+        </div>
+      </button>
+
+      <button id="failedBtn" class="group flex flex-col w-full px-4 py-3 bg-[#f59e0b] hover:bg-amber-600 text-white rounded-[24px] transition-colors duration-300 ease-in-out shadow-sm hover:shadow-md border-none outline-none">
+        <div class="flex items-center w-full">
+          <i data-lucide="circle-x" class="w-5 h-5 mr-3 flex-shrink-0"></i>
+          <span class="font-semibold text-sm flex-1 text-left">Failed</span>
+          <i data-lucide="chevron-right" class="w-4 h-4 transition-transform duration-300 group-hover:rotate-90"></i>
+        </div>
+        <div class="grid grid-rows-[0fr] transition-[grid-template-rows] duration-300 ease-in-out group-hover:grid-rows-[1fr]">
+          <div class="overflow-hidden">
+            <p class="pt-2 text-xs text-blue-100 opacity-0 transition-opacity duration-300 delay-100 group-hover:opacity-100 text-white text-left">
+              Generate google drive file link for applicants who failed the examination and send it to them.
+            </p>
+          </div>
+        </div>
+      </button>
+
+      <button id="backupBtn" class="group flex flex-col w-full px-4 py-3 bg-[#6b7280] hover:bg-gray-600 text-white rounded-[24px] transition-colors duration-300 ease-in-out shadow-sm hover:shadow-md border-none outline-none">
+        <div class="flex items-center w-full">
+          <i data-lucide="database" class="w-5 h-5 mr-3 flex-shrink-0"></i>
+          <span class="font-semibold text-sm flex-1 text-left">Backup</span>
+          <i data-lucide="chevron-right" class="w-4 h-4 transition-transform duration-300 group-hover:rotate-90"></i>
+        </div>
+        <div class="grid grid-rows-[0fr] transition-[grid-template-rows] duration-300 ease-in-out group-hover:grid-rows-[1fr]">
+          <div class="overflow-hidden">
+            <p class="pt-2 text-xs text-blue-100 opacity-0 transition-opacity duration-300 delay-100 group-hover:opacity-100 text-white text-left">
+              Backup the existing data in the spreadsheet to a new sheet with timestamp before generating new letters. This ensures that you have a copy of the current state before any changes are made.
+            </p>
+          </div>
+        </div>
+      </button>
+
+      </div>
+    </div>
+  </div>
+
+  
+<!-- FOR EXAM SECTION -->
+<div id="forExamPage" class="hidden bg-white border border-gray-300 rounded-xl p-6 shadow-xl w-full max-w-md mx-auto">
+      <div class="flex items-center mb-6">
+        <!-- Added 'relative' here -->
+        <button id="backBtn" class="group relative p-2 bg-gray-100 mr-2 hover:bg-black rounded-lg transition-colors duration-300 ease-in-out">
+          <i data-lucide="chevron-left" class="w-5 h-5 text-gray-500 group-hover:text-white transition-colors"></i>
+          
+          <!-- Tooltip -->
+          <span class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block px-2 py-1 text-[10px] font-medium text-white bg-gray-800 rounded shadow-sm whitespace-nowrap z-50">
+            Go Back
+            <!-- Added a small triangle pointer for extra polish -->
+            <span class="absolute top-full left-1/2 -translate-x-1/2 -mt-1 border-4 border-transparent border-t-gray-800"></span>
+          </span>
+        </button>
+        <h2 class="text-md font-bold text-gray-900 tracking-tight">FOR EXAMINATION | Generate Letters & Send Emails</h2>
+      </div>
+
+
+      <div class="space-y-3 mb-6">
+  
+        <div class="space-y-4 mb-6">
+          
+          <!-- Step 1: Validation (Active State) -->
+          <div class="step-container flex items-start gap-3 relative">
+            <div class="bg-slate-600 text-white rounded-full w-8 h-8 flex items-center justify-center text-xs font-bold shrink-0 mt-0.5 z-10 shadow-sm">1</div>
+            <div class="flex-1">
+              <button id="validateColumnsBtn" class="group relative flex items-center justify-center gap-2 w-full py-2 px-2 bg-slate-600 text-white rounded-xl text-sm font-bold shadow-md active:scale-95 hover:bg-slate-700 transition">
+                <i data-lucide="check-circle" class="w-4 h-4"></i> Fill Columns O-R
+                <span class="absolute bottom-[calc(100%+8px)] left-0 w-full hidden group-hover:block px-2 py-1 text-[10px] font-medium text-white bg-slate-600 rounded-lg shadow-md z-50 pointer-events-none text-center">
+                  Ensure that Columns **O to R** in 'LETTER - EXAM SCHED' are completely filled out.
+                  <span class="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-600"></span>
+                </span>
+              </button>
+              <p id="step1Status" class="text-[10px] mt-2 font-semibold text-center"></p>
+            </div>
+          </div>
+
+          <!-- Step 2: Generation (Locked State Example) -->
+          <div class="step-container flex items-start gap-3 relative grayscale opacity-50">
+            <div id="circleStep2" class="bg-blue-600 text-white rounded-full w-8 h-8 flex items-center justify-center text-xs font-bold shrink-0 mt-0.5 z-10">2</div>
+            <div class="flex-1">
+              <button id="runProcessBtn" disabled class="group relative w-full py-2 px-2 bg-blue-600 text-white rounded-xl text-sm font-bold shadow-md flex items-center justify-center gap-2 cursor-not-allowed">
+                <i data-lucide="folder-plus" class="w-4 h-4"></i> Create & Generate
+                <span class="absolute bottom-[calc(100%+8px)] left-0 w-full hidden group-hover:block px-2 py-1 text-[10px] font-medium text-white bg-blue-600 rounded-lg shadow-md z-50 pointer-events-none text-center">
+                  Creates a Drive folder and generates PDF letters.
+                  <span class="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-blue-600"></span>
+                </span>
+              </button>
+              <p id="step2Status" class="text-[10px] mt-2 font-semibold text-center text-blue-700"></p>
+            </div>
+          </div>
+
+          <!-- Step 3: Folder Verification (Locked) -->
+          <div class="step-container flex items-start gap-3 relative grayscale opacity-50">
+            <div class="bg-amber-600 text-white rounded-full w-8 h-8 flex items-center justify-center text-xs font-bold shrink-0 mt-0.5 z-10">3</div>
+            <div class="flex-1">
+              <button id="openFolderBtn" disabled class="group relative w-full py-2 px-2 bg-amber-600 text-white rounded-xl text-sm font-bold shadow-md flex items-center justify-center gap-2 cursor-not-allowed">
+                <i data-lucide="eye" class="w-4 h-4"></i> Verify PDFs
+                <span class="absolute bottom-[calc(100%+8px)] left-0 w-full hidden group-hover:block px-2 py-1 text-[10px] font-medium text-white bg-amber-600 rounded-lg shadow-md z-50 pointer-events-none text-center">
+                  Verify PDFs before generating links.
+                  <span class="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-amber-600"></span>
+                </span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Step 4: Link Insertion (Locked) -->
+          <div class="step-container flex items-start gap-3 relative grayscale opacity-50">
+            <div class="bg-green-600 text-white rounded-full w-8 h-8 flex items-center justify-center text-xs font-bold shrink-0 mt-0.5 z-10">4</div>
+            <div class="flex-1">
+              <button id="generateLinksBtn" disabled class="group relative w-full py-2 px-2 bg-green-600 text-white rounded-xl text-sm font-bold shadow-md flex items-center justify-center gap-2 cursor-not-allowed">
+                <i data-lucide="link" class="w-4 h-4"></i> Generate Links
+                <span class="absolute bottom-[calc(100%+8px)] left-0 w-full hidden group-hover:block px-2 py-1 text-[10px] font-medium text-white bg-green-600 rounded-lg shadow-md z-50 pointer-events-none text-center">
+                  Extracts URLs and inserts them into Column S.
+                  <span class="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-green-600"></span>
+                </span>
+              </button>
+              <p id="step4Status" class="text-[10px] mt-2 font-semibold text-center"></p>
+            </div>
+          </div>
+
+          <!-- Step 5: Manual Alignment Check (Locked) -->
+          <div class="step-container flex items-start gap-3 relative grayscale opacity-50">
+            <div class="bg-purple-600 text-white rounded-full w-8 h-8 flex items-center justify-center text-xs font-bold shrink-0 mt-0.5 z-10">5</div>
+            <div class="flex-1">
+              <button id="verifyLinksBtn" disabled class="group relative w-full py-2 px-2 bg-purple-600 text-white rounded-xl text-sm font-bold shadow-md flex items-center justify-center gap-2 cursor-not-allowed">
+                <i data-lucide="list-check" class="w-4 h-4"></i> Verify Alignment
+                <span class="absolute bottom-[calc(100%+8px)] left-0 w-full hidden group-hover:block px-2 py-1 text-[10px] font-medium text-white bg-purple-600 rounded-lg shadow-md z-50 pointer-events-none text-center">
+                  Manually check that links match the applicant names.
+                  <span class="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-purple-600"></span>
+                </span>
+              </button>
+              <!-- ADD THIS LINE HERE -->
+              <p id="step5Status" class="text-[10px] mt-2 font-semibold text-center"></p>
+            </div>
+          </div>
+
+          <!-- Step 6: Finalization (Locked) -->
+          <div class="step-container flex items-start gap-3 relative grayscale opacity-50">
+            <div class="bg-indigo-600 text-white rounded-full w-8 h-8 flex items-center justify-center text-xs font-bold shrink-0 mt-0.5 z-10">6</div>
+            <div class="flex-1">
+              <button id="sendExamBtn" disabled class="group relative w-full py-2 px-2 bg-indigo-600 text-white rounded-xl text-sm font-bold shadow-md flex items-center justify-center gap-2 cursor-not-allowed">
+                <i data-lucide="send" class="w-4 h-4"></i> Send Emails
+                <span class="absolute bottom-[calc(100%+8px)] left-0 w-full hidden group-hover:block px-2 py-1 text-[10px] font-medium text-white bg-purple-600 rounded-lg shadow-md z-50 pointer-events-none text-center">
+                  Double check everything before sending out emails to applicants.
+                  <span class="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-purple-600"></span>
+                </span>
+              </button>
+              <!-- Add the status label here -->
+              <p id="step6Status" class="text-[10px] mt-2 font-semibold text-center"></p>
+            </div>
+          </div>
+
+          <!-- Step 7: Archive (Locked) -->
+          <div class="step-container flex items-start gap-3 relative grayscale opacity-50">
+            <div class="bg-sky-600 text-white rounded-full w-8 h-8 flex items-center justify-center text-xs font-bold shrink-0 mt-0.5 z-10">7</div>
+            <div class="flex-1">
+              <button id="backupExamBtn" disabled class="group relative w-full py-2 px-2 bg-sky-600 text-white rounded-xl text-sm font-bold shadow-md flex items-center justify-start gap-2 cursor-not-allowed">
+                <i data-lucide="archive" class="w-4 h-4"></i>
+                <span class="flex-1 text-left">Backup Sheet</span>
+                <span class="absolute bottom-[calc(100%+8px)] left-0 w-full hidden group-hover:block px-2 py-1 text-[10px] font-medium text-white bg-sky-600 rounded-lg shadow-md z-50 pointer-events-none text-center">
+                  Backup the spreadsheet to the folder.
+                  <span class="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-sky-600"></span>
+                </span>
+              </button>
+              <!-- Add the status label here -->
+              <p id="step7Status" class="text-[10px] mt-2 font-semibold text-center"></p>
+            </div>
+          </div>
+
+          <div class="flex gap-2 mt-4 justify-center">
+            <!-- Home Icon -->
+            <button id="mainMenuBtn" class="group relative p-2 bg-gray-100 hover:bg-gray-700 rounded-lg transition-colors duration-300">
+              <i data-lucide="home" class="w-5 h-5 text-gray-600 group-hover:text-white"></i>
+              <span class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block px-2 py-1 text-[10px] font-medium text-white bg-gray-800 rounded shadow-sm whitespace-nowrap z-50">
+                Main Menu
+                <span class="absolute top-full left-1/2 -translate-x-1/2 -mt-1 border-4 border-transparent border-t-gray-800"></span>
+              </span>
+            </button>
+            
+            <!-- Reset Icon -->
+            <button id="resetBtn" class="group relative p-2 bg-gray-100 hover:bg-amber-600 rounded-lg transition-colors duration-300">
+              <i data-lucide="rotate-ccw" class="w-5 h-5 text-gray-600 group-hover:text-white"></i>
+              <span class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block px-2 py-1 text-[10px] font-medium text-white bg-amber-600 rounded shadow-sm whitespace-nowrap z-50">
+                Reset Steps
+                <span class="absolute top-full left-1/2 -translate-x-1/2 -mt-1 border-4 border-transparent border-t-amber-600"></span>
+              </span>
+            </button>
+            
+            <!-- Go to DQ Icon -->
+            <button id="gotoDQBtn" class="group relative p-2 bg-gray-100 hover:bg-sky-600 rounded-lg transition-colors duration-300">
+              <i data-lucide="arrow-right" class="w-5 h-5 text-gray-600 group-hover:text-white"></i>
+              <span class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block px-2 py-1 text-[10px] font-medium text-white bg-sky-600 rounded shadow-sm whitespace-nowrap z-50">
+                Go to DQ Applicants
+                <span class="absolute top-full left-1/2 -translate-x-1/2 -mt-1 border-4 border-transparent border-t-sky-600"></span>
+              </span>
+            </button>
+          </div>
+
+        </div>
+      </div>
+    
+
+</div>
+
+  <!-- UNQUALIFIED PAGE -->
+  <div id="unqualified-page" class="hidden bg-white border border-gray-300 rounded-xl p-6 shadow-xl w-full max-w-md mx-auto">
+    <div class="flex items-center mb-6">
+      <button id="backBtnUnqualified" class="group relative p-2 bg-gray-100 mr-2 hover:bg-black rounded-lg transition-colors duration-300 ease-in-out">
+        <i data-lucide="chevron-left" class="w-5 h-5 text-gray-500 group-hover:text-white transition-colors"></i>
+        <span class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block px-2 py-1 text-[10px] font-medium text-white bg-gray-800 rounded shadow-sm whitespace-nowrap z-50">
+          Go Back
+          <span class="absolute top-full left-1/2 -translate-x-1/2 -mt-1 border-4 border-transparent border-t-gray-800"></span>
+        </span>
+      </button>
+      <h2 class="text-md font-bold text-gray-900 tracking-tight">UNQUALIFIED - Generate Letters & Send Emails</h2>
+    </div>
+
+    <div class="space-y-4 mb-6">
+      <!-- Step 0: Verify Column R -->
+      <div class="step-container flex items-start gap-3 relative">
+        <div class="bg-slate-600 text-white rounded-full w-8 h-8 flex items-center justify-center text-xs font-bold shrink-0 mt-0.5 z-10 shadow-sm">0</div>
+        <div class="flex-1">
+          <button id="validateDQColumnsBtn" class="group relative flex items-center justify-center gap-2 w-full py-2 px-2 bg-slate-600 text-white rounded-xl text-sm font-bold shadow-md active:scale-95 hover:bg-slate-700 transition">
+            <i data-lucide="check-circle" class="w-4 h-4"></i> Fill Column R
+            <span class="absolute bottom-[calc(100%+8px)] left-0 w-full hidden group-hover:block px-2 py-1 text-[10px] font-medium text-white bg-slate-600 rounded-lg shadow-md z-50 pointer-events-none text-center">
+              Ensure that Column R in 'LETTER - DQ' is completely filled out.
+              <span class="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-600"></span>
+            </span>
+          </button>
+          <p id="uqStep0Status" class="text-[10px] mt-2 font-semibold text-center"></p>
+        </div>
+      </div>
+
+      <div class="step-container flex items-start gap-3 relative grayscale opacity-50">
+        <div class="bg-indigo-600 text-white rounded-full w-8 h-8 flex items-center justify-center text-xs font-bold shrink-0 mt-0.5 z-10 shadow-sm">1</div>
+        <div class="flex-1">
+          <button id="runUnqualifiedBtn" disabled class="group relative flex items-center justify-start gap-2 w-full py-2 bg-indigo-600 text-white rounded-xl text-sm font-bold shadow-md active:scale-95 hover:bg-indigo-700 transition px-2 cursor-not-allowed">
+            <i data-lucide="folder-plus" class="w-4 h-4"></i>
+            <span>Create & Generate</span>
+          </button>
+          <p id="uqStep1Status" class="text-[10px] mt-2 font-semibold text-center"></p>
+        </div>
+      </div>
+
+      <div class="step-container flex items-start gap-3 relative grayscale opacity-50">
+        <div class="bg-orange-500 text-white rounded-full w-8 h-8 flex items-center justify-center text-xs font-bold shrink-0 mt-0.5 z-10">2</div>
+        <div class="flex-1">
+          <button id="openUnqualifiedFolderBtn" disabled class="group relative w-full py-2 px-2 bg-orange-500 text-white rounded-xl text-sm font-bold shadow-md flex items-center justify-center gap-2 cursor-not-allowed">
+            <i data-lucide="folder-open" class="w-4 h-4"></i> Open Folder
+          </button>
+          <p id="uqStep2Status" class="text-[10px] mt-2 font-semibold text-center"></p>
+        </div>
+      </div>
+
+      <div class="step-container flex items-start gap-3 relative grayscale opacity-50">
+        <div class="bg-amber-500 text-white rounded-full w-8 h-8 flex items-center justify-center text-xs font-bold shrink-0 mt-0.5 z-10">3</div>
+        <div class="flex-1">
+          <button id="generateUnqualifiedLinksBtn" disabled class="group relative w-full py-2 px-2 bg-amber-500 text-white rounded-xl text-sm font-bold shadow-md flex items-center justify-center gap-2 cursor-not-allowed">
+            <i data-lucide="link" class="w-4 h-4"></i> Generate Links
+          </button>
+          <p id="uqStep3Status" class="text-[10px] mt-2 font-semibold text-center"></p>
+        </div>
+      </div>
+
+      <div class="step-container flex items-start gap-3 relative grayscale opacity-50">
+        <div class="bg-yellow-500 text-white rounded-full w-8 h-8 flex items-center justify-center text-xs font-bold shrink-0 mt-0.5 z-10">4</div>
+        <div class="flex-1">
+          <button id="verifyUnqualifiedLinksBtn" disabled class="group relative w-full py-2 px-2 bg-yellow-500 text-white rounded-xl text-sm font-bold shadow-md flex items-center justify-center gap-2 cursor-not-allowed">
+            <i data-lucide="check-circle" class="w-4 h-4"></i> Verify Links
+          </button>
+          <p id="uqStep4Status" class="text-[10px] mt-2 font-semibold text-center"></p>
+        </div>
+      </div>
+
+      <div class="step-container flex items-start gap-3 relative grayscale opacity-50">
+        <div class="bg-teal-600 text-white rounded-full w-8 h-8 flex items-center justify-center text-xs font-bold shrink-0 mt-0.5 z-10">5</div>
+        <div class="flex-1">
+          <button id="sendUnqualifiedBtn" disabled class="group relative w-full py-2 px-2 bg-teal-600 text-white rounded-xl text-sm font-bold shadow-md flex items-center justify-center gap-2 cursor-not-allowed">
+            <i data-lucide="send" class="w-4 h-4"></i> Send Emails
+          </button>
+          <p id="uqStep5Status" class="text-[10px] mt-2 font-semibold text-center"></p>
+        </div>
+      </div>
+
+      <div class="step-container flex items-start gap-3 relative grayscale opacity-50">
+        <div class="bg-sky-600 text-white rounded-full w-8 h-8 flex items-center justify-center text-xs font-bold shrink-0 mt-0.5 z-10">6</div>
+        <div class="flex-1">
+          <button id="backupDqBtn" disabled class="group relative w-full py-2 px-2 bg-sky-600 text-white rounded-xl text-sm font-bold shadow-md flex items-center justify-start gap-2 cursor-not-allowed">
+            <i data-lucide="archive" class="w-4 h-4"></i>
+            <span>Backup Sheet</span>
+          </button>
+          <p id="uqStep6Status" class="text-[10px] mt-2 font-semibold text-center"></p>
+        </div>
+      </div>
+
+      <div class="flex gap-2 mt-4 justify-center">
+        <!-- Home Icon -->
+        <button id="mainMenuBtnUQ" class="group relative p-2 bg-gray-100 hover:bg-gray-700 rounded-lg transition-colors duration-300">
+          <i data-lucide="home" class="w-5 h-5 text-gray-600 group-hover:text-white"></i>
+          <span class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block px-2 py-1 text-[10px] font-medium text-white bg-gray-800 rounded shadow-sm whitespace-nowrap z-50">
+            Main Menu
+            <span class="absolute top-full left-1/2 -translate-x-1/2 -mt-1 border-4 border-transparent border-t-gray-800"></span>
+          </span>
+        </button>
+        
+        <!-- Reset Icon -->
+        <button id="resetBtnUQ" class="group relative p-2 bg-gray-100 hover:bg-amber-600 rounded-lg transition-colors duration-300">
+          <i data-lucide="rotate-ccw" class="w-5 h-5 text-gray-600 group-hover:text-white"></i>
+          <span class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block px-2 py-1 text-[10px] font-medium text-white bg-amber-600 rounded shadow-sm whitespace-nowrap z-50">
+            Reset Steps
+            <span class="absolute top-full left-1/2 -translate-x-1/2 -mt-1 border-4 border-transparent border-t-amber-600"></span>
+          </span>
+        </button>
+        
+        <!-- Go to Failed Icon -->
+        <button id="goToFailedBtn" class="group relative p-2 bg-gray-100 hover:bg-red-600 rounded-lg transition-colors duration-300">
+          <i data-lucide="arrow-right" class="w-5 h-5 text-gray-600 group-hover:text-white"></i>
+          <span class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block px-2 py-1 text-[10px] font-medium text-white bg-red-600 rounded shadow-sm whitespace-nowrap z-50">
+            Go to Failed
+            <span class="absolute top-full left-1/2 -translate-x-1/2 -mt-1 border-4 border-transparent border-t-red-600"></span>
+          </span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- FOR INTERVIEW PAGE -->
+  <div id="for-interview-page" class="hidden bg-white border border-gray-300 rounded-xl p-6 shadow-xl w-full max-w-md mx-auto">
+    <div class="flex items-center mb-6">
+      <button id="backBtnInterview" class="group relative p-2 bg-gray-100 mr-2 hover:bg-black rounded-lg transition-colors duration-300 ease-in-out">
+        <i data-lucide="chevron-left" class="w-5 h-5 text-gray-500 group-hover:text-white transition-colors"></i>
+        <span class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block px-2 py-1 text-[10px] font-medium text-white bg-gray-800 rounded shadow-sm whitespace-nowrap z-50">
+          Go Back
+          <span class="absolute top-full left-1/2 -translate-x-1/2 -mt-1 border-4 border-transparent border-t-gray-800"></span>
+        </span>
+      </button>
+      <h2 class="text-md font-bold text-gray-900 tracking-tight">FOR INTERVIEW | Generate Letters & Send Emails</h2>
+    </div>
+
+    <div class="space-y-4 mb-6">
+      <!-- Step 1: Validation (Active State) -->
+      <div class="step-container flex items-start gap-3 relative">
+        <div class="bg-slate-600 text-white rounded-full w-8 h-8 flex items-center justify-center text-xs font-bold shrink-0 mt-0.5 z-10 shadow-sm">1</div>
+        <div class="flex-1">
+          <button id="validateInterviewColumnsBtn" class="group relative flex items-center justify-center gap-2 w-full py-2 px-2 bg-slate-600 text-white rounded-xl text-sm font-bold shadow-md active:scale-95 hover:bg-slate-700 transition">
+            <i data-lucide="check-circle" class="w-4 h-4"></i> Fill Columns O-R
+            <span class="absolute bottom-[calc(100%+8px)] left-0 w-full hidden group-hover:block px-2 py-1 text-[10px] font-medium text-white bg-slate-600 rounded-lg shadow-md z-50 pointer-events-none text-center">
+              Ensure that Columns **O to R** are completely filled out.
+              <span class="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-600"></span>
+            </span>
+          </button>
+          <p id="interviewStep1Status" class="text-[10px] mt-2 font-semibold text-center"></p>
+        </div>
+      </div>
+
+      <!-- Step 2: Generation (Locked State Example) -->
+      <div class="step-container flex items-start gap-3 relative grayscale opacity-50">
+        <div class="bg-blue-600 text-white rounded-full w-8 h-8 flex items-center justify-center text-xs font-bold shrink-0 mt-0.5 z-10">2</div>
+        <div class="flex-1">
+          <button id="runInterviewProcessBtn" disabled class="group relative w-full py-2 px-2 bg-blue-600 text-white rounded-xl text-sm font-bold shadow-md flex items-center justify-center gap-2 cursor-not-allowed">
+            <i data-lucide="folder-plus" class="w-4 h-4"></i> Create & Generate
+            <span class="absolute bottom-[calc(100%+8px)] left-0 w-full hidden group-hover:block px-2 py-1 text-[10px] font-medium text-white bg-blue-600 rounded-lg shadow-md z-50 pointer-events-none text-center">
+              Creates a Drive folder and generates PDF letters.
+              <span class="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-blue-600"></span>
+            </span>
+          </button>
+          <p id="interviewStep2Status" class="text-[10px] mt-2 font-semibold text-center text-blue-700"></p>
+        </div>
+      </div>
+
+      <!-- Step 3: Folder Verification (Locked) -->
+      <div class="step-container flex items-start gap-3 relative grayscale opacity-50">
+        <div class="bg-amber-600 text-white rounded-full w-8 h-8 flex items-center justify-center text-xs font-bold shrink-0 mt-0.5 z-10">3</div>
+        <div class="flex-1">
+          <button id="openInterviewFolderBtn" disabled class="group relative w-full py-2 px-2 bg-amber-600 text-white rounded-xl text-sm font-bold shadow-md flex items-center justify-center gap-2 cursor-not-allowed">
+            <i data-lucide="eye" class="w-4 h-4"></i> Verify PDFs
+            <span class="absolute bottom-[calc(100%+8px)] left-0 w-full hidden group-hover:block px-2 py-1 text-[10px] font-medium text-white bg-amber-600 rounded-lg shadow-md z-50 pointer-events-none text-center">
+              Verify PDFs before generating links.
+              <span class="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-amber-600"></span>
+            </span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Step 4: Link Insertion (Locked) -->
+      <div class="step-container flex items-start gap-3 relative grayscale opacity-50">
+        <div class="bg-green-600 text-white rounded-full w-8 h-8 flex items-center justify-center text-xs font-bold shrink-0 mt-0.5 z-10">4</div>
+        <div class="flex-1">
+          <button id="generateInterviewLinksBtn" disabled class="group relative w-full py-2 px-2 bg-green-600 text-white rounded-xl text-sm font-bold shadow-md flex items-center justify-center gap-2 cursor-not-allowed">
+            <i data-lucide="link" class="w-4 h-4"></i> Generate Links
+            <span class="absolute bottom-[calc(100%+8px)] left-0 w-full hidden group-hover:block px-2 py-1 text-[10px] font-medium text-white bg-green-600 rounded-lg shadow-md z-50 pointer-events-none text-center">
+              Extracts URLs and inserts them into Column S.
+              <span class="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-green-600"></span>
+            </span>
+          </button>
+          <p id="interviewStep4Status" class="text-[10px] mt-2 font-semibold text-center"></p>
+        </div>
+      </div>
+
+      <!-- Step 5: Manual Alignment Check (Locked) -->
+      <div class="step-container flex items-start gap-3 relative grayscale opacity-50">
+        <div class="bg-purple-600 text-white rounded-full w-8 h-8 flex items-center justify-center text-xs font-bold shrink-0 mt-0.5 z-10">5</div>
+        <div class="flex-1">
+          <button id="verifyInterviewLinksBtn" disabled class="group relative w-full py-2 px-2 bg-purple-600 text-white rounded-xl text-sm font-bold shadow-md flex items-center justify-center gap-2 cursor-not-allowed">
+            <i data-lucide="list-check" class="w-4 h-4"></i> Verify Alignment
+            <span class="absolute bottom-[calc(100%+8px)] left-0 w-full hidden group-hover:block px-2 py-1 text-[10px] font-medium text-white bg-purple-600 rounded-lg shadow-md z-50 pointer-events-none text-center">
+              Manually check that links match the applicant names.
+              <span class="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-purple-600"></span>
+            </span>
+          </button>
+          <p id="interviewStep5Status" class="text-[10px] mt-2 font-semibold text-center"></p>
+        </div>
+      </div>
+
+      <!-- Step 6: Finalization (Locked) -->
+      <div class="step-container flex items-start gap-3 relative grayscale opacity-50">
+        <div class="bg-indigo-600 text-white rounded-full w-8 h-8 flex items-center justify-center text-xs font-bold shrink-0 mt-0.5 z-10">6</div>
+        <div class="flex-1">
+          <button id="sendInterviewBtn" disabled class="group relative w-full py-2 px-2 bg-indigo-600 text-white rounded-xl text-sm font-bold shadow-md flex items-center justify-center gap-2 cursor-not-allowed">
+            <i data-lucide="send" class="w-4 h-4"></i> Send Emails
+            <span class="absolute bottom-[calc(100%+8px)] left-0 w-full hidden group-hover:block px-2 py-1 text-[10px] font-medium text-white bg-purple-600 rounded-lg shadow-md z-50 pointer-events-none text-center">
+              Double check everything before sending out emails to applicants.
+              <span class="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-purple-600"></span>
+            </span>
+          </button>
+          <p id="interviewStep6Status" class="text-[10px] mt-2 font-semibold text-center"></p>
+        </div>
+      </div>
+
+      <!-- Step 7: Archive (Locked) -->
+      <div class="step-container flex items-start gap-3 relative grayscale opacity-50">
+        <div class="bg-sky-600 text-white rounded-full w-8 h-8 flex items-center justify-center text-xs font-bold shrink-0 mt-0.5 z-10">7</div>
+        <div class="flex-1">
+          <button id="backupInterviewBtn" disabled class="group relative w-full py-2 px-2 bg-sky-600 text-white rounded-xl text-sm font-bold shadow-md flex items-center justify-start gap-2 cursor-not-allowed">
+            <i data-lucide="archive" class="w-4 h-4"></i>
+            <span class="flex-1 text-left">Backup Sheet</span>
+            <span class="absolute bottom-[calc(100%+8px)] left-0 w-full hidden group-hover:block px-2 py-1 text-[10px] font-medium text-white bg-sky-600 rounded-lg shadow-md z-50 pointer-events-none text-center">
+              Backup the spreadsheet to the folder.
+              <span class="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-sky-600"></span>
+            </span>
+          </button>
+          <p id="interviewStep7Status" class="text-[10px] mt-2 font-semibold text-center"></p>
+        </div>
+      </div>
+
+      <div class="flex gap-2 mt-4 justify-center">
+        <!-- Home Icon -->
+        <button id="mainMenuBtnInterview" class="group relative p-2 bg-gray-100 hover:bg-gray-700 rounded-lg transition-colors duration-300">
+          <i data-lucide="home" class="w-5 h-5 text-gray-600 group-hover:text-white"></i>
+          <span class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block px-2 py-1 text-[10px] font-medium text-white bg-gray-800 rounded shadow-sm whitespace-nowrap z-50">
+            Main Menu
+            <span class="absolute top-full left-1/2 -translate-x-1/2 -mt-1 border-4 border-transparent border-t-gray-800"></span>
+          </span>
+        </button>
+        
+        <!-- Reset Icon -->
+        <button id="resetBtnInterview" class="group relative p-2 bg-gray-100 hover:bg-amber-600 rounded-lg transition-colors duration-300">
+          <i data-lucide="rotate-ccw" class="w-5 h-5 text-gray-600 group-hover:text-white"></i>
+          <span class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block px-2 py-1 text-[10px] font-medium text-white bg-amber-600 rounded shadow-sm whitespace-nowrap z-50">
+            Reset Steps
+            <span class="absolute top-full left-1/2 -translate-x-1/2 -mt-1 border-4 border-transparent border-t-amber-600"></span>
+          </span>
+        </button>
+        
+        <!-- Go to Failed Icon -->
+        <button id="goToFailedFromInterviewBtn" class="group relative p-2 bg-gray-100 hover:bg-red-600 rounded-lg transition-colors duration-300">
+          <i data-lucide="arrow-right" class="w-5 h-5 text-gray-600 group-hover:text-white"></i>
+          <span class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block px-2 py-1 text-[10px] font-medium text-white bg-red-600 rounded shadow-sm whitespace-nowrap z-50">
+            Go to Failed
+            <span class="absolute top-full left-1/2 -translate-x-1/2 -mt-1 border-4 border-transparent border-t-red-600"></span>
+          </span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- FAILED PAGE -->
+  <div id="failed-page" class="hidden bg-white border border-gray-300 rounded-xl p-6 shadow-xl w-full max-w-md mx-auto">
+    <div class="flex items-center justify-between mb-6">
+      <h2 class="text-xl font-bold text-gray-900 tracking-tight">Failed Applicants</h2>
+      <button id="backBtnFailed" class="p-2 hover:bg-gray-100 rounded-full transition-colors">
+        <i data-lucide="x" class="w-5 h-5 text-gray-500"></i>
+      </button>
+    </div>
+  </div>
+
+<script>
+  // Initialize Lucide Icons
+  lucide.createIcons();
+
+  // --- Utility: The Waterfall Unlocker ---
+  function unlockNextStep(stepIndex) {
+    const containers = document.querySelectorAll('.step-container');
+    const container = containers[stepIndex]; // index 1 is Step 2, etc.
+    
+    if (container) {
+      const button = container.querySelector('button');
+      // Remove visual "locked" state
+      container.classList.remove('grayscale', 'opacity-50');
+      // Enable functionality
+      button.disabled = false;
+      button.classList.remove('cursor-not-allowed');
+      button.classList.add('cursor-pointer', 'transition', 'active:scale-95');
+      // Smooth scroll for long sidebars
+      container.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+  }
+
+  function setButtonEnabled(button, enabled) {
+    if (!button) return;
+    button.disabled = !enabled;
+    button.classList.toggle('cursor-not-allowed', !enabled);
+    button.classList.toggle('cursor-pointer', enabled);
+    if (enabled) {
+      button.classList.remove('opacity-50');
+      const container = button.closest('.step-container');
+      if (container) {
+        container.classList.remove('grayscale', 'opacity-50');
+      }
+    } else {
+      button.classList.add('opacity-50');
+    }
+  }
+
+  // UI Elements
+  const landingPage = document.getElementById('landingPage');
+  const statusDiv = document.getElementById('status'); // Global status from original script
+  
+  // Navigation Buttons
+  const navButtons = {
+    forExam: document.getElementById('forExamBtn'),
+    unqualified: document.getElementById('unqualifiedBtn'),
+    forInterview: document.getElementById('forInterviewBtn'),
+    failed: document.getElementById('failedBtn'),
+    backup: document.getElementById('backupBtn')
+  };
+
+  // Step Completion Tracking
+  const stepStatus = {
+    step1: false, step2: false, step3: false, 
+    step4: false, step5: false, step6: false
+  };
+
+  let currentLetterType = 'forExam';
+
+  // --- Navigation Logic ---
+  function showLanding() {
+    landingPage.classList.remove('hidden');
+    landingPage.classList.add('flex');
+    ['forExamPage', 'unqualified-page', 'for-interview-page', 'failed-page'].forEach(id => {
+      const page = document.getElementById(id);
+      if (page) {
+        page.classList.add('hidden');
+        page.classList.remove('block');
+      }
+    });
+  }
+
+  function showPage(type) {
+    currentLetterType = type;
+    ['landingPage', 'forExamPage', 'unqualified-page', 'for-interview-page', 'failed-page'].forEach(id => {
+      const page = document.getElementById(id);
+      if (page) {
+        page.classList.add('hidden');
+        page.classList.remove('block');
+      }
+    });
+
+    const pageId = {
+      forExam: 'forExamPage',
+      unqualified: 'unqualified-page',
+      forInterview: 'for-interview-page',
+      failed: 'failed-page'
+    }[type];
+    const page = document.getElementById(pageId);
+    if (page) {
+      page.classList.remove('hidden');
+      page.classList.add('block');
+    }
+  }
+
+  // --- Step 1: Validate Columns ---
+  document.getElementById('validateColumnsBtn').addEventListener('click', function() {
+    const btn = this;
+    const statusLabel = document.getElementById('step1Status');
+    
+    btn.disabled = true;
+    btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Validating...';
+    lucide.createIcons();
+
+    google.script.run
+      .withSuccessHandler((res) => {
+        if (res.hasData) {
+          stepStatus.step1 = true;
+          statusLabel.innerText = "✓ Columns O-R verified!";
+          statusLabel.className = "text-[10px] px-2 mt-2 font-semibold text-center text-green-600";
+          btn.innerHTML = '<i data-lucide="check-circle" class="w-4 h-4"></i> Complete';
+          btn.className = "group flex items-center justify-start gap-2 w-full py-2 px-2 bg-green-100 text-green-700 rounded-xl text-sm font-bold border border-green-200 cursor-default";
+          
+          unlockNextStep(1); // Unlock Step 2
+        } else {
+          statusLabel.innerText = "❌ Missing data in columns O-R";
+          statusLabel.className = "text-[10px] px-2 mt-2 font-semibold text-center text-red-600";
+          btn.disabled = false;
+          btn.innerHTML = '<i data-lucide="check-circle" class="w-4 h-4"></i> Fill Columns O-R';
+        }
+        lucide.createIcons();
+      })
+      .checkColumnsOtoR();
+  });
+
+  // --- Step 2: Run Complete Process ---
+  document.getElementById('runProcessBtn').addEventListener('click', function() {
+    const btn = this;
+    const statusLabel = document.getElementById('step2Status');
+    
+    btn.disabled = true;
+    btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Processing...';
+    lucide.createIcons();
+
+    google.script.run
+      .withSuccessHandler((res) => {
+        stepStatus.step2 = true;
+        statusLabel.innerText = "✓ Letters generated!";
+        statusLabel.className = "text-[10px] px-2 mt-2 font-semibold text-center text-green-600";
+        btn.innerHTML = '<i data-lucide="check-circle" class="w-4 h-4"></i> Complete';
+        btn.className = "group flex items-center justify-start gap-2 w-full py-2 px-2 bg-green-100 text-green-700 rounded-xl text-sm font-bold border border-green-200 cursor-default";
+        
+        unlockNextStep(2); // Unlock Step 3
+        lucide.createIcons();
+      })
+      .runCompleteProcess();
+  });
+
+  // --- Step 3: Open Folder ---
+  document.getElementById('openFolderBtn').addEventListener('click', function() {
+    const btn = this;
+    google.script.run
+      .withSuccessHandler((folderUrl) => {
+        if (folderUrl) {
+          window.open(folderUrl, '_blank');
+          stepStatus.step3 = true;
+          btn.innerHTML = '<i data-lucide="check-circle" class="w-4 h-4"></i> Complete';
+          btn.className = "group flex items-center justify-start gap-2 w-full py-2 px-2 bg-green-100 text-green-700 rounded-xl text-sm font-bold border border-green-200 cursor-default";
+          btn.disabled = true;
+          
+          unlockNextStep(3); // Unlock Step 4
+          lucide.createIcons();
+        }
+      })
+      .getFolderUrl(currentLetterType);
+  });
+
+// --- Step 4: Generate Links ---
+  document.getElementById('generateLinksBtn').addEventListener('click', function() {
+    const btn = this;
+    const statusLabel = document.getElementById('step4Status');
+    
+    // 1. Set Loading UI
+    btn.disabled = true;
+    btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Generating...';
+    lucide.createIcons();
+
+    google.script.run
+      .withSuccessHandler((resultMessage) => {
+        // 2. Handle Success
+        stepStatus.step4 = true;
+        if (statusLabel) {
+          statusLabel.innerText = "✓ " + resultMessage;
+          statusLabel.className = "text-[10px] px-2 mt-2 font-semibold text-center text-green-600";
+        }
+        
+        btn.innerHTML = '<i data-lucide="check-circle" class="w-4 h-4"></i> Complete';
+        btn.className = "group flex items-center justify-start gap-2 w-full py-2 px-2 bg-green-100 text-green-700 rounded-xl text-sm font-bold border border-green-200 cursor-default";
+        
+        unlockNextStep(4); // Unlocks Step 5
+        lucide.createIcons();
+      })
+      .withFailureHandler((err) => {
+        // 3. Handle Failure (Critical to prevent getting "stuck")
+        console.error(err);
+        if (statusLabel) {
+          statusLabel.innerText = "❌ " + err.message;
+          statusLabel.className = "text-[10px] px-2 mt-2 font-semibold text-center text-red-600";
+        }
+        // Reset button so user can try again
+        btn.disabled = false;
+        btn.innerHTML = '<i data-lucide="link" class="w-4 h-4"></i> Generate Links';
+        lucide.createIcons();
+      })
+      // CHANGE THIS LINE to match your .gs function name
+      .forExamGenerateLinks(); 
+  });
+
+  // --- Step 5: Verify Links (Manual) ---
+    document.getElementById('verifyLinksBtn').addEventListener('click', function() {
+      const btn = this;
+      const statusLabel = document.getElementById('step5Status');
+      
+      // Mark logic as complete
+      stepStatus.step5 = true;
+      
+      // Update Label (with safety check)
+      if (statusLabel) {
+        statusLabel.innerText = "✓ Alignment verified!";
+        statusLabel.className = "text-[10px] px-2 mt-2 font-semibold text-center text-green-600";
+      }
+      
+      // Update Button Appearance
+      btn.innerHTML = '<i data-lucide="check-circle" class="w-4 h-4"></i> Complete';
+      btn.className = "group flex items-center justify-start gap-2 w-full py-2 px-2 bg-green-100 text-green-700 rounded-xl text-sm font-bold border border-green-200 cursor-default";
+      btn.disabled = true;
+      
+      // Crucial: Unlock the next step
+      unlockNextStep(5); 
+      
+      // Refresh icons
+      lucide.createIcons();
+    });
+
+// --- Step 6: Send Emails (Simulated) ---
+  document.getElementById('sendExamBtn').addEventListener('click', function() {
+    const btn = this;
+    const statusLabel = document.getElementById('step6Status');
+    
+    btn.disabled = true;
+    btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Sending...';
+    lucide.createIcons();
+
+    google.script.run
+      .withSuccessHandler((res) => {
+        stepStatus.step6 = true;
+        if (statusLabel) {
+          statusLabel.innerText = "✓ " + res.status + " (" + res.count + " emails)";
+          statusLabel.className = "text-[10px] px-2 mt-2 font-semibold text-center text-green-600";
+        }
+        
+        btn.innerHTML = '<i data-lucide="check-circle" class="w-4 h-4"></i> Complete';
+        btn.className = "group flex items-center justify-start gap-2 w-full py-2 px-2 bg-green-100 text-green-700 rounded-xl text-sm font-bold border border-green-200 cursor-default px-4";
+        
+        unlockNextStep(6); // Unlocks Step 7
+        lucide.createIcons();
+      })
+      .withFailureHandler((err) => {
+        if (statusLabel) {
+          statusLabel.innerText = "❌ Error: " + err.message;
+          statusLabel.className = "text-[10px] px-2 mt-2 font-semibold text-center text-red-600";
+        }
+        btn.disabled = false;
+        btn.innerHTML = '<i data-lucide="send" class="w-4 h-4"></i> Send Emails';
+        lucide.createIcons();
+      })
+      .forExamSendEmails(); // Updated to match the .gs function name
+  });
+
+  // --- Step 7: Backup Sheet ---
+  document.getElementById('backupExamBtn').addEventListener('click', function() {
+    const btn = this;
+    const statusLabel = document.getElementById('step7Status');
+    btn.disabled = true;
+    btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Backing up...';
+
+    google.script.run
+      .withSuccessHandler(() => {
+        statusLabel.innerText = "✓ Backup complete!";
+        btn.innerHTML = '<i data-lucide="check-circle" class="w-4 h-4"></i> Complete';
+        btn.className = "group flex items-center justify-start gap-2 w-full py-2 bg-green-100 text-green-700 rounded-xl text-sm font-bold border border-green-200 cursor-default px-4";
+        lucide.createIcons();
+      })
+      .backupExamSheet();
+  });
+
+  document.getElementById('runUnqualifiedBtn').addEventListener('click', function() {
+    const btn = this;
+    const statusLabel = document.getElementById('uqStep1Status');
+
+    btn.disabled = true;
+    btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Processing...';
+    lucide.createIcons();
+
+    google.script.run
+      .withSuccessHandler((res) => {
+        statusLabel.innerText = '✓ Letters generated!';
+        statusLabel.className = 'text-[10px] mt-2 font-semibold text-center text-green-600';
+        btn.innerHTML = '<i data-lucide="check-circle" class="w-4 h-4"></i> Complete';
+        btn.className = 'group flex items-center justify-start gap-2 w-full py-2 bg-green-100 text-green-700 rounded-xl text-sm font-bold border border-green-200 cursor-default px-4';
+        setButtonEnabled(document.getElementById('openUnqualifiedFolderBtn'), true);
+        setButtonEnabled(document.getElementById('generateUnqualifiedLinksBtn'), false);
+        lucide.createIcons();
+      })
+      .withFailureHandler((err) => {
+        statusLabel.innerText = '❌ ' + err.message;
+        statusLabel.className = 'text-[10px] mt-2 font-semibold text-center text-red-600';
+        btn.disabled = false;
+        btn.innerHTML = '<i data-lucide="folder-plus" class="w-4 h-4"></i> Create & Generate';
+        lucide.createIcons();
+      })
+      .runUnqualifiedCompleteProcess();
+  });
+
+  document.getElementById('openUnqualifiedFolderBtn').addEventListener('click', function() {
+    const btn = this;
+    google.script.run
+      .withSuccessHandler((folderUrl) => {
+        if (folderUrl) {
+          window.open(folderUrl, '_blank');
+          document.getElementById('uqStep2Status').innerText = '✓ Opened';
+          document.getElementById('uqStep2Status').className = 'text-[10px] mt-2 font-semibold text-center text-green-600';
+          setButtonEnabled(document.getElementById('generateUnqualifiedLinksBtn'), true);
+          setButtonEnabled(btn, false);
+        }
+      })
+      .getFolderUrl('unqualified');
+  });
+
+  document.getElementById('generateUnqualifiedLinksBtn').addEventListener('click', function() {
+    const btn = this;
+    const statusLabel = document.getElementById('uqStep3Status');
+
+    btn.disabled = true;
+    btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Generating...';
+    lucide.createIcons();
+
+    google.script.run
+      .withSuccessHandler((resultMessage) => {
+        statusLabel.innerText = '✓ ' + resultMessage;
+        statusLabel.className = 'text-[10px] mt-2 font-semibold text-center text-green-600';
+        btn.innerHTML = '<i data-lucide="check-circle" class="w-4 h-4"></i> Complete';
+        btn.className = 'group flex items-center justify-start gap-2 w-full py-2 bg-green-100 text-green-700 rounded-xl text-sm font-bold border border-green-200 cursor-default px-4';
+        setButtonEnabled(document.getElementById('verifyUnqualifiedLinksBtn'), true);
+        setButtonEnabled(btn, false);
+        lucide.createIcons();
+      })
+      .withFailureHandler((err) => {
+        statusLabel.innerText = '❌ ' + err.message;
+        statusLabel.className = 'text-[10px] mt-2 font-semibold text-center text-red-600';
+        btn.disabled = false;
+        btn.innerHTML = '<i data-lucide="link" class="w-4 h-4"></i> Generate Links';
+        lucide.createIcons();
+      })
+      .generateGDriveLinks('unqualified');
+  });
+
+  document.getElementById('verifyUnqualifiedLinksBtn').addEventListener('click', function() {
+    const btn = this;
+    const statusLabel = document.getElementById('uqStep4Status');
+
+    btn.disabled = true;
+    btn.innerHTML = '<i data-lucide="check-circle" class="w-4 h-4"></i> Complete';
+    btn.className = 'group flex items-center justify-start gap-2 w-full py-2 bg-green-100 text-green-700 rounded-xl text-sm font-bold border border-green-200 cursor-default px-4';
+    statusLabel.innerText = '✓ Alignment verified!';
+    statusLabel.className = 'text-[10px] mt-2 font-semibold text-center text-green-600';
+    setButtonEnabled(document.getElementById('sendUnqualifiedBtn'), true);
+    lucide.createIcons();
+  });
+
+  document.getElementById('sendUnqualifiedBtn').addEventListener('click', function() {
+    const btn = this;
+    const statusLabel = document.getElementById('uqStep5Status');
+
+    btn.disabled = true;
+    btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Sending...';
+    lucide.createIcons();
+
+    google.script.run
+      .withSuccessHandler((res) => {
+        statusLabel.innerText = '✓ ' + res.status + ' (' + res.count + ' emails)';
+        statusLabel.className = 'text-[10px] mt-2 font-semibold text-center text-green-600';
+        btn.innerHTML = '<i data-lucide="check-circle" class="w-4 h-4"></i> Complete';
+        btn.className = 'group flex items-center justify-start gap-2 w-full py-2 bg-green-100 text-green-700 rounded-xl text-sm font-bold border border-green-200 cursor-default px-4';
+        setButtonEnabled(document.getElementById('backupDqBtn'), true);
+        setButtonEnabled(btn, false);
+        lucide.createIcons();
+      })
+      .withFailureHandler((err) => {
+        statusLabel.innerText = '❌ Error: ' + err.message;
+        statusLabel.className = 'text-[10px] mt-2 font-semibold text-center text-red-600';
+        btn.disabled = false;
+        btn.innerHTML = '<i data-lucide="send" class="w-4 h-4"></i> Send Emails';
+        lucide.createIcons();
+      })
+      .sendEmailsToUnqualified();
+  });
+
+  document.getElementById('backupDqBtn').addEventListener('click', function() {
+    const btn = this;
+    const statusLabel = document.getElementById('uqStep6Status');
+    btn.disabled = true;
+    btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Backing up...';
+
+    google.script.run
+      .withSuccessHandler(() => {
+        statusLabel.innerText = '✓ Backup complete!';
+        btn.innerHTML = '<i data-lucide="check-circle" class="w-4 h-4"></i> Complete';
+        btn.className = 'group flex items-center justify-start gap-2 w-full py-2 bg-green-100 text-green-700 rounded-xl text-sm font-bold border border-green-200 cursor-default px-4';
+        lucide.createIcons();
+      })
+      .withFailureHandler((err) => {
+        statusLabel.innerText = '❌ Error: ' + err.message;
+        statusLabel.className = 'text-[10px] mt-2 font-semibold text-center text-red-600';
+        btn.disabled = false;
+        btn.innerHTML = '<i data-lucide="archive" class="w-4 h-4"></i> Backup Sheet';
+        lucide.createIcons();
+      })
+      .backupDqSheet();
+  });
+
+  // Reset Steps Function
+  function resetForExamSteps() {
+    // Reset step status flags
+    stepStatus.step1 = false;
+    stepStatus.step2 = false;
+    stepStatus.step3 = false;
+    stepStatus.step4 = false;
+    stepStatus.step5 = false;
+    stepStatus.step6 = false;
+
+    // Reset Step 1 button
+    const validateBtn = document.getElementById('validateColumnsBtn');
+    if (validateBtn) {
+      validateBtn.disabled = false;
+      validateBtn.innerHTML = '<i data-lucide="check-circle" class="w-4 h-4"></i> Fill Columns O-R';
+      validateBtn.className = 'group relative flex items-center justify-center gap-2 w-full py-2 px-2 bg-slate-600 text-white rounded-xl text-sm font-bold shadow-md active:scale-95 hover:bg-slate-700 transition';
+    }
+    const step1Status = document.getElementById('step1Status');
+    if (step1Status) {
+      step1Status.innerText = '';
+      step1Status.className = 'text-[10px] mt-2 font-semibold text-center';
+    }
+
+    // Reset Steps 2-7
+    const stepsData = [
+      { btnId: 'runProcessBtn', statusId: 'step2Status', icon: 'folder-plus', text: 'Create & Generate', containerIndex: 1 },
+      { btnId: 'openFolderBtn', statusId: 'step3Status', icon: 'eye', text: 'Verify PDFs', containerIndex: 2 },
+      { btnId: 'generateLinksBtn', statusId: 'step4Status', icon: 'link', text: 'Generate Links', containerIndex: 3 },
+      { btnId: 'verifyLinksBtn', statusId: 'step5Status', icon: 'list-check', text: 'Verify Alignment', containerIndex: 4 },
+      { btnId: 'sendExamBtn', statusId: 'step6Status', icon: 'send', text: 'Send Emails', containerIndex: 5 },
+      { btnId: 'backupExamBtn', statusId: 'step7Status', icon: 'archive', text: 'Backup Sheet', containerIndex: 6 }
+    ];
+
+    const containers = document.querySelectorAll('.step-container');
+    stepsData.forEach((stepData) => {
+      const btn = document.getElementById(stepData.btnId);
+      if (btn) {
+        btn.disabled = true;
+        btn.classList.add('cursor-not-allowed');
+        btn.classList.remove('cursor-pointer', 'active:scale-95');
+        btn.innerHTML = `<i data-lucide="${stepData.icon}" class="w-4 h-4"></i> ${stepData.text}`;
+        btn.className = 'group relative w-full py-2 px-2 bg-blue-600 text-white rounded-xl text-sm font-bold shadow-md flex items-center justify-center gap-2 cursor-not-allowed';
+        
+        const container = containers[stepData.containerIndex];
+        if (container) {
+          container.classList.add('grayscale', 'opacity-50');
+        }
+      }
+
+      const statusEl = document.getElementById(stepData.statusId);
+      if (statusEl) {
+        statusEl.innerText = '';
+        statusEl.className = 'text-[10px] mt-2 font-semibold text-center';
+      }
+    });
+
+    lucide.createIcons();
+  }
+
+  document.getElementById('mainMenuBtn').addEventListener('click', function() {
+    showLanding();
+  });
+
+  document.getElementById('resetBtn').addEventListener('click', function() {
+    resetForExamSteps();
+  });
+
+  document.getElementById('gotoDQBtn').addEventListener('click', function() {
+    const btn = this;
+    btn.classList.add('opacity-50');
+
+    google.script.run
+      .withSuccessHandler(() => {
+        showPage('unqualified');
+        btn.classList.remove('opacity-50');
+        lucide.createIcons();
+      })
+      .withFailureHandler((err) => {
+        btn.classList.remove('opacity-50');
+        lucide.createIcons();
+        alert('Unable to switch sheets: ' + err.message);
+      })
+      .setActiveSheetByName('LETTER - DQ');
+  });
+
+  // Navigation Event Listeners
+  navButtons.forExam.onclick = () => showPage('forExam');
+  navButtons.unqualified.onclick = () => showPage('unqualified');
+  navButtons.forInterview.onclick = () => showPage('forInterview');
+  navButtons.failed.onclick = () => showPage('failed');
+  document.getElementById('backBtn')?.addEventListener('click', showLanding);
+  document.getElementById('backBtnUnqualified')?.addEventListener('click', showLanding);
+
+  // ==== UNQUALIFIED PAGE EVENT LISTENERS ====
+  
+  document.getElementById('validateDQColumnsBtn').addEventListener('click', function() {
+    const btn = this;
+    const statusLabel = document.getElementById('uqStep0Status');
+    
+    btn.disabled = true;
+    btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Validating...';
+    lucide.createIcons();
+
+    google.script.run
+      .withSuccessHandler((res) => {
+        if (res.hasData) {
+          statusLabel.innerText = "✓ Column R verified!";
+          statusLabel.className = "text-[10px] px-2 mt-2 font-semibold text-center text-green-600";
+          btn.innerHTML = '<i data-lucide="check-circle" class="w-4 h-4"></i> Complete';
+          btn.className = "group flex items-center justify-start gap-2 w-full py-2 px-2 bg-green-100 text-green-700 rounded-xl text-sm font-bold border border-green-200 cursor-default";
+          
+          setButtonEnabled(document.getElementById('runUnqualifiedBtn'), true);
+        } else {
+          statusLabel.innerText = "❌ Missing data in column R";
+          statusLabel.className = "text-[10px] px-2 mt-2 font-semibold text-center text-red-600";
+          btn.disabled = false;
+          btn.innerHTML = '<i data-lucide="check-circle" class="w-4 h-4"></i> Fill Column R';
+        }
+        lucide.createIcons();
+      })
+      .checkColumnRInSheet('LETTER - DQ');
+  });
+
+  // Reset Unqualified Steps Function
+  function resetUnqualifiedSteps() {
+    // Reset Step 0
+    const validateDQBtn = document.getElementById('validateDQColumnsBtn');
+    if (validateDQBtn) {
+      validateDQBtn.disabled = false;
+      validateDQBtn.innerHTML = '<i data-lucide="check-circle" class="w-4 h-4"></i> Fill Column R';
+      validateDQBtn.className = 'group relative flex items-center justify-center gap-2 w-full py-2 px-2 bg-slate-600 text-white rounded-xl text-sm font-bold shadow-md active:scale-95 hover:bg-slate-700 transition';
+    }
+    const uqStep0Status = document.getElementById('uqStep0Status');
+    if (uqStep0Status) {
+      uqStep0Status.innerText = '';
+      uqStep0Status.className = 'text-[10px] mt-2 font-semibold text-center';
+    }
+
+    // Reset Steps 1-6
+    const stepsData = [
+      { btnId: 'runUnqualifiedBtn', statusId: 'uqStep1Status', containerIndex: 1 },
+      { btnId: 'openUnqualifiedFolderBtn', statusId: 'uqStep2Status', containerIndex: 2 },
+      { btnId: 'generateUnqualifiedLinksBtn', statusId: 'uqStep3Status', containerIndex: 3 },
+      { btnId: 'verifyUnqualifiedLinksBtn', statusId: 'uqStep4Status', containerIndex: 4 },
+      { btnId: 'sendUnqualifiedBtn', statusId: 'uqStep5Status', containerIndex: 5 },
+      { btnId: 'backupDqBtn', statusId: 'uqStep6Status', containerIndex: 6 }
+    ];
+
+    const containers = document.querySelectorAll('#unqualified-page .step-container');
+    stepsData.forEach((stepData) => {
+      const btn = document.getElementById(stepData.btnId);
+      if (btn) {
+        btn.disabled = true;
+        btn.classList.add('cursor-not-allowed');
+        btn.classList.remove('cursor-pointer');
+        
+        const container = containers[stepData.containerIndex];
+        if (container) {
+          container.classList.add('grayscale', 'opacity-50');
+        }
+      }
+
+      const statusEl = document.getElementById(stepData.statusId);
+      if (statusEl) {
+        statusEl.innerText = '';
+        statusEl.className = 'text-[10px] mt-2 font-semibold text-center';
+      }
+    });
+
+    lucide.createIcons();
+  }
+
+  document.getElementById('mainMenuBtnUQ').addEventListener('click', function() {
+    showLanding();
+  });
+
+  document.getElementById('resetBtnUQ').addEventListener('click', function() {
+    resetUnqualifiedSteps();
+  });
+
+  document.getElementById('goToFailedBtn').addEventListener('click', function() {
+    const btn = this;
+    btn.classList.add('opacity-50');
+
+    google.script.run
+      .withSuccessHandler(() => {
+        showPage('failed');
+        btn.classList.remove('opacity-50');
+        lucide.createIcons();
+      })
+      .withFailureHandler((err) => {
+        btn.classList.remove('opacity-50');
+        lucide.createIcons();
+        alert('Unable to switch sheets: ' + err.message);
+      })
+      .setActiveSheetByName('LETTER - FAILED');
+  });
+
+  // ==== FOR INTERVIEW PAGE EVENT LISTENERS ====
+
+  document.getElementById('validateInterviewColumnsBtn').addEventListener('click', function() {
+    const btn = this;
+    const statusLabel = document.getElementById('interviewStep1Status');
+    
+    btn.disabled = true;
+    btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Validating...';
+    lucide.createIcons();
+
+    google.script.run
+      .withSuccessHandler((res) => {
+        if (res.hasData) {
+          statusLabel.innerText = "✓ Columns O-R verified!";
+          statusLabel.className = "text-[10px] px-2 mt-2 font-semibold text-center text-green-600";
+          btn.innerHTML = '<i data-lucide="check-circle" class="w-4 h-4"></i> Complete';
+          btn.className = "group flex items-center justify-start gap-2 w-full py-2 px-2 bg-green-100 text-green-700 rounded-xl text-sm font-bold border border-green-200 cursor-default";
+          
+          const containers = document.querySelectorAll('#for-interview-page .step-container');
+          if (containers[1]) {
+            containers[1].classList.remove('grayscale', 'opacity-50');
+            const nextBtn = containers[1].querySelector('button');
+            if (nextBtn) {
+              nextBtn.disabled = false;
+              nextBtn.classList.remove('cursor-not-allowed');
+              nextBtn.classList.add('cursor-pointer');
+            }
+          }
+        } else {
+          statusLabel.innerText = "❌ Missing data in columns O-R";
+          statusLabel.className = "text-[10px] px-2 mt-2 font-semibold text-center text-red-600";
+          btn.disabled = false;
+          btn.innerHTML = '<i data-lucide="check-circle" class="w-4 h-4"></i> Fill Columns O-R';
+        }
+        lucide.createIcons();
+      })
+      .checkColumnsOtoRInSheet('LETTER - INTERVIEW');
+  });
+
+  document.getElementById('runInterviewProcessBtn').addEventListener('click', function() {
+    const btn = this;
+    const statusLabel = document.getElementById('interviewStep2Status');
+    
+    btn.disabled = true;
+    btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Processing...';
+    lucide.createIcons();
+
+    google.script.run
+      .withSuccessHandler((res) => {
+        statusLabel.innerText = "✓ Letters generated!";
+        statusLabel.className = "text-[10px] px-2 mt-2 font-semibold text-center text-green-600";
+        btn.innerHTML = '<i data-lucide="check-circle" class="w-4 h-4"></i> Complete';
+        btn.className = "group flex items-center justify-start gap-2 w-full py-2 px-2 bg-green-100 text-green-700 rounded-xl text-sm font-bold border border-green-200 cursor-default";
+        
+        const containers = document.querySelectorAll('#for-interview-page .step-container');
+        if (containers[2]) {
+          containers[2].classList.remove('grayscale', 'opacity-50');
+          const nextBtn = containers[2].querySelector('button');
+          if (nextBtn) {
+            nextBtn.disabled = false;
+            nextBtn.classList.remove('cursor-not-allowed');
+            nextBtn.classList.add('cursor-pointer');
+          }
+        }
+        lucide.createIcons();
+      })
+      .runInterviewCompleteProcess();
+  });
+
+  document.getElementById('openInterviewFolderBtn').addEventListener('click', function() {
+    const btn = this;
+    google.script.run
+      .withSuccessHandler((folderUrl) => {
+        if (folderUrl) {
+          window.open(folderUrl, '_blank');
+          btn.innerHTML = '<i data-lucide="check-circle" class="w-4 h-4"></i> Complete';
+          btn.className = "group flex items-center justify-start gap-2 w-full py-2 px-2 bg-green-100 text-green-700 rounded-xl text-sm font-bold border border-green-200 cursor-default";
+          btn.disabled = true;
+          
+          const containers = document.querySelectorAll('#for-interview-page .step-container');
+          if (containers[3]) {
+            containers[3].classList.remove('grayscale', 'opacity-50');
+            const nextBtn = containers[3].querySelector('button');
+            if (nextBtn) {
+              nextBtn.disabled = false;
+              nextBtn.classList.remove('cursor-not-allowed');
+              nextBtn.classList.add('cursor-pointer');
+            }
+          }
+          lucide.createIcons();
+        }
+      })
+      .getFolderUrl('interview');
+  });
+
+  document.getElementById('generateInterviewLinksBtn').addEventListener('click', function() {
+    const btn = this;
+    const statusLabel = document.getElementById('interviewStep4Status');
+    
+    btn.disabled = true;
+    btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Generating...';
+    lucide.createIcons();
+
+    google.script.run
+      .withSuccessHandler((resultMessage) => {
+        statusLabel.innerText = "✓ " + resultMessage;
+        statusLabel.className = "text-[10px] px-2 mt-2 font-semibold text-center text-green-600";
+        btn.innerHTML = '<i data-lucide="check-circle" class="w-4 h-4"></i> Complete';
+        btn.className = "group flex items-center justify-start gap-2 w-full py-2 px-2 bg-green-100 text-green-700 rounded-xl text-sm font-bold border border-green-200 cursor-default";
+        
+        const containers = document.querySelectorAll('#for-interview-page .step-container');
+        if (containers[4]) {
+          containers[4].classList.remove('grayscale', 'opacity-50');
+          const nextBtn = containers[4].querySelector('button');
+          if (nextBtn) {
+            nextBtn.disabled = false;
+            nextBtn.classList.remove('cursor-not-allowed');
+            nextBtn.classList.add('cursor-pointer');
+          }
+        }
+        lucide.createIcons();
+      })
+      .withFailureHandler((err) => {
+        statusLabel.innerText = "❌ " + err.message;
+        statusLabel.className = "text-[10px] px-2 mt-2 font-semibold text-center text-red-600";
+        btn.disabled = false;
+        btn.innerHTML = '<i data-lucide="link" class="w-4 h-4"></i> Generate Links';
+        lucide.createIcons();
+      })
+      .interviewGenerateLinks();
+  });
+
+  document.getElementById('verifyInterviewLinksBtn').addEventListener('click', function() {
+    const btn = this;
+    const statusLabel = document.getElementById('interviewStep5Status');
+    
+    statusLabel.innerText = "✓ Alignment verified!";
+    statusLabel.className = "text-[10px] px-2 mt-2 font-semibold text-center text-green-600";
+    btn.innerHTML = '<i data-lucide="check-circle" class="w-4 h-4"></i> Complete';
+    btn.className = "group flex items-center justify-start gap-2 w-full py-2 px-2 bg-green-100 text-green-700 rounded-xl text-sm font-bold border border-green-200 cursor-default";
+    btn.disabled = true;
+    
+    const containers = document.querySelectorAll('#for-interview-page .step-container');
+    if (containers[5]) {
+      containers[5].classList.remove('grayscale', 'opacity-50');
+      const nextBtn = containers[5].querySelector('button');
+      if (nextBtn) {
+        nextBtn.disabled = false;
+        nextBtn.classList.remove('cursor-not-allowed');
+        nextBtn.classList.add('cursor-pointer');
+      }
+    }
+    lucide.createIcons();
+  });
+
+  document.getElementById('sendInterviewBtn').addEventListener('click', function() {
+    const btn = this;
+    const statusLabel = document.getElementById('interviewStep6Status');
+    
+    btn.disabled = true;
+    btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Sending...';
+    lucide.createIcons();
+
+    google.script.run
+      .withSuccessHandler((res) => {
+        statusLabel.innerText = "✓ " + res.status + " (" + res.count + " emails)";
+        statusLabel.className = "text-[10px] px-2 mt-2 font-semibold text-center text-green-600";
+        btn.innerHTML = '<i data-lucide="check-circle" class="w-4 h-4"></i> Complete';
+        btn.className = "group flex items-center justify-start gap-2 w-full py-2 px-2 bg-green-100 text-green-700 rounded-xl text-sm font-bold border border-green-200 cursor-default";
+        
+        const containers = document.querySelectorAll('#for-interview-page .step-container');
+        if (containers[6]) {
+          containers[6].classList.remove('grayscale', 'opacity-50');
+          const nextBtn = containers[6].querySelector('button');
+          if (nextBtn) {
+            nextBtn.disabled = false;
+            nextBtn.classList.remove('cursor-not-allowed');
+            nextBtn.classList.add('cursor-pointer');
+          }
+        }
+        lucide.createIcons();
+      })
+      .withFailureHandler((err) => {
+        statusLabel.innerText = "❌ Error: " + err.message;
+        statusLabel.className = "text-[10px] px-2 mt-2 font-semibold text-center text-red-600";
+        btn.disabled = false;
+        btn.innerHTML = '<i data-lucide="send" class="w-4 h-4"></i> Send Emails';
+        lucide.createIcons();
+      })
+      .interviewSendEmails();
+  });
+
+  document.getElementById('backupInterviewBtn').addEventListener('click', function() {
+    const btn = this;
+    const statusLabel = document.getElementById('interviewStep7Status');
+    btn.disabled = true;
+    btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Backing up...';
+
+    google.script.run
+      .withSuccessHandler(() => {
+        statusLabel.innerText = "✓ Backup complete!";
+        btn.innerHTML = '<i data-lucide="check-circle" class="w-4 h-4"></i> Complete';
+        btn.className = "group flex items-center justify-start gap-2 w-full py-2 bg-green-100 text-green-700 rounded-xl text-sm font-bold border border-green-200 cursor-default px-4";
+        lucide.createIcons();
+      })
+      .backupInterviewSheet();
+  });
+
+  // Reset Interview Steps Function
+  function resetInterviewSteps() {
+    // Reset Step 1
+    const validateInterviewBtn = document.getElementById('validateInterviewColumnsBtn');
+    if (validateInterviewBtn) {
+      validateInterviewBtn.disabled = false;
+      validateInterviewBtn.innerHTML = '<i data-lucide="check-circle" class="w-4 h-4"></i> Fill Columns O-R';
+      validateInterviewBtn.className = 'group relative flex items-center justify-center gap-2 w-full py-2 px-2 bg-slate-600 text-white rounded-xl text-sm font-bold shadow-md active:scale-95 hover:bg-slate-700 transition';
+    }
+    const interviewStep1Status = document.getElementById('interviewStep1Status');
+    if (interviewStep1Status) {
+      interviewStep1Status.innerText = '';
+      interviewStep1Status.className = 'text-[10px] mt-2 font-semibold text-center';
+    }
+
+    // Reset Steps 2-7
+    const stepsData = [
+      { btnId: 'runInterviewProcessBtn', statusId: 'interviewStep2Status', containerIndex: 1 },
+      { btnId: 'openInterviewFolderBtn', statusId: 'interviewStep3Status', containerIndex: 2 },
+      { btnId: 'generateInterviewLinksBtn', statusId: 'interviewStep4Status', containerIndex: 3 },
+      { btnId: 'verifyInterviewLinksBtn', statusId: 'interviewStep5Status', containerIndex: 4 },
+      { btnId: 'sendInterviewBtn', statusId: 'interviewStep6Status', containerIndex: 5 },
+      { btnId: 'backupInterviewBtn', statusId: 'interviewStep7Status', containerIndex: 6 }
+    ];
+
+    const containers = document.querySelectorAll('#for-interview-page .step-container');
+    stepsData.forEach((stepData) => {
+      const btn = document.getElementById(stepData.btnId);
+      if (btn) {
+        btn.disabled = true;
+        btn.classList.add('cursor-not-allowed');
+        btn.classList.remove('cursor-pointer');
+        
+        const container = containers[stepData.containerIndex];
+        if (container) {
+          container.classList.add('grayscale', 'opacity-50');
+        }
+      }
+
+      const statusEl = document.getElementById(stepData.statusId);
+      if (statusEl) {
+        statusEl.innerText = '';
+        statusEl.className = 'text-[10px] mt-2 font-semibold text-center';
+      }
+    });
+
+    lucide.createIcons();
+  }
+
+  document.getElementById('mainMenuBtnInterview').addEventListener('click', function() {
+    showLanding();
+  });
+
+  document.getElementById('resetBtnInterview').addEventListener('click', function() {
+    resetInterviewSteps();
+  });
+
+  document.getElementById('goToFailedFromInterviewBtn').addEventListener('click', function() {
+    const btn = this;
+    btn.classList.add('opacity-50');
+
+    google.script.run
+      .withSuccessHandler(() => {
+        showPage('failed');
+        btn.classList.remove('opacity-50');
+        lucide.createIcons();
+      })
+      .withFailureHandler((err) => {
+        btn.classList.remove('opacity-50');
+        lucide.createIcons();
+        alert('Unable to switch sheets: ' + err.message);
+      })
+      .setActiveSheetByName('LETTER - FAILED');
+  });
+
+  document.getElementById('backBtnInterview').addEventListener('click', showLanding);
+
+</script>
+
+</body>
+</html>
