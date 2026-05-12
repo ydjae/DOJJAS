@@ -7,7 +7,7 @@ const FOR_INTERVIEW = {
   SHEET_NAME: 'LETTER - FOR INTERVIEW',
   TEMPLATE_ID: '1V0icY2qWob_D2LQpe24H5Q85p5QXnfHgwlLt8sWeSNs', // Same template as exam for now
   COL_LAST_NAME: 1,
-  COL_FIRST_NAME: 2,
+  COL_FIRST_NAME: 2, 
   COL_EMAIL: 7,
   COL_TEMPLATE_COLS_START: 15, // Column O
   COL_TEMPLATE_COLS_END: 18,   // Column R
