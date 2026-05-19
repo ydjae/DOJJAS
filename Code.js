@@ -38,7 +38,7 @@ function runCompleteProcess() {
 }
 
 /**
- * Generate Google Drive links for For Exam
+ * Generate Google Drive links for letter types
  */
 function generateGDriveLinks(letterType) {
   if (letterType === 'forExam') {
@@ -46,6 +46,9 @@ function generateGDriveLinks(letterType) {
   }
   if (letterType === 'unqualified') {
     return unqualifiedGenerateLinks();
+  }
+  if (letterType === 'failed') {
+    return failedGenerateLinks();
   }
   throw new Error('Letter type not supported: ' + letterType);
 }
@@ -59,6 +62,12 @@ function getFolderUrl(letterType) {
   }
   if (letterType === 'unqualified') {
     return unqualifiedGetFolderUrl();
+  }
+  if (letterType === 'failed') {
+    return failedGetFolderUrl();
+  }
+  if (letterType === 'interview') {
+    return forInterviewGetFolderUrl();
   }
   throw new Error('Letter type not supported: ' + letterType);
 }
@@ -78,16 +87,66 @@ function backupDqSheet() {
 }
 
 /**
- * Set the active spreadsheet sheet by name.
+ * Backup Letter - Interview sheet
  */
-function setActiveSheetByName(sheetName) {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
-  const sheet = ss.getSheetByName(sheetName);
-  if (!sheet) {
-    throw new Error('Sheet "' + sheetName + '" not found.');
-  }
-  ss.setActiveSheet(sheet);
-  return true;
+function backupInterviewSheet() {
+  return forInterviewBackupSheet();
+}
+
+/**
+ * Backup Letter - Failed sheet
+ */
+function backupFailedSheet() {
+  return failedBackupSheet();
+}
+
+/**
+ * Backup the entire spreadsheet to Drive with timestamp
+ */
+function backupWholeSheet() {
+  return backupWholeSheet_();
+}
+
+/**
+ * Run complete For Interview process
+ */
+function runInterviewCompleteProcess() {
+  return forInterviewRunCompleteProcess();
+}
+
+/**
+ * Run complete Failed process
+ */
+function runFailedCompleteProcess() {
+  return failedRunCompleteProcess();
+}
+
+/**
+ * Verify Failed PDF alignment
+ */
+function verifyFailedAlignment() {
+  return failedVerifyAlignment();
+}
+
+/**
+ * Send emails to failed applicants
+ */
+function sendEmailsToFailedApplicants() {
+  return failedSendEmails();
+}
+
+/**
+ * Generate Google Drive links for For Interview
+ */
+function interviewGenerateLinks() {
+  return forInterviewGenerateLinks();
+}
+
+/**
+ * Send emails to interview applicants
+ */
+function interviewSendEmails() {
+  return forInterviewSendEmails();
 }
 
 /**
@@ -111,24 +170,17 @@ function runUnqualifiedCompleteProcess() {
   return unqualifiedRunCompleteProcess();
 }
 
-// ==========================================
-// FOR INTERVIEW WORKFLOW - Public API
-// ==========================================
-
 /**
- * Get folder URL for For Interview
+ * Set the active spreadsheet sheet by name.
  */
-function getFolderUrl(type) {
-  if (type === 'forExam') {
-    return forExamGetFolderUrl();
+function setActiveSheetByName(sheetName) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName(sheetName);
+  if (!sheet) {
+    throw new Error('Sheet "' + sheetName + '" not found.');
   }
-  if (type === 'unqualified') {
-    return unqualifiedGetFolderUrl();
-  }
-  if (type === 'interview') {
-    return forInterviewGetFolderUrl();
-  }
-  throw new Error('Letter type not supported: ' + type);
+  ss.setActiveSheet(sheet);
+  return true;
 }
 
 /**
@@ -138,4 +190,8 @@ function showGeneratorSidebar() {
   const html = HtmlService.createHtmlOutputFromFile('Sidebar')
     .setTitle('DOJ 5 Job Application System');
   SpreadsheetApp.getUi().showSidebar(html);
+}
+
+function checkFailedColumnL() {
+  return checkFailedColumnM();
 }

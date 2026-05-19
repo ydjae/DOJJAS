@@ -88,6 +88,43 @@ function getUnqualifiedPositionFolder() {
   };
 }
 
+/**
+ * Check if column R has data in the specified sheet (for unqualified validation)
+ */
+function checkColumnRInSheet(sheetName) {
+  try {
+    const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(sheetName);
+    if (!sheet) {
+      return { hasData: false, message: 'Sheet not found' };
+    }
+
+    const lastRow = sheet.getLastRow();
+    if (lastRow < 2) {
+      return { hasData: false };
+    }
+
+    const dataRange = sheet.getRange(2, 1, lastRow - 1, 18).getValues(); // Check up to column R
+
+    for (let i = 0; i < dataRange.length; i++) {
+      const rowData = dataRange[i];
+      const valA = rowData[0]; // Column A
+
+      if (valA && valA.toString().trim() !== '') {
+        const colRValue = rowData[17]; // Column R (0-indexed)
+        if (!colRValue || colRValue.toString().trim() === '') {
+          const rowNum = 2 + i;
+        throw new Error('Missing data in column R for applicant at row ' + rowNum);
+        }
+      }
+    }
+
+    return { hasData: true };
+  } catch (e) {
+    return { hasData: false, message: e.message };
+  }
+}
+
+
 function unqualifiedGeneratePDFs(targetFolderId) {
   try {
     const ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -222,19 +259,24 @@ function unqualifiedBackupSheet() {
 
     const backupBlob = Utilities.newBlob(csvContent, MimeType.CSV, backupFileName);
     folder.createFile(backupBlob);
-    return 'Backup successful! LETTER - DQ has been saved to the Unqualified folder.';
+    return {
+      message: 'Backup successful! LETTER - DQ has been saved to the Unqualified folder.',
+      folderUrl: folder.getUrl()
+    };
   } catch (e) {
     throw new Error('Error backing up DQ sheet: ' + e.message);
   }
 }
 
 function unqualifiedSendEmails() {
+  // PASTE YOUR DEPLOYED WEB APP URL HERE
+  const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyFPxd3UelHmFuh4fqQC7YPLpVk44rorubWx_My_0S2OV7Il4GlJC1wd7rq8aVKJKpKNg/exec";
+
   try {
     const ss = SpreadsheetApp.getActiveSpreadsheet();
     const sheet = ss.getSheetByName(UNQUALIFIED.SHEET_NAME);
-    if (!sheet) {
-      throw new Error('Sheet "' + UNQUALIFIED.SHEET_NAME + '" not found.');
-    }
+
+    if (!sheet) throw new Error('Sheet "' + UNQUALIFIED.SHEET_NAME + '" not found.');
 
     const lastRow = sheet.getLastRow();
     if (lastRow < UNQUALIFIED.START_ROW) {
@@ -252,9 +294,7 @@ function unqualifiedSendEmails() {
       const driveLink = row[UNQUALIFIED.COL_LINK - 1];
       const statusCell = sheet.getRange(UNQUALIFIED.START_ROW + i, UNQUALIFIED.COL_STATUS);
 
-      if (!applicantName || applicantName.toString().trim() === '') {
-        continue;
-      }
+      if (!applicantName || applicantName.toString().trim() === '') continue;
 
       if (!email || email.toString().trim() === '' || !driveLink || driveLink.toString().trim() === '') {
         statusCell.setValue('Not sent - missing email or link (' + now + ')');
@@ -269,14 +309,41 @@ function unqualifiedSendEmails() {
         'Please see attached file regarding your application.\n\n' +
         'Link: ' + driveLink;
 
-      GmailApp.sendEmail(email.toString().trim(), subject, body, { replyTo: 'orp05@doj.gov.ph' });
+      // --- INTEGRATED PROXY CALL ---
+      const payload = {
+        recipient: email.toString().trim(),
+        cc: 'orp05.hiring@gmail.com',
+        replyTo: 'orp05.hiring@gmail.com',
+        subject: subject,
+        body: body
+      };
+
+      const options = {
+        method: "post",
+        contentType: "application/json",
+        payload: JSON.stringify(payload),
+        muteHttpExceptions: true
+      };
+
+      const response = UrlFetchApp.fetch(WEB_APP_URL, options);
+
+      if (response.getContentText() === "Success") {
+        statusCell.setValue('Sent (' + now + ')');
+        emailCount++;
+      } else {
+        statusCell.setValue('Error: Proxy failed (' + now + ')');
+      }
+
+/**
+      GmailApp.sendEmail(email.toString().trim(), subject, body, { replyTo: 'orp05.hiring@gmail.com' });
       statusCell.setValue('Sent (' + now + ')');
       emailCount++;
+      */
     }
 
     return { status: 'Emails sent', count: emailCount };
   } catch (e) {
-    throw new Error('Error sending unqualified email notifications: ' + e.message);
+    throw new Error('Error sending email notifications: ' + e.message);
   }
 }
 

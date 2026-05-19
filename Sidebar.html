@@ -191,7 +191,7 @@
             <div class="bg-slate-600 text-white rounded-full w-8 h-8 flex items-center justify-center text-xs font-bold shrink-0 mt-0.5 z-10 shadow-sm">1</div>
             <div class="flex-1">
               <button id="validateColumnsBtn" class="group relative flex items-center justify-center gap-2 w-full py-2 px-2 bg-slate-600 text-white rounded-xl text-sm font-bold shadow-md active:scale-95 hover:bg-slate-700 transition">
-                <i data-lucide="check-circle" class="w-4 h-4"></i> Fill Columns O-R
+                <i data-lucide="check-circle" class="w-4 h-4"></i> Check Columns O-R
                 <span class="absolute bottom-[calc(100%+8px)] left-0 w-full hidden group-hover:block px-2 py-1 text-[10px] font-medium text-white bg-slate-600 rounded-lg shadow-md z-50 pointer-events-none text-center">
                   Ensure that Columns **O to R** in 'LETTER - EXAM SCHED' are completely filled out.
                   <span class="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-600"></span>
@@ -227,6 +227,7 @@
                   <span class="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-amber-600"></span>
                 </span>
               </button>
+              <p id="step3Status" class="text-[10px] mt-2 font-semibold text-center"></p>
             </div>
           </div>
 
@@ -250,7 +251,7 @@
             <div class="bg-purple-600 text-white rounded-full w-8 h-8 flex items-center justify-center text-xs font-bold shrink-0 mt-0.5 z-10">5</div>
             <div class="flex-1">
               <button id="verifyLinksBtn" disabled class="group relative w-full py-2 px-2 bg-purple-600 text-white rounded-xl text-sm font-bold shadow-md flex items-center justify-center gap-2 cursor-not-allowed">
-                <i data-lucide="list-check" class="w-4 h-4"></i> Verify Alignment
+                <i data-lucide="list-check" class="w-4 h-4"></i> Verify File Alignment
                 <span class="absolute bottom-[calc(100%+8px)] left-0 w-full hidden group-hover:block px-2 py-1 text-[10px] font-medium text-white bg-purple-600 rounded-lg shadow-md z-50 pointer-events-none text-center">
                   Manually check that links match the applicant names.
                   <span class="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-purple-600"></span>
@@ -325,8 +326,6 @@
 
         </div>
       </div>
-    
-
 </div>
 
   <!-- UNQUALIFIED PAGE -->
@@ -339,16 +338,16 @@
           <span class="absolute top-full left-1/2 -translate-x-1/2 -mt-1 border-4 border-transparent border-t-gray-800"></span>
         </span>
       </button>
-      <h2 class="text-md font-bold text-gray-900 tracking-tight">UNQUALIFIED - Generate Letters & Send Emails</h2>
+      <h2 class="text-md font-bold text-gray-900 tracking-tight">UNQUALIFIED | Generate Letters & Send Emails</h2>
     </div>
 
     <div class="space-y-4 mb-6">
       <!-- Step 0: Verify Column R -->
       <div class="step-container flex items-start gap-3 relative">
-        <div class="bg-slate-600 text-white rounded-full w-8 h-8 flex items-center justify-center text-xs font-bold shrink-0 mt-0.5 z-10 shadow-sm">0</div>
+        <div class="bg-slate-600 text-white rounded-full w-8 h-8 flex items-center justify-center text-xs font-bold shrink-0 mt-0.5 z-10 shadow-sm">1</div>
         <div class="flex-1">
           <button id="validateDQColumnsBtn" class="group relative flex items-center justify-center gap-2 w-full py-2 px-2 bg-slate-600 text-white rounded-xl text-sm font-bold shadow-md active:scale-95 hover:bg-slate-700 transition">
-            <i data-lucide="check-circle" class="w-4 h-4"></i> Fill Column R
+            <i data-lucide="check-circle" class="w-4 h-4"></i> Check Column R
             <span class="absolute bottom-[calc(100%+8px)] left-0 w-full hidden group-hover:block px-2 py-1 text-[10px] font-medium text-white bg-slate-600 rounded-lg shadow-md z-50 pointer-events-none text-center">
               Ensure that Column R in 'LETTER - DQ' is completely filled out.
               <span class="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-600"></span>
@@ -359,62 +358,86 @@
       </div>
 
       <div class="step-container flex items-start gap-3 relative grayscale opacity-50">
-        <div class="bg-indigo-600 text-white rounded-full w-8 h-8 flex items-center justify-center text-xs font-bold shrink-0 mt-0.5 z-10 shadow-sm">1</div>
+        <div class="bg-indigo-600 text-white rounded-full w-8 h-8 flex items-center justify-center text-xs font-bold shrink-0 mt-0.5 z-10 shadow-sm">2</div>
         <div class="flex-1">
           <button id="runUnqualifiedBtn" disabled class="group relative flex items-center justify-start gap-2 w-full py-2 bg-indigo-600 text-white rounded-xl text-sm font-bold shadow-md active:scale-95 hover:bg-indigo-700 transition px-2 cursor-not-allowed">
-            <i data-lucide="folder-plus" class="w-4 h-4"></i>
-            <span>Create & Generate</span>
+            <i data-lucide="folder-plus" class="w-4 h-4"></i>Create & Generate
+            <span class="absolute bottom-[calc(100%+8px)] left-0 w-full hidden group-hover:block px-2 py-1 text-[10px] font-medium text-white bg-slate-600 rounded-lg shadow-md z-50 pointer-events-none text-center">
+              Creates a Drive folder and generates PDF letters.
+              <span class="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-600"></span>
+            </span>
+            
           </button>
           <p id="uqStep1Status" class="text-[10px] mt-2 font-semibold text-center"></p>
         </div>
       </div>
 
       <div class="step-container flex items-start gap-3 relative grayscale opacity-50">
-        <div class="bg-orange-500 text-white rounded-full w-8 h-8 flex items-center justify-center text-xs font-bold shrink-0 mt-0.5 z-10">2</div>
+        <div class="bg-orange-500 text-white rounded-full w-8 h-8 flex items-center justify-center text-xs font-bold shrink-0 mt-0.5 z-10">3</div>
         <div class="flex-1">
           <button id="openUnqualifiedFolderBtn" disabled class="group relative w-full py-2 px-2 bg-orange-500 text-white rounded-xl text-sm font-bold shadow-md flex items-center justify-center gap-2 cursor-not-allowed">
-            <i data-lucide="folder-open" class="w-4 h-4"></i> Open Folder
+            <i data-lucide="eye" class="w-4 h-4"></i> Verify PDFs
+            <span class="absolute bottom-[calc(100%+8px)] left-0 w-full hidden group-hover:block px-2 py-1 text-[10px] font-medium text-white bg-amber-600 rounded-lg shadow-md z-50 pointer-events-none text-center">
+              Verify PDFs before generating links.
+              <span class="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-amber-600"></span>
+            </span>
           </button>
           <p id="uqStep2Status" class="text-[10px] mt-2 font-semibold text-center"></p>
         </div>
       </div>
 
       <div class="step-container flex items-start gap-3 relative grayscale opacity-50">
-        <div class="bg-amber-500 text-white rounded-full w-8 h-8 flex items-center justify-center text-xs font-bold shrink-0 mt-0.5 z-10">3</div>
+        <div class="bg-amber-500 text-white rounded-full w-8 h-8 flex items-center justify-center text-xs font-bold shrink-0 mt-0.5 z-10">4</div>
         <div class="flex-1">
           <button id="generateUnqualifiedLinksBtn" disabled class="group relative w-full py-2 px-2 bg-amber-500 text-white rounded-xl text-sm font-bold shadow-md flex items-center justify-center gap-2 cursor-not-allowed">
             <i data-lucide="link" class="w-4 h-4"></i> Generate Links
+            <span class="absolute bottom-[calc(100%+8px)] left-0 w-full hidden group-hover:block px-2 py-1 text-[10px] font-medium text-white bg-green-600 rounded-lg shadow-md z-50 pointer-events-none text-center">
+                  Extracts URLs and inserts them into Column P.
+                  <span class="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-green-600"></span>
+                </span>
           </button>
           <p id="uqStep3Status" class="text-[10px] mt-2 font-semibold text-center"></p>
         </div>
       </div>
 
       <div class="step-container flex items-start gap-3 relative grayscale opacity-50">
-        <div class="bg-yellow-500 text-white rounded-full w-8 h-8 flex items-center justify-center text-xs font-bold shrink-0 mt-0.5 z-10">4</div>
+        <div class="bg-yellow-500 text-white rounded-full w-8 h-8 flex items-center justify-center text-xs font-bold shrink-0 mt-0.5 z-10">5</div>
         <div class="flex-1">
           <button id="verifyUnqualifiedLinksBtn" disabled class="group relative w-full py-2 px-2 bg-yellow-500 text-white rounded-xl text-sm font-bold shadow-md flex items-center justify-center gap-2 cursor-not-allowed">
-            <i data-lucide="check-circle" class="w-4 h-4"></i> Verify Links
+            <i data-lucide="check-circle" class="w-4 h-4"></i> Verify File Alignment
+            <span class="absolute bottom-[calc(100%+8px)] left-0 w-full hidden group-hover:block px-2 py-1 text-[10px] font-medium text-white bg-purple-600 rounded-lg shadow-md z-50 pointer-events-none text-center">
+                  Manually check that links match the applicant names.
+                  <span class="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-purple-600"></span>
+                </span>
           </button>
           <p id="uqStep4Status" class="text-[10px] mt-2 font-semibold text-center"></p>
         </div>
       </div>
 
       <div class="step-container flex items-start gap-3 relative grayscale opacity-50">
-        <div class="bg-teal-600 text-white rounded-full w-8 h-8 flex items-center justify-center text-xs font-bold shrink-0 mt-0.5 z-10">5</div>
+        <div class="bg-teal-600 text-white rounded-full w-8 h-8 flex items-center justify-center text-xs font-bold shrink-0 mt-0.5 z-10">6</div>
         <div class="flex-1">
           <button id="sendUnqualifiedBtn" disabled class="group relative w-full py-2 px-2 bg-teal-600 text-white rounded-xl text-sm font-bold shadow-md flex items-center justify-center gap-2 cursor-not-allowed">
             <i data-lucide="send" class="w-4 h-4"></i> Send Emails
+            <span class="absolute bottom-[calc(100%+8px)] left-0 w-full hidden group-hover:block px-2 py-1 text-[10px] font-medium text-white bg-purple-600 rounded-lg shadow-md z-50 pointer-events-none text-center">
+                  Double check everything before sending out emails to applicants.
+                  <span class="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-purple-600"></span>
+                </span>
           </button>
           <p id="uqStep5Status" class="text-[10px] mt-2 font-semibold text-center"></p>
         </div>
       </div>
 
       <div class="step-container flex items-start gap-3 relative grayscale opacity-50">
-        <div class="bg-sky-600 text-white rounded-full w-8 h-8 flex items-center justify-center text-xs font-bold shrink-0 mt-0.5 z-10">6</div>
+        <div class="bg-sky-600 text-white rounded-full w-8 h-8 flex items-center justify-center text-xs font-bold shrink-0 mt-0.5 z-10">7</div>
         <div class="flex-1">
           <button id="backupDqBtn" disabled class="group relative w-full py-2 px-2 bg-sky-600 text-white rounded-xl text-sm font-bold shadow-md flex items-center justify-start gap-2 cursor-not-allowed">
             <i data-lucide="archive" class="w-4 h-4"></i>
             <span>Backup Sheet</span>
+            <span class="absolute bottom-[calc(100%+8px)] left-0 w-full hidden group-hover:block px-2 py-1 text-[10px] font-medium text-white bg-sky-600 rounded-lg shadow-md z-50 pointer-events-none text-center">
+                  Backup the spreadsheet to the folder.
+                  <span class="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-sky-600"></span>
+                </span>
           </button>
           <p id="uqStep6Status" class="text-[10px] mt-2 font-semibold text-center"></p>
         </div>
@@ -437,16 +460,16 @@
             Reset Steps
             <span class="absolute top-full left-1/2 -translate-x-1/2 -mt-1 border-4 border-transparent border-t-amber-600"></span>
           </span>
-        </button>  
+        </button> 
         
         <!-- Go to Failed Icon -->
-        <button id="goToFailedBtn" class="group relative p-2 bg-gray-100 hover:bg-red-600 rounded-lg transition-colors duration-300">
+        <!--button id="goToFailedBtn" class="group relative p-2 bg-gray-100 hover:bg-red-600 rounded-lg transition-colors duration-300">
           <i data-lucide="arrow-right" class="w-5 h-5 text-gray-600 group-hover:text-white"></i>
           <span class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block px-2 py-1 text-[10px] font-medium text-white bg-red-600 rounded shadow-sm whitespace-nowrap z-50">
             Go to Failed
             <span class="absolute top-full left-1/2 -translate-x-1/2 -mt-1 border-4 border-transparent border-t-red-600"></span>
           </span>
-        </button>
+        </button-->
       </div>
     </div>
   </div>
@@ -470,7 +493,7 @@
         <div class="bg-slate-600 text-white rounded-full w-8 h-8 flex items-center justify-center text-xs font-bold shrink-0 mt-0.5 z-10 shadow-sm">1</div>
         <div class="flex-1">
           <button id="validateInterviewColumnsBtn" class="group relative flex items-center justify-center gap-2 w-full py-2 px-2 bg-slate-600 text-white rounded-xl text-sm font-bold shadow-md active:scale-95 hover:bg-slate-700 transition">
-            <i data-lucide="check-circle" class="w-4 h-4"></i> Fill Columns O-R
+            <i data-lucide="check-circle" class="w-4 h-4"></i> Check Columns O-R
             <span class="absolute bottom-[calc(100%+8px)] left-0 w-full hidden group-hover:block px-2 py-1 text-[10px] font-medium text-white bg-slate-600 rounded-lg shadow-md z-50 pointer-events-none text-center">
               Ensure that Columns **O to R** are completely filled out.
               <span class="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-600"></span>
@@ -506,6 +529,7 @@
               <span class="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-amber-600"></span>
             </span>
           </button>
+          <p id="interviewStep3Status" class="text-[10px] mt-2 font-semibold text-center"></p>
         </div>
       </div>
 
@@ -529,7 +553,7 @@
         <div class="bg-purple-600 text-white rounded-full w-8 h-8 flex items-center justify-center text-xs font-bold shrink-0 mt-0.5 z-10">5</div>
         <div class="flex-1">
           <button id="verifyInterviewLinksBtn" disabled class="group relative w-full py-2 px-2 bg-purple-600 text-white rounded-xl text-sm font-bold shadow-md flex items-center justify-center gap-2 cursor-not-allowed">
-            <i data-lucide="list-check" class="w-4 h-4"></i> Verify Alignment
+            <i data-lucide="list-check" class="w-4 h-4"></i> Verify File Alignment
             <span class="absolute bottom-[calc(100%+8px)] left-0 w-full hidden group-hover:block px-2 py-1 text-[10px] font-medium text-white bg-purple-600 rounded-lg shadow-md z-50 pointer-events-none text-center">
               Manually check that links match the applicant names.
               <span class="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-purple-600"></span>
@@ -590,11 +614,11 @@
         </button>
         
         <!-- Go to Failed Icon -->
-        <button id="goToFailedFromInterviewBtn" class="group relative p-2 bg-gray-100 hover:bg-red-600 rounded-lg transition-colors duration-300">
+        <button id="goToFailedFromInterviewBtn" class="group relative p-2 bg-gray-100 hover:bg-sky-600 rounded-lg transition-colors duration-300">
           <i data-lucide="arrow-right" class="w-5 h-5 text-gray-600 group-hover:text-white"></i>
-          <span class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block px-2 py-1 text-[10px] font-medium text-white bg-red-600 rounded shadow-sm whitespace-nowrap z-50">
+          <span class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block px-2 py-1 text-[10px] font-medium text-white bg-sky-600 rounded shadow-sm whitespace-nowrap z-50">
             Go to Failed
-            <span class="absolute top-full left-1/2 -translate-x-1/2 -mt-1 border-4 border-transparent border-t-red-600"></span>
+            <span class="absolute top-full left-1/2 -translate-x-1/2 -mt-1 border-4 border-transparent border-t-sky-600"></span>
           </span>
         </button>
       </div>
@@ -604,10 +628,142 @@
   <!-- FAILED PAGE -->
   <div id="failed-page" class="hidden bg-white border border-gray-300 rounded-xl p-6 shadow-xl w-full max-w-md mx-auto">
     <div class="flex items-center justify-between mb-6">
-      <h2 class="text-xl font-bold text-gray-900 tracking-tight">Failed Applicants</h2>
-      <button id="backBtnFailed" class="p-2 hover:bg-gray-100 rounded-full transition-colors">
-        <i data-lucide="x" class="w-5 h-5 text-gray-500"></i>
+      <button id="backBtnFailed" class="group relative p-2 bg-gray-100 mr-2 hover:bg-black rounded-lg transition-colors duration-300 ease-in-out">
+        <i data-lucide="chevron-left" class="w-5 h-5 text-gray-500 group-hover:text-white transition-colors"></i>
+        <span class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block px-2 py-1 text-[10px] font-medium text-white bg-gray-800 rounded shadow-sm whitespace-nowrap z-50">
+          Go Back
+          <span class="absolute top-full left-1/2 -translate-x-1/2 -mt-1 border-4 border-transparent border-t-gray-800"></span>
+        </span>
       </button>
+      <h2 class="text-xl font-bold text-gray-900 tracking-tight">FAILED | Generate Letters & Send Emails</h2>
+    </div>
+
+    <div class="space-y-4">
+      <div class="step-container flex items-start gap-3 relative">
+        <div class="bg-slate-600 text-white rounded-full w-8 h-8 flex items-center justify-center text-xs font-bold shrink-0 mt-0.5 z-10">1</div>
+        <div class="flex-1">
+          <button id="checkFailedColumnLBtn" class="group relative flex items-center justify-start gap-2 w-full py-2 px-2 bg-slate-600 text-white rounded-xl text-sm font-bold shadow-md active:scale-95 hover:bg-slate-700 transition">
+            <i data-lucide="check-square" class="w-4 h-4"></i> Check Column M
+          </button>
+          <p id="failedStep1Status" class="text-[10px] mt-2 font-semibold text-center"></p>
+        </div>
+      </div>
+
+      <div class="step-container flex items-start gap-3 relative grayscale opacity-50">
+        <div class="bg-slate-600 text-white rounded-full w-8 h-8 flex items-center justify-center text-xs font-bold shrink-0 mt-0.5 z-10">2</div>
+        <div class="flex-1">
+          <button id="runFailedBtn" disabled class="group relative flex items-center justify-start gap-2 w-full py-2 px-2 bg-slate-600 text-white rounded-xl text-sm font-bold shadow-md flex items-center justify-center gap-2 cursor-not-allowed opacity-50">
+            <i data-lucide="folder-plus" class="w-4 h-4"></i> Create & Generate
+          </button>
+          <p id="failedStep2Status" class="text-[10px] mt-2 font-semibold text-center"></p>
+        </div>
+      </div>
+
+      <div class="step-container flex items-start gap-3 relative grayscale opacity-50">
+        <div class="bg-amber-600 text-white rounded-full w-8 h-8 flex items-center justify-center text-xs font-bold shrink-0 mt-0.5 z-10">3</div>
+        <div class="flex-1">
+          <button id="openFailedFolderBtn" disabled class="group relative w-full py-2 px-2 bg-amber-600 text-white rounded-xl text-sm font-bold shadow-md flex items-center justify-center gap-2 cursor-not-allowed opacity-50">
+            <i data-lucide="eye" class="w-4 h-4"></i> Verify PDFs
+          </button>
+          <p id="failedStep3Status" class="text-[10px] mt-2 font-semibold text-center"></p>
+        </div>
+      </div>
+
+      <div class="step-container flex items-start gap-3 relative grayscale opacity-50">
+        <div class="bg-green-600 text-white rounded-full w-8 h-8 flex items-center justify-center text-xs font-bold shrink-0 mt-0.5 z-10">4</div>
+        <div class="flex-1">
+          <button id="generateFailedLinksBtn" disabled class="group relative w-full py-2 px-2 bg-green-600 text-white rounded-xl text-sm font-bold shadow-md flex items-center justify-center gap-2 cursor-not-allowed opacity-50">
+            <i data-lucide="link" class="w-4 h-4"></i> Generate Links
+          </button>
+          <p id="failedStep4Status" class="text-[10px] mt-2 font-semibold text-center"></p>
+        </div>
+      </div>
+
+      <div class="step-container flex items-start gap-3 relative grayscale opacity-50">
+        <div class="bg-blue-600 text-white rounded-full w-8 h-8 flex items-center justify-center text-xs font-bold shrink-0 mt-0.5 z-10">5</div>
+        <div class="flex-1">
+          <button id="verifyFailedLinksBtn" disabled class="group relative w-full py-2 px-2 bg-blue-600 text-white rounded-xl text-sm font-bold shadow-md flex items-center justify-center gap-2 cursor-not-allowed opacity-50">
+            <i data-lucide="list-check" class="w-4 h-4"></i> Verify File Alignment
+          </button>
+          <p id="failedStep5Status" class="text-[10px] mt-2 font-semibold text-center"></p>
+        </div>
+      </div>
+
+      <div class="step-container flex items-start gap-3 relative grayscale opacity-50">
+        <div class="bg-indigo-600 text-white rounded-full w-8 h-8 flex items-center justify-center text-xs font-bold shrink-0 mt-0.5 z-10">6</div>
+        <div class="flex-1">
+          <button id="sendFailedEmailsBtn" disabled class="group relative w-full py-2 px-2 bg-indigo-600 text-white rounded-xl text-sm font-bold shadow-md flex items-center justify-center gap-2 cursor-not-allowed opacity-50">
+            <i data-lucide="send" class="w-4 h-4"></i> Send Emails
+          </button>
+          <p id="failedStep6Status" class="text-[10px] mt-2 font-semibold text-center"></p>
+        </div>
+      </div>
+
+      <div class="step-container flex items-start gap-3 relative grayscale opacity-50">
+        <div class="bg-sky-600 text-white rounded-full w-8 h-8 flex items-center justify-center text-xs font-bold shrink-0 mt-0.5 z-10">7</div>
+        <div class="flex-1">
+          <button id="backupFailedBtn" disabled class="group relative w-full py-2 px-2 bg-sky-600 text-white rounded-xl text-sm font-bold shadow-md flex items-center justify-center gap-2 cursor-not-allowed opacity-50">
+            <i data-lucide="archive" class="w-4 h-4"></i> Backup Sheet
+          </button>
+          <p id="failedStep7Status" class="text-[10px] mt-2 font-semibold text-center"></p>
+        </div>
+      </div>
+
+      <div class="flex gap-2 mt-4 justify-center">
+        <!-- Home Icon -->
+        <button id="failedHomeBtn" class="group relative p-2 bg-gray-100 hover:bg-gray-700 rounded-lg transition-colors duration-300">
+          <i data-lucide="home" class="w-5 h-5 text-gray-600 group-hover:text-white"></i>
+          <span class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block px-2 py-1 text-[10px] font-medium text-white bg-gray-800 rounded shadow-sm whitespace-nowrap z-50">
+            Main Menu
+            <span class="absolute top-full left-1/2 -translate-x-1/2 -mt-1 border-4 border-transparent border-t-gray-800"></span>
+          </span>
+        </button>
+        
+        <!-- Reset Icon -->
+        <button id="failedResetBtn" class="group relative p-2 bg-gray-100 hover:bg-amber-600 rounded-lg transition-colors duration-300">
+          <i data-lucide="rotate-ccw" class="w-5 h-5 text-gray-600 group-hover:text-white"></i>
+          <span class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block px-2 py-1 text-[10px] font-medium text-white bg-amber-600 rounded shadow-sm whitespace-nowrap z-50">
+            Reset Steps
+            <span class="absolute top-full left-1/2 -translate-x-1/2 -mt-1 border-4 border-transparent border-t-amber-600"></span>
+          </span>
+        </button>
+        
+        <!-- Go to Failed Icon -->
+        <button id="failedGotoBackupBtn" class="group relative p-2 bg-gray-100 hover:bg-sky-600 rounded-lg transition-colors duration-300">
+          <i data-lucide="arrow-right" class="w-5 h-5 text-gray-600 group-hover:text-white"></i>
+          <span class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block px-2 py-1 text-[10px] font-medium text-white bg-sky-600 rounded shadow-sm whitespace-nowrap z-50">
+            Go to 'Back Up whole Google Sheet'
+            <span class="absolute top-full left-1/2 -translate-x-1/2 -mt-1 border-4 border-transparent border-t-sky-600"></span>
+          </span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- BACKUP PAGE -->
+  <div id="backup-page" class="hidden bg-white border border-gray-300 rounded-xl p-6 shadow-xl w-full max-w-md mx-auto">
+    <div class="flex items-center mb-6">
+      <button id="backupBackBtn" class="group relative p-2 bg-gray-100 mr-2 hover:bg-black rounded-lg transition-colors duration-300 ease-in-out">
+        <i data-lucide="chevron-left" class="w-5 h-5 text-gray-500 group-hover:text-white transition-colors"></i>
+        
+        <!-- Tooltip -->
+        <span class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block px-2 py-1 text-[10px] font-medium text-white bg-gray-800 rounded shadow-sm whitespace-nowrap z-50">
+          Go Back
+          <span class="absolute top-full left-1/2 -translate-x-1/2 -mt-1 border-4 border-transparent border-t-gray-800"></span>
+        </span>
+      </button>
+      <h2 class="text-md font-bold text-gray-900 tracking-tight">BACKUP | Google Sheet</h2>
+    </div>
+
+    <div class="space-y-4">
+      <button id="backupWholeSheetBtn" class="group relative flex items-center justify-start gap-2 w-full py-3 px-3 bg-slate-600 text-white rounded-xl text-sm font-bold shadow-md active:scale-95 hover:bg-slate-700 transition">
+        <i data-lucide="database" class="w-5 h-5"></i> Backup Entire Sheet
+         <span class="absolute bottom-[calc(100%+8px)] left-0 w-full hidden group-hover:block px-2 py-1 text-[10px] font-medium text-white bg-slate-600 rounded-lg shadow-md z-50 pointer-events-none text-center">
+              Creates a backup of the entire Google Sheet in the same Drive folder.
+              <span class="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-600"></span>
+            </span>
+      </button>
+      <p id="backupStatus" class="text-[10px] mt-2 font-semibold text-center"></p>
     </div>
   </div>
 
@@ -616,8 +772,9 @@
   lucide.createIcons();
 
   // --- Utility: The Waterfall Unlocker ---
-  function unlockNextStep(stepIndex) {
-    const containers = document.querySelectorAll('.step-container');
+  function unlockNextStep(stepIndex, sectionId) {
+    const selector = sectionId ? `#${sectionId} .step-container` : '.step-container';
+    const containers = document.querySelectorAll(selector);
     const container = containers[stepIndex]; // index 1 is Step 2, etc.
     
     if (container) {
@@ -626,7 +783,7 @@
       container.classList.remove('grayscale', 'opacity-50');
       // Enable functionality
       button.disabled = false;
-      button.classList.remove('cursor-not-allowed');
+      button.classList.remove('cursor-not-allowed', 'opacity-50');
       button.classList.add('cursor-pointer', 'transition', 'active:scale-95');
       // Smooth scroll for long sidebars
       container.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
@@ -674,7 +831,7 @@
   function showLanding() {
     landingPage.classList.remove('hidden');
     landingPage.classList.add('flex');
-    ['forExamPage', 'unqualified-page', 'for-interview-page', 'failed-page'].forEach(id => {
+    ['forExamPage', 'unqualified-page', 'for-interview-page', 'failed-page', 'backup-page'].forEach(id => {
       const page = document.getElementById(id);
       if (page) {
         page.classList.add('hidden');
@@ -685,7 +842,7 @@
 
   function showPage(type) {
     currentLetterType = type;
-    ['landingPage', 'forExamPage', 'unqualified-page', 'for-interview-page', 'failed-page'].forEach(id => {
+    ['landingPage', 'forExamPage', 'unqualified-page', 'for-interview-page', 'failed-page', 'backup-page'].forEach(id => {
       const page = document.getElementById(id);
       if (page) {
         page.classList.add('hidden');
@@ -697,7 +854,8 @@
       forExam: 'forExamPage',
       unqualified: 'unqualified-page',
       forInterview: 'for-interview-page',
-      failed: 'failed-page'
+      failed: 'failed-page',
+      backup: 'backup-page'
     }[type];
     const page = document.getElementById(pageId);
     if (page) {
@@ -706,8 +864,9 @@
     }
   }
 
+// ==== FOR EXAM PAGE EVENT LISTENERS ====
   // --- Step 1: Validate Columns ---
-  document.getElementById('validateColumnsBtn').addEventListener('click', function() {
+  document.getElementById('validateColumnsBtn')?.addEventListener('click', function() {
     const btn = this;
     const statusLabel = document.getElementById('step1Status');
     
@@ -729,7 +888,7 @@
           statusLabel.innerText = "❌ Missing data in columns O-R";
           statusLabel.className = "text-[10px] px-2 mt-2 font-semibold text-center text-red-600";
           btn.disabled = false;
-          btn.innerHTML = '<i data-lucide="check-circle" class="w-4 h-4"></i> Fill Columns O-R';
+          btn.innerHTML = '<i data-lucide="check-circle" class="w-4 h-4"></i> Check Columns O-R';
         }
         lucide.createIcons();
       })
@@ -737,31 +896,40 @@
   });
 
   // --- Step 2: Run Complete Process ---
-  document.getElementById('runProcessBtn').addEventListener('click', function() {
+  document.getElementById('runProcessBtn')?.addEventListener('click', function() {
     const btn = this;
     const statusLabel = document.getElementById('step2Status');
     
     btn.disabled = true;
     btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Processing...';
     lucide.createIcons();
+    window.setProcessing(true);
 
     google.script.run
       .withSuccessHandler((res) => {
         stepStatus.step2 = true;
-        statusLabel.innerText = "✓ Letters generated!";
+        const generatedApplicants = (res && res.applicants) || (res && res.pdfGeneration && res.pdfGeneration.applicants) || [];
+        const pdfCount = generatedApplicants.length;
+        const lastApplicant = generatedApplicants.length > 0 ? generatedApplicants[generatedApplicants.length - 1] : '';
+        
+        statusLabel.innerHTML = "✓ <span class='text-green-700 font-bold'>" + pdfCount + " PDF(s) generated</span>" +
+          (lastApplicant ? '<br><span class="text-sm text-green-600">Last: ' + lastApplicant + '</span>' : '');
         statusLabel.className = "text-[10px] px-2 mt-2 font-semibold text-center text-green-600";
         btn.innerHTML = '<i data-lucide="check-circle" class="w-4 h-4"></i> Complete';
         btn.className = "group flex items-center justify-start gap-2 w-full py-2 px-2 bg-green-100 text-green-700 rounded-xl text-sm font-bold border border-green-200 cursor-default";
         
         unlockNextStep(2); // Unlock Step 3
+        window.setProcessing(false);
         lucide.createIcons();
       })
       .runCompleteProcess();
+      
   });
 
   // --- Step 3: Open Folder ---
-  document.getElementById('openFolderBtn').addEventListener('click', function() {
+  document.getElementById('openFolderBtn')?.addEventListener('click', function() {
     const btn = this;
+    const statusLabel = document.getElementById('step3Status');
     google.script.run
       .withSuccessHandler((folderUrl) => {
         if (folderUrl) {
@@ -771,6 +939,12 @@
           btn.className = "group flex items-center justify-start gap-2 w-full py-2 px-2 bg-green-100 text-green-700 rounded-xl text-sm font-bold border border-green-200 cursor-default";
           btn.disabled = true;
           
+          // Display hyperlink
+          if (statusLabel) {
+            statusLabel.innerHTML = '✓ <a href="' + folderUrl + '" target="_blank" class="text-blue-600 hover:text-blue-800 underline">Open Folder</a>';
+            statusLabel.className = "text-[10px] mt-2 font-semibold text-center";
+          }
+          
           unlockNextStep(3); // Unlock Step 4
           lucide.createIcons();
         }
@@ -779,7 +953,7 @@
   });
 
 // --- Step 4: Generate Links ---
-  document.getElementById('generateLinksBtn').addEventListener('click', function() {
+  document.getElementById('generateLinksBtn')?.addEventListener('click', function() {
     const btn = this;
     const statusLabel = document.getElementById('step4Status');
     
@@ -820,7 +994,7 @@
   });
 
   // --- Step 5: Verify Links (Manual) ---
-    document.getElementById('verifyLinksBtn').addEventListener('click', function() {
+    document.getElementById('verifyLinksBtn')?.addEventListener('click', function() {
       const btn = this;
       const statusLabel = document.getElementById('step5Status');
       
@@ -846,13 +1020,14 @@
     });
 
 // --- Step 6: Send Emails (Simulated) ---
-  document.getElementById('sendExamBtn').addEventListener('click', function() {
+  document.getElementById('sendExamBtn')?.addEventListener('click', function() {
     const btn = this;
     const statusLabel = document.getElementById('step6Status');
     
     btn.disabled = true;
     btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Sending...';
     lucide.createIcons();
+    window.setProcessing(true);
 
     google.script.run
       .withSuccessHandler((res) => {
@@ -866,6 +1041,7 @@
         btn.className = "group flex items-center justify-start gap-2 w-full py-2 px-2 bg-green-100 text-green-700 rounded-xl text-sm font-bold border border-green-200 cursor-default px-4";
         
         unlockNextStep(6); // Unlocks Step 7
+        window.setProcessing(false);
         lucide.createIcons();
       })
       .withFailureHandler((err) => {
@@ -875,44 +1051,69 @@
         }
         btn.disabled = false;
         btn.innerHTML = '<i data-lucide="send" class="w-4 h-4"></i> Send Emails';
+        window.setProcessing(false);
         lucide.createIcons();
       })
       .forExamSendEmails(); // Updated to match the .gs function name
   });
 
   // --- Step 7: Backup Sheet ---
-  document.getElementById('backupExamBtn').addEventListener('click', function() {
+  document.getElementById('backupExamBtn')?.addEventListener('click', function() {
     const btn = this;
     const statusLabel = document.getElementById('step7Status');
     btn.disabled = true;
     btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Backing up...';
+    window.setProcessing(true);
 
     google.script.run
-      .withSuccessHandler(() => {
+      .withSuccessHandler((result) => {
         statusLabel.innerText = "✓ Backup complete!";
         btn.innerHTML = '<i data-lucide="check-circle" class="w-4 h-4"></i> Complete';
         btn.className = "group flex items-center justify-start gap-2 w-full py-2 bg-green-100 text-green-700 rounded-xl text-sm font-bold border border-green-200 cursor-default px-4";
+        
+        // Display hyperlink
+        if (result && result.folderUrl) {
+          statusLabel.innerHTML = '✓ <a href="' + result.folderUrl + '" target="_blank" class="text-blue-600 hover:text-blue-800 underline">Open Folder</a>';
+          statusLabel.className = "text-[10px] mt-2 font-semibold text-center";
+        }
+        window.setProcessing(false);
+        lucide.createIcons();
+      })
+      .withFailureHandler((err) => {
+        statusLabel.innerText = '❌ ' + err.message;
+        statusLabel.className = 'text-[10px] mt-2 font-semibold text-center text-red-600';
+        btn.disabled = false;
+        window.setProcessing(false);
         lucide.createIcons();
       })
       .backupExamSheet();
   });
 
-  document.getElementById('runUnqualifiedBtn').addEventListener('click', function() {
+  // ==== FOR UNQUALIFIED PAGE EVENT LISTENERS ====
+
+  document.getElementById('runUnqualifiedBtn')?.addEventListener('click', function() {
     const btn = this;
     const statusLabel = document.getElementById('uqStep1Status');
 
     btn.disabled = true;
     btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Processing...';
     lucide.createIcons();
+    window.setProcessing(true);
 
     google.script.run
       .withSuccessHandler((res) => {
-        statusLabel.innerText = '✓ Letters generated!';
+        const generatedApplicants = (res && res.applicants) || (res && res.pdfGeneration && res.pdfGeneration.applicants) || [];
+        const pdfCount = generatedApplicants.length;
+        const lastApplicant = generatedApplicants.length > 0 ? generatedApplicants[generatedApplicants.length - 1] : '';
+        
+        statusLabel.innerHTML = "✓ <span class='text-green-700 font-bold'>" + pdfCount + " PDF(s) generated</span>" +
+          (lastApplicant ? '<br><span class="text-sm text-green-600">Last: ' + lastApplicant + '</span>' : '');
         statusLabel.className = 'text-[10px] mt-2 font-semibold text-center text-green-600';
         btn.innerHTML = '<i data-lucide="check-circle" class="w-4 h-4"></i> Complete';
         btn.className = 'group flex items-center justify-start gap-2 w-full py-2 bg-green-100 text-green-700 rounded-xl text-sm font-bold border border-green-200 cursor-default px-4';
         setButtonEnabled(document.getElementById('openUnqualifiedFolderBtn'), true);
         setButtonEnabled(document.getElementById('generateUnqualifiedLinksBtn'), false);
+        window.setProcessing(false);
         lucide.createIcons();
       })
       .withFailureHandler((err) => {
@@ -920,19 +1121,24 @@
         statusLabel.className = 'text-[10px] mt-2 font-semibold text-center text-red-600';
         btn.disabled = false;
         btn.innerHTML = '<i data-lucide="folder-plus" class="w-4 h-4"></i> Create & Generate';
+        window.setProcessing(false);
         lucide.createIcons();
       })
       .runUnqualifiedCompleteProcess();
   });
 
-  document.getElementById('openUnqualifiedFolderBtn').addEventListener('click', function() {
+  document.getElementById('openUnqualifiedFolderBtn')?.addEventListener('click', function() {
     const btn = this;
+    const statusLabel = document.getElementById('uqStep2Status');
     google.script.run
       .withSuccessHandler((folderUrl) => {
         if (folderUrl) {
           window.open(folderUrl, '_blank');
-          document.getElementById('uqStep2Status').innerText = '✓ Opened';
-          document.getElementById('uqStep2Status').className = 'text-[10px] mt-2 font-semibold text-center text-green-600';
+          
+          // Display hyperlink
+          statusLabel.innerHTML = '✓ <a href="' + folderUrl + '" target="_blank" class="text-blue-600 hover:text-blue-800 underline">Open Folder</a>';
+          statusLabel.className = 'text-[10px] mt-2 font-semibold text-center';
+          
           setButtonEnabled(document.getElementById('generateUnqualifiedLinksBtn'), true);
           setButtonEnabled(btn, false);
         }
@@ -940,7 +1146,7 @@
       .getFolderUrl('unqualified');
   });
 
-  document.getElementById('generateUnqualifiedLinksBtn').addEventListener('click', function() {
+  document.getElementById('generateUnqualifiedLinksBtn')?.addEventListener('click', function() {
     const btn = this;
     const statusLabel = document.getElementById('uqStep3Status');
 
@@ -968,7 +1174,7 @@
       .generateGDriveLinks('unqualified');
   });
 
-  document.getElementById('verifyUnqualifiedLinksBtn').addEventListener('click', function() {
+  document.getElementById('verifyUnqualifiedLinksBtn')?.addEventListener('click', function() {
     const btn = this;
     const statusLabel = document.getElementById('uqStep4Status');
 
@@ -981,7 +1187,7 @@
     lucide.createIcons();
   });
 
-  document.getElementById('sendUnqualifiedBtn').addEventListener('click', function() {
+  document.getElementById('sendUnqualifiedBtn')?.addEventListener('click', function() {
     const btn = this;
     const statusLabel = document.getElementById('uqStep5Status');
 
@@ -1009,17 +1215,23 @@
       .sendEmailsToUnqualified();
   });
 
-  document.getElementById('backupDqBtn').addEventListener('click', function() {
+  document.getElementById('backupDqBtn')?.addEventListener('click', function() {
     const btn = this;
     const statusLabel = document.getElementById('uqStep6Status');
     btn.disabled = true;
     btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Backing up...';
 
     google.script.run
-      .withSuccessHandler(() => {
+      .withSuccessHandler((result) => {
         statusLabel.innerText = '✓ Backup complete!';
         btn.innerHTML = '<i data-lucide="check-circle" class="w-4 h-4"></i> Complete';
         btn.className = 'group flex items-center justify-start gap-2 w-full py-2 bg-green-100 text-green-700 rounded-xl text-sm font-bold border border-green-200 cursor-default px-4';
+        
+        // Display hyperlink
+        if (result && result.folderUrl) {
+          statusLabel.innerHTML = '✓ <a href="' + result.folderUrl + '" target="_blank" class="text-blue-600 hover:text-blue-800 underline">Open Folder</a>';
+          statusLabel.className = "text-[10px] mt-2 font-semibold text-center";
+        }
         lucide.createIcons();
       })
       .withFailureHandler((err) => {
@@ -1046,7 +1258,7 @@
     const validateBtn = document.getElementById('validateColumnsBtn');
     if (validateBtn) {
       validateBtn.disabled = false;
-      validateBtn.innerHTML = '<i data-lucide="check-circle" class="w-4 h-4"></i> Fill Columns O-R';
+      validateBtn.innerHTML = '<i data-lucide="check-circle" class="w-4 h-4"></i> Check Columns O-R';
       validateBtn.className = 'group relative flex items-center justify-center gap-2 w-full py-2 px-2 bg-slate-600 text-white rounded-xl text-sm font-bold shadow-md active:scale-95 hover:bg-slate-700 transition';
     }
     const step1Status = document.getElementById('step1Status');
@@ -1060,7 +1272,7 @@
       { btnId: 'runProcessBtn', statusId: 'step2Status', icon: 'folder-plus', text: 'Create & Generate', containerIndex: 1 },
       { btnId: 'openFolderBtn', statusId: 'step3Status', icon: 'eye', text: 'Verify PDFs', containerIndex: 2 },
       { btnId: 'generateLinksBtn', statusId: 'step4Status', icon: 'link', text: 'Generate Links', containerIndex: 3 },
-      { btnId: 'verifyLinksBtn', statusId: 'step5Status', icon: 'list-check', text: 'Verify Alignment', containerIndex: 4 },
+      { btnId: 'verifyLinksBtn', statusId: 'step5Status', icon: 'list-check', text: 'Verify File Alignment', containerIndex: 4 },
       { btnId: 'sendExamBtn', statusId: 'step6Status', icon: 'send', text: 'Send Emails', containerIndex: 5 },
       { btnId: 'backupExamBtn', statusId: 'step7Status', icon: 'archive', text: 'Backup Sheet', containerIndex: 6 }
     ];
@@ -1091,15 +1303,15 @@
     lucide.createIcons();
   }
 
-  document.getElementById('mainMenuBtn').addEventListener('click', function() {
+  document.getElementById('mainMenuBtn')?.addEventListener('click', function() {
     showLanding();
   });
 
-  document.getElementById('resetBtn').addEventListener('click', function() {
+  document.getElementById('resetBtn')?.addEventListener('click', function() {
     resetForExamSteps();
   });
 
-  document.getElementById('gotoDQBtn').addEventListener('click', function() {
+  document.getElementById('gotoDQBtn')?.addEventListener('click', function() {
     const btn = this;
     btn.classList.add('opacity-50');
 
@@ -1124,85 +1336,111 @@
   navButtons.failed.onclick = () => showPage('failed');
   document.getElementById('backBtn')?.addEventListener('click', showLanding);
   document.getElementById('backBtnUnqualified')?.addEventListener('click', showLanding);
+  document.getElementById('backBtnInterview')?.addEventListener('click', showLanding);
 
   // ==== UNQUALIFIED PAGE EVENT LISTENERS ====
-  
+
+// Step 1: Validate Column R
+if (document.getElementById('validateDQColumnsBtn')) {
   document.getElementById('validateDQColumnsBtn').addEventListener('click', function() {
     const btn = this;
     const statusLabel = document.getElementById('uqStep0Status');
     
+    // Set UI to loading state
     btn.disabled = true;
     btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Validating...';
-    lucide.createIcons();
+    if (typeof lucide !== 'undefined') lucide.createIcons();
 
     google.script.run
       .withSuccessHandler((res) => {
-        if (res.hasData) {
+        if (res && res.hasData) {
+          // Success: Proceed to Step 2
           statusLabel.innerText = "✓ Column R verified!";
           statusLabel.className = "text-[10px] px-2 mt-2 font-semibold text-center text-green-600";
           btn.innerHTML = '<i data-lucide="check-circle" class="w-4 h-4"></i> Complete';
           btn.className = "group flex items-center justify-start gap-2 w-full py-2 px-2 bg-green-100 text-green-700 rounded-xl text-sm font-bold border border-green-200 cursor-default";
           
-          setButtonEnabled(document.getElementById('runUnqualifiedBtn'), true);
+          unlockNextStep(8); 
         } else {
-          statusLabel.innerText = "❌ Missing data in column R";
+          // Failure: Display the exact row error from your backend function
+          const errorMessage = (res && res.message) ? res.message : "Missing data in column R";
+          
+          statusLabel.innerText = "❌ " + errorMessage;
           statusLabel.className = "text-[10px] px-2 mt-2 font-semibold text-center text-red-600";
+          
+          // Reset the button so they can try again after fixing the sheet
           btn.disabled = false;
           btn.innerHTML = '<i data-lucide="check-circle" class="w-4 h-4"></i> Fill Column R';
         }
-        lucide.createIcons();
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+      })
+      .withFailureHandler((err) => {
+        statusLabel.innerText = "❌ Error: " + err.message;
+        btn.disabled = false;
+        btn.innerHTML = 'Retry Validation';
+        if (typeof lucide !== 'undefined') lucide.createIcons();
       })
       .checkColumnRInSheet('LETTER - DQ');
   });
+}
 
   // Reset Unqualified Steps Function
-  function resetUnqualifiedSteps() {
-    // Reset Step 0
-    const validateDQBtn = document.getElementById('validateDQColumnsBtn');
-    if (validateDQBtn) {
-      validateDQBtn.disabled = false;
-      validateDQBtn.innerHTML = '<i data-lucide="check-circle" class="w-4 h-4"></i> Fill Column R';
-      validateDQBtn.className = 'group relative flex items-center justify-center gap-2 w-full py-2 px-2 bg-slate-600 text-white rounded-xl text-sm font-bold shadow-md active:scale-95 hover:bg-slate-700 transition';
-    }
-    const uqStep0Status = document.getElementById('uqStep0Status');
-    if (uqStep0Status) {
-      uqStep0Status.innerText = '';
-      uqStep0Status.className = 'text-[10px] mt-2 font-semibold text-center';
-    }
+function resetUnqualifiedSteps() {
+  // Reset Step 0
+  const validateDQBtn = document.getElementById('validateDQColumnsBtn');
+  if (validateDQBtn) {
+    validateDQBtn.disabled = false;
+    validateDQBtn.innerHTML = '<i data-lucide="check-circle" class="w-4 h-4"></i> Check Column R';
+    validateDQBtn.className = 'group relative flex items-center justify-center gap-2 w-full py-2 px-2 bg-slate-600 text-white rounded-xl text-sm font-bold shadow-md active:scale-95 hover:bg-slate-700 transition';
+  }
+  const uqStep0Status = document.getElementById('uqStep0Status');
+  if (uqStep0Status) {
+    uqStep0Status.innerText = '';
+    uqStep0Status.className = 'text-[10px] mt-2 font-semibold text-center';
+  }
 
-    // Reset Steps 1-6
-    const stepsData = [
-      { btnId: 'runUnqualifiedBtn', statusId: 'uqStep1Status', containerIndex: 1 },
-      { btnId: 'openUnqualifiedFolderBtn', statusId: 'uqStep2Status', containerIndex: 2 },
-      { btnId: 'generateUnqualifiedLinksBtn', statusId: 'uqStep3Status', containerIndex: 3 },
-      { btnId: 'verifyUnqualifiedLinksBtn', statusId: 'uqStep4Status', containerIndex: 4 },
-      { btnId: 'sendUnqualifiedBtn', statusId: 'uqStep5Status', containerIndex: 5 },
-      { btnId: 'backupDqBtn', statusId: 'uqStep6Status', containerIndex: 6 }
-    ];
+  // Reset Steps 1-6
+  const stepsData = [
+    { btnId: 'runUnqualifiedBtn', statusId: 'uqStep1Status', icon: 'folder-plus', text: 'Create & Generate', containerIndex: 1 },
+    { btnId: 'openUnqualifiedFolderBtn', statusId: 'uqStep2Status', icon: 'eye', text: 'Verify PDFs', containerIndex: 2 },
+    { btnId: 'generateUnqualifiedLinksBtn', statusId: 'uqStep3Status', icon: 'link', text: 'Generate Links', containerIndex: 3 },
+    { btnId: 'verifyUnqualifiedLinksBtn', statusId: 'uqStep4Status', icon: 'list-check', text: 'Verify File Alignment', containerIndex: 4 },
+    { btnId: 'sendUnqualifiedBtn', statusId: 'uqStep5Status', icon: 'send', text: 'Send Emails', containerIndex: 5 },
+    { btnId: 'backupDqBtn', statusId: 'uqStep6Status', icon: 'archive', text: 'Backup Sheet', containerIndex: 6 }
+  ];
 
-    const containers = document.querySelectorAll('#unqualified-page .step-container');
-    stepsData.forEach((stepData) => {
-      const btn = document.getElementById(stepData.btnId);
-      if (btn) {
-        btn.disabled = true;
-        btn.classList.add('cursor-not-allowed');
-        btn.classList.remove('cursor-pointer');
-        
-        const container = containers[stepData.containerIndex];
-        if (container) {
-          container.classList.add('grayscale', 'opacity-50');
-        }
+  const containers = document.querySelectorAll('#unqualified-page .step-container');
+  stepsData.forEach((stepData) => {
+    const btn = document.getElementById(stepData.btnId);
+    if (btn) {
+      btn.disabled = true;
+      // FIX: Re-insert the original icon and text
+      btn.innerHTML = `<i data-lucide="${stepData.icon}" class="w-4 h-4"></i> ${stepData.text}`;
+      
+      btn.classList.add('cursor-not-allowed');
+      btn.classList.remove('cursor-pointer');
+      
+      // Reset classes to the original "Locked" state (usually blue or similar based on your CSS)
+      btn.className = 'group relative w-full py-2 px-2 bg-blue-600 text-white rounded-xl text-sm font-bold shadow-md flex items-center justify-center gap-2 cursor-not-allowed';
+      
+      const container = containers[stepData.containerIndex];
+      if (container) {
+        container.classList.add('grayscale', 'opacity-50');
       }
+    }
 
-      const statusEl = document.getElementById(stepData.statusId);
-      if (statusEl) {
-        statusEl.innerText = '';
-        statusEl.className = 'text-[10px] mt-2 font-semibold text-center';
-      }
-    });
+    const statusEl = document.getElementById(stepData.statusId);
+    if (statusEl) {
+      statusEl.innerText = '';
+      statusEl.className = 'text-[10px] mt-2 font-semibold text-center';
+    }
+  });
 
+  // Re-run Lucide to render the newly added <i> tags
+  if (typeof lucide !== 'undefined') {
     lucide.createIcons();
   }
+}
 
   document.getElementById('mainMenuBtnUQ').addEventListener('click', function() {
     showLanding();
@@ -1212,7 +1450,7 @@
     resetUnqualifiedSteps();
   });
 
-  document.getElementById('goToFailedBtn').addEventListener('click', function() {
+  document.getElementById('goToFailedBtn')?.addEventListener('click', function() {
     const btn = this;
     btn.classList.add('opacity-50');
 
@@ -1230,221 +1468,185 @@
       .setActiveSheetByName('LETTER - FAILED');
   });
 
-  // ==== FOR INTERVIEW PAGE EVENT LISTENERS ====
+// ==== FOR INTERVIEW PAGE EVENT LISTENERS ====
 
-  document.getElementById('validateInterviewColumnsBtn').addEventListener('click', function() {
-    const btn = this;
-    const statusLabel = document.getElementById('interviewStep1Status');
-    
-    btn.disabled = true;
-    btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Validating...';
-    lucide.createIcons();
+// Step 1: Validate Columns
+document.getElementById('validateInterviewColumnsBtn')?.addEventListener('click', function() {
+  console.log("Interview Step 1: Initiated");
+  const btn = this;
+  const statusLabel = document.getElementById('interviewStep1Status');
+  
+  btn.disabled = true;
+  btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Validating...';
+  if (typeof lucide !== 'undefined') lucide.createIcons();
 
-    google.script.run
-      .withSuccessHandler((res) => {
-        if (res.hasData) {
-          statusLabel.innerText = "✓ Columns O-R verified!";
-          statusLabel.className = "text-[10px] px-2 mt-2 font-semibold text-center text-green-600";
-          btn.innerHTML = '<i data-lucide="check-circle" class="w-4 h-4"></i> Complete';
-          btn.className = "group flex items-center justify-start gap-2 w-full py-2 px-2 bg-green-100 text-green-700 rounded-xl text-sm font-bold border border-green-200 cursor-default";
-          
-          const containers = document.querySelectorAll('#for-interview-page .step-container');
-          if (containers[1]) {
-            containers[1].classList.remove('grayscale', 'opacity-50');
-            const nextBtn = containers[1].querySelector('button');
-            if (nextBtn) {
-              nextBtn.disabled = false;
-              nextBtn.classList.remove('cursor-not-allowed');
-              nextBtn.classList.add('cursor-pointer');
-            }
-          }
-        } else {
-          statusLabel.innerText = "❌ Missing data in columns O-R";
-          statusLabel.className = "text-[10px] px-2 mt-2 font-semibold text-center text-red-600";
-          btn.disabled = false;
-          btn.innerHTML = '<i data-lucide="check-circle" class="w-4 h-4"></i> Fill Columns O-R';
-        }
-        lucide.createIcons();
-      })
-      .checkColumnsOtoRInSheet('LETTER - INTERVIEW');
-  });
-
-  document.getElementById('runInterviewProcessBtn').addEventListener('click', function() {
-    const btn = this;
-    const statusLabel = document.getElementById('interviewStep2Status');
-    
-    btn.disabled = true;
-    btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Processing...';
-    lucide.createIcons();
-
-    google.script.run
-      .withSuccessHandler((res) => {
-        statusLabel.innerText = "✓ Letters generated!";
+  google.script.run
+    .withSuccessHandler((res) => {
+      console.log("Interview Step 1: Success", res);
+      if (res.hasData) {
+        statusLabel.innerText = "✓ Columns O-R verified!";
         statusLabel.className = "text-[10px] px-2 mt-2 font-semibold text-center text-green-600";
         btn.innerHTML = '<i data-lucide="check-circle" class="w-4 h-4"></i> Complete';
         btn.className = "group flex items-center justify-start gap-2 w-full py-2 px-2 bg-green-100 text-green-700 rounded-xl text-sm font-bold border border-green-200 cursor-default";
         
-        const containers = document.querySelectorAll('#for-interview-page .step-container');
-        if (containers[2]) {
-          containers[2].classList.remove('grayscale', 'opacity-50');
-          const nextBtn = containers[2].querySelector('button');
-          if (nextBtn) {
-            nextBtn.disabled = false;
-            nextBtn.classList.remove('cursor-not-allowed');
-            nextBtn.classList.add('cursor-pointer');
-          }
-        }
-        lucide.createIcons();
-      })
-      .runInterviewCompleteProcess();
-  });
-
-  document.getElementById('openInterviewFolderBtn').addEventListener('click', function() {
-    const btn = this;
-    google.script.run
-      .withSuccessHandler((folderUrl) => {
-        if (folderUrl) {
-          window.open(folderUrl, '_blank');
-          btn.innerHTML = '<i data-lucide="check-circle" class="w-4 h-4"></i> Complete';
-          btn.className = "group flex items-center justify-start gap-2 w-full py-2 px-2 bg-green-100 text-green-700 rounded-xl text-sm font-bold border border-green-200 cursor-default";
-          btn.disabled = true;
-          
-          const containers = document.querySelectorAll('#for-interview-page .step-container');
-          if (containers[3]) {
-            containers[3].classList.remove('grayscale', 'opacity-50');
-            const nextBtn = containers[3].querySelector('button');
-            if (nextBtn) {
-              nextBtn.disabled = false;
-              nextBtn.classList.remove('cursor-not-allowed');
-              nextBtn.classList.add('cursor-pointer');
-            }
-          }
-          lucide.createIcons();
-        }
-      })
-      .getFolderUrl('interview');
-  });
-
-  document.getElementById('generateInterviewLinksBtn').addEventListener('click', function() {
-    const btn = this;
-    const statusLabel = document.getElementById('interviewStep4Status');
-    
-    btn.disabled = true;
-    btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Generating...';
-    lucide.createIcons();
-
-    google.script.run
-      .withSuccessHandler((resultMessage) => {
-        statusLabel.innerText = "✓ " + resultMessage;
-        statusLabel.className = "text-[10px] px-2 mt-2 font-semibold text-center text-green-600";
-        btn.innerHTML = '<i data-lucide="check-circle" class="w-4 h-4"></i> Complete';
-        btn.className = "group flex items-center justify-start gap-2 w-full py-2 px-2 bg-green-100 text-green-700 rounded-xl text-sm font-bold border border-green-200 cursor-default";
-        
-        const containers = document.querySelectorAll('#for-interview-page .step-container');
-        if (containers[4]) {
-          containers[4].classList.remove('grayscale', 'opacity-50');
-          const nextBtn = containers[4].querySelector('button');
-          if (nextBtn) {
-            nextBtn.disabled = false;
-            nextBtn.classList.remove('cursor-not-allowed');
-            nextBtn.classList.add('cursor-pointer');
-          }
-        }
-        lucide.createIcons();
-      })
-      .withFailureHandler((err) => {
-        statusLabel.innerText = "❌ " + err.message;
+        unlockNextStep(15); // Adjust this if the Create & Generate button stays gray
+      } else {
+        statusLabel.innerText = "❌ Missing data in columns O-R";
         statusLabel.className = "text-[10px] px-2 mt-2 font-semibold text-center text-red-600";
         btn.disabled = false;
-        btn.innerHTML = '<i data-lucide="link" class="w-4 h-4"></i> Generate Links';
-        lucide.createIcons();
-      })
-      .interviewGenerateLinks();
-  });
-
-  document.getElementById('verifyInterviewLinksBtn').addEventListener('click', function() {
-    const btn = this;
-    const statusLabel = document.getElementById('interviewStep5Status');
-    
-    statusLabel.innerText = "✓ Alignment verified!";
-    statusLabel.className = "text-[10px] px-2 mt-2 font-semibold text-center text-green-600";
-    btn.innerHTML = '<i data-lucide="check-circle" class="w-4 h-4"></i> Complete';
-    btn.className = "group flex items-center justify-start gap-2 w-full py-2 px-2 bg-green-100 text-green-700 rounded-xl text-sm font-bold border border-green-200 cursor-default";
-    btn.disabled = true;
-    
-    const containers = document.querySelectorAll('#for-interview-page .step-container');
-    if (containers[5]) {
-      containers[5].classList.remove('grayscale', 'opacity-50');
-      const nextBtn = containers[5].querySelector('button');
-      if (nextBtn) {
-        nextBtn.disabled = false;
-        nextBtn.classList.remove('cursor-not-allowed');
-        nextBtn.classList.add('cursor-pointer');
+        btn.innerHTML = '<i data-lucide="check-circle" class="w-4 h-4"></i> Check Columns O-R';
       }
-    }
-    lucide.createIcons();
-  });
+      if (typeof lucide !== 'undefined') lucide.createIcons();
+    })
+    .withFailureHandler((err) => {
+      console.error("Interview Step 1: Script Error", err);
+      btn.disabled = false;
+      btn.innerHTML = 'Retry Validation';
+    })
+    .checkColumnsOtoRInSheet('LETTER - FOR INTERVIEW');
+});
 
-  document.getElementById('sendInterviewBtn').addEventListener('click', function() {
-    const btn = this;
-    const statusLabel = document.getElementById('interviewStep6Status');
-    
-    btn.disabled = true;
-    btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Sending...';
-    lucide.createIcons();
+// Step 2: Create & Generate
+document.getElementById('runInterviewProcessBtn')?.addEventListener('click', function() {
+  const btn = this;
+  const statusLabel = document.getElementById('interviewStep2Status');
+  btn.disabled = true;
+  btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Processing...';
+  if (typeof lucide !== 'undefined') lucide.createIcons();
+    window.setProcessing(true);
 
-    google.script.run
-      .withSuccessHandler((res) => {
-        statusLabel.innerText = "✓ " + res.status + " (" + res.count + " emails)";
-        statusLabel.className = "text-[10px] px-2 mt-2 font-semibold text-center text-green-600";
+  google.script.run
+    .withSuccessHandler((res) => {
+      const generatedApplicants = (res && res.applicants) || (res && res.pdfGeneration && res.pdfGeneration.applicants) || [];
+      const pdfCount = generatedApplicants.length;
+      const lastApplicant = generatedApplicants.length > 0 ? generatedApplicants[generatedApplicants.length - 1] : '';
+      
+      statusLabel.innerHTML = "✓ <span class='text-green-700 font-bold'>" + pdfCount + " PDF(s) generated</span>" +
+        (lastApplicant ? '<br><span class="text-sm text-green-600">Last: ' + lastApplicant + '</span>' : '');
+      statusLabel.className = "text-[10px] px-2 mt-2 font-semibold text-center text-green-600";
+      btn.innerHTML = '<i data-lucide="check-circle" class="w-4 h-4"></i> Complete';
+      btn.className = "group flex items-center justify-start gap-2 w-full py-2 px-2 bg-green-100 text-green-700 rounded-xl text-sm font-bold border border-green-200 cursor-default";
+      
+      unlockNextStep(16); 
+      window.setProcessing(false);
+      if (typeof lucide !== 'undefined') lucide.createIcons();
+    })
+      .withFailureHandler((err) => {
+        statusLabel.innerText = '❌ ' + err.message;
+        statusLabel.className = 'text-[10px] px-2 mt-2 font-semibold text-center text-red-600';
+        btn.disabled = false;
+        btn.innerHTML = '<i data-lucide="folder-plus" class="w-4 h-4"></i> Create & Generate';
+        window.setProcessing(false);
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+      })
+    .runInterviewCompleteProcess();
+});
+
+// Step 3: Verify PDFs
+document.getElementById('openInterviewFolderBtn')?.addEventListener('click', function() {
+  const btn = this;
+  const statusLabel = document.getElementById('interviewStep3Status');
+  google.script.run
+    .withSuccessHandler((folderUrl) => {
+      if (folderUrl) {
+        window.open(folderUrl, '_blank');
         btn.innerHTML = '<i data-lucide="check-circle" class="w-4 h-4"></i> Complete';
         btn.className = "group flex items-center justify-start gap-2 w-full py-2 px-2 bg-green-100 text-green-700 rounded-xl text-sm font-bold border border-green-200 cursor-default";
+        btn.disabled = true;
+        statusLabel.innerHTML = '✓ <a href="' + folderUrl + '" target="_blank" class="text-blue-600 hover:text-blue-800 underline">Open Folder</a>';
         
-        const containers = document.querySelectorAll('#for-interview-page .step-container');
-        if (containers[6]) {
-          containers[6].classList.remove('grayscale', 'opacity-50');
-          const nextBtn = containers[6].querySelector('button');
-          if (nextBtn) {
-            nextBtn.disabled = false;
-            nextBtn.classList.remove('cursor-not-allowed');
-            nextBtn.classList.add('cursor-pointer');
-          }
-        }
-        lucide.createIcons();
-      })
-      .withFailureHandler((err) => {
-        statusLabel.innerText = "❌ Error: " + err.message;
-        statusLabel.className = "text-[10px] px-2 mt-2 font-semibold text-center text-red-600";
-        btn.disabled = false;
-        btn.innerHTML = '<i data-lucide="send" class="w-4 h-4"></i> Send Emails';
-        lucide.createIcons();
-      })
-      .interviewSendEmails();
-  });
+        unlockNextStep(17);
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+      }
+    })
+    .getFolderUrl('interview');
+});
 
-  document.getElementById('backupInterviewBtn').addEventListener('click', function() {
-    const btn = this;
-    const statusLabel = document.getElementById('interviewStep7Status');
-    btn.disabled = true;
-    btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Backing up...';
+// Step 4: Generate Links
+document.getElementById('generateInterviewLinksBtn')?.addEventListener('click', function() {
+  const btn = this;
+  const statusLabel = document.getElementById('interviewStep4Status');
+  btn.disabled = true;
+  btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Generating...';
+  if (typeof lucide !== 'undefined') lucide.createIcons();
 
-    google.script.run
-      .withSuccessHandler(() => {
-        statusLabel.innerText = "✓ Backup complete!";
-        btn.innerHTML = '<i data-lucide="check-circle" class="w-4 h-4"></i> Complete';
-        btn.className = "group flex items-center justify-start gap-2 w-full py-2 bg-green-100 text-green-700 rounded-xl text-sm font-bold border border-green-200 cursor-default px-4";
-        lucide.createIcons();
-      })
-      .backupInterviewSheet();
-  });
+  google.script.run
+    .withSuccessHandler((resultMessage) => {
+      statusLabel.innerText = "✓ " + resultMessage;
+      statusLabel.className = "text-[10px] px-2 mt-2 font-semibold text-center text-green-600";
+      btn.innerHTML = '<i data-lucide="check-circle" class="w-4 h-4"></i> Complete';
+      btn.className = "group flex items-center justify-start gap-2 w-full py-2 px-2 bg-green-100 text-green-700 rounded-xl text-sm font-bold border border-green-200 cursor-default";
+      
+      unlockNextStep(18);
+      if (typeof lucide !== 'undefined') lucide.createIcons();
+    })
+    .forInterviewGenerateLinks();
+});
 
-  // Reset Interview Steps Function
+// Step 5: Verify Alignment
+document.getElementById('verifyInterviewLinksBtn')?.addEventListener('click', function() {
+  const btn = this;
+  const statusLabel = document.getElementById('interviewStep5Status');
+  statusLabel.innerText = "✓ Alignment verified!";
+  statusLabel.className = "text-[10px] px-2 mt-2 font-semibold text-center text-green-600";
+  btn.innerHTML = '<i data-lucide="check-circle" class="w-4 h-4"></i> Complete';
+  btn.className = "group flex items-center justify-start gap-2 w-full py-2 px-2 bg-green-100 text-green-700 rounded-xl text-sm font-bold border border-green-200 cursor-default";
+  btn.disabled = true;
+  
+  unlockNextStep(19);
+  if (typeof lucide !== 'undefined') lucide.createIcons();
+});
+
+// Step 6: Send Emails
+document.getElementById('sendInterviewBtn')?.addEventListener('click', function() {
+  const btn = this;
+  const statusLabel = document.getElementById('interviewStep6Status');
+  btn.disabled = true;
+  btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Sending...';
+  if (typeof lucide !== 'undefined') lucide.createIcons();
+
+  google.script.run
+    .withSuccessHandler((res) => {
+      statusLabel.innerText = "✓ " + res.status + " (" + res.count + " emails)";
+      statusLabel.className = "text-[10px] px-2 mt-2 font-semibold text-center text-green-600";
+      btn.innerHTML = '<i data-lucide="check-circle" class="w-4 h-4"></i> Complete';
+      btn.className = "group flex items-center justify-start gap-2 w-full py-2 px-2 bg-green-100 text-green-700 rounded-xl text-sm font-bold border border-green-200 cursor-default";
+      
+      unlockNextStep(20);
+      if (typeof lucide !== 'undefined') lucide.createIcons();
+    })
+    .forInterviewSendEmails();
+});
+
+// Step 7: Backup Sheet
+document.getElementById('backupInterviewBtn')?.addEventListener('click', function() {
+  const btn = this;
+  const statusLabel = document.getElementById('interviewStep7Status');
+  btn.disabled = true;
+  btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Backing up...';
+  if (typeof lucide !== 'undefined') lucide.createIcons();
+
+  google.script.run
+    .withSuccessHandler((result) => {
+      statusLabel.innerText = "✓ Backup complete!";
+      btn.innerHTML = '<i data-lucide="check-circle" class="w-4 h-4"></i> Complete';
+      btn.className = "group flex items-center justify-start gap-2 w-full py-2 bg-green-100 text-green-700 rounded-xl text-sm font-bold border border-green-200 cursor-default px-4";
+      if (result && result.folderUrl) {
+        statusLabel.innerHTML = '✓ <a href="' + result.folderUrl + '" target="_blank" class="text-blue-600 hover:text-blue-800 underline">Open Folder</a>';
+      }
+      if (typeof lucide !== 'undefined') lucide.createIcons();
+    })
+    .backupInterviewSheet();
+});
+
+// Reset Interview Steps Function
   function resetInterviewSteps() {
     // Reset Step 1
     const validateInterviewBtn = document.getElementById('validateInterviewColumnsBtn');
     if (validateInterviewBtn) {
       validateInterviewBtn.disabled = false;
-      validateInterviewBtn.innerHTML = '<i data-lucide="check-circle" class="w-4 h-4"></i> Fill Columns O-R';
+      // Ensure the text and icon match the initial state
+      validateInterviewBtn.innerHTML = '<i data-lucide="check-circle" class="w-4 h-4"></i> Check Columns O-R';
       validateInterviewBtn.className = 'group relative flex items-center justify-center gap-2 w-full py-2 px-2 bg-slate-600 text-white rounded-xl text-sm font-bold shadow-md active:scale-95 hover:bg-slate-700 transition';
     }
     const interviewStep1Status = document.getElementById('interviewStep1Status');
@@ -1455,12 +1657,12 @@
 
     // Reset Steps 2-7
     const stepsData = [
-      { btnId: 'runInterviewProcessBtn', statusId: 'interviewStep2Status', containerIndex: 1 },
-      { btnId: 'openInterviewFolderBtn', statusId: 'interviewStep3Status', containerIndex: 2 },
-      { btnId: 'generateInterviewLinksBtn', statusId: 'interviewStep4Status', containerIndex: 3 },
-      { btnId: 'verifyInterviewLinksBtn', statusId: 'interviewStep5Status', containerIndex: 4 },
-      { btnId: 'sendInterviewBtn', statusId: 'interviewStep6Status', containerIndex: 5 },
-      { btnId: 'backupInterviewBtn', statusId: 'interviewStep7Status', containerIndex: 6 }
+      { btnId: 'runInterviewProcessBtn', statusId: 'interviewStep2Status', icon: 'folder-plus', text: 'Create & Generate', containerIndex: 1 },
+      { btnId: 'openInterviewFolderBtn', statusId: 'interviewStep3Status', icon: 'eye', text: 'Verify PDFs', containerIndex: 2 },
+      { btnId: 'generateInterviewLinksBtn', statusId: 'interviewStep4Status', icon: 'link', text: 'Generate Links', containerIndex: 3 },
+      { btnId: 'verifyInterviewLinksBtn', statusId: 'interviewStep5Status', icon: 'list-check', text: 'Verify File Alignment', containerIndex: 4 },
+      { btnId: 'sendInterviewBtn', statusId: 'interviewStep6Status', icon: 'send', text: 'Send Emails', containerIndex: 5 },
+      { btnId: 'backupInterviewBtn', statusId: 'interviewStep7Status', icon: 'archive', text: 'Backup Sheet', containerIndex: 6 }
     ];
 
     const containers = document.querySelectorAll('#for-interview-page .step-container');
@@ -1468,6 +1670,12 @@
       const btn = document.getElementById(stepData.btnId);
       if (btn) {
         btn.disabled = true;
+        // Revert to original Icon and Text
+        btn.innerHTML = `<i data-lucide="${stepData.icon}" class="w-4 h-4"></i> ${stepData.text}`;
+        
+        // Revert to original Blue styling and locked cursor
+        btn.className = 'group relative w-full py-2 px-2 bg-blue-600 text-white rounded-xl text-sm font-bold shadow-md flex items-center justify-center gap-2 cursor-not-allowed';
+        
         btn.classList.add('cursor-not-allowed');
         btn.classList.remove('cursor-pointer');
         
@@ -1484,18 +1692,60 @@
       }
     });
 
-    lucide.createIcons();
+    // Refresh Lucide icons to render the <i> tags correctly
+    if (typeof lucide !== 'undefined') lucide.createIcons();
   }
 
-  document.getElementById('mainMenuBtnInterview').addEventListener('click', function() {
+  // Navigation and Reset logic
+  document.getElementById('mainMenuBtnInterview')?.addEventListener('click', function() {
     showLanding();
   });
 
-  document.getElementById('resetBtnInterview').addEventListener('click', function() {
+  document.getElementById('resetBtnInterview')?.addEventListener('click', function() {
     resetInterviewSteps();
   });
 
-  document.getElementById('goToFailedFromInterviewBtn').addEventListener('click', function() {
+  function resetFailedSteps() {
+    const failedSteps = [
+      { btnId: 'checkFailedColumnLBtn', statusId: 'failedStep1Status', icon: 'check-square', text: 'Check Column M', enabled: true, containerIndex: 0, className: 'group relative flex items-center justify-start gap-2 w-full py-2 px-2 bg-slate-600 text-white rounded-xl text-sm font-bold shadow-md active:scale-95 hover:bg-slate-700 transition' },
+      { btnId: 'runFailedBtn', statusId: 'failedStep2Status', icon: 'folder-plus', text: 'Create & Generate', enabled: false, containerIndex: 1, className: 'group relative flex items-center justify-start gap-2 w-full py-2 px-2 bg-slate-600 text-white rounded-xl text-sm font-bold shadow-md cursor-not-allowed opacity-50' },
+      { btnId: 'openFailedFolderBtn', statusId: 'failedStep3Status', icon: 'eye', text: 'Verify PDFs', enabled: false, containerIndex: 2, className: 'group relative w-full py-2 px-2 bg-amber-600 text-white rounded-xl text-sm font-bold shadow-md flex items-center justify-center gap-2 cursor-not-allowed opacity-50' },
+      { btnId: 'generateFailedLinksBtn', statusId: 'failedStep4Status', icon: 'link', text: 'Generate Links', enabled: false, containerIndex: 3, className: 'group relative w-full py-2 px-2 bg-green-600 text-white rounded-xl text-sm font-bold shadow-md flex items-center justify-center gap-2 cursor-not-allowed opacity-50' },
+      { btnId: 'verifyFailedLinksBtn', statusId: 'failedStep5Status', icon: 'list-check', text: 'Verify File Alignment', enabled: false, containerIndex: 4, className: 'group relative w-full py-2 px-2 bg-blue-600 text-white rounded-xl text-sm font-bold shadow-md flex items-center justify-center gap-2 cursor-not-allowed opacity-50' },
+      { btnId: 'sendFailedEmailsBtn', statusId: 'failedStep6Status', icon: 'send', text: 'Send Emails', enabled: false, containerIndex: 5, className: 'group relative w-full py-2 px-2 bg-indigo-600 text-white rounded-xl text-sm font-bold shadow-md flex items-center justify-center gap-2 cursor-not-allowed opacity-50' },
+      { btnId: 'backupFailedBtn', statusId: 'failedStep7Status', icon: 'archive', text: 'Backup Sheet', enabled: false, containerIndex: 6, className: 'group relative w-full py-2 px-2 bg-sky-600 text-white rounded-xl text-sm font-bold shadow-md flex items-center justify-center gap-2 cursor-not-allowed opacity-50' }
+    ];
+
+    const containers = document.querySelectorAll('#failed-page .step-container');
+    failedSteps.forEach(step => {
+      const btn = document.getElementById(step.btnId);
+      if (btn) {
+        btn.disabled = !step.enabled;
+        btn.innerHTML = `<i data-lucide="${step.icon}" class="w-4 h-4"></i> ${step.text}`;
+        btn.className = step.className;
+      }
+
+      const container = containers[step.containerIndex];
+      if (container) {
+        if (step.enabled) {
+          container.classList.remove('grayscale', 'opacity-50');
+        } else {
+          container.classList.add('grayscale', 'opacity-50');
+        }
+      }
+
+      const statusLabel = document.getElementById(step.statusId);
+      if (statusLabel) {
+        statusLabel.innerText = '';
+        statusLabel.className = 'text-[10px] mt-2 font-semibold text-center';
+      }
+    });
+
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+  }
+
+// ==== FOR FAILED PAGE EVENT LISTENERS ====
+  document.getElementById('goToFailedFromInterviewBtn')?.addEventListener('click', function() {
     const btn = this;
     btn.classList.add('opacity-50');
 
@@ -1513,9 +1763,399 @@
       .setActiveSheetByName('LETTER - FAILED');
   });
 
+  document.getElementById('backBtnFailed')?.addEventListener('click', showLanding);
+
+  document.getElementById('checkFailedColumnLBtn')?.addEventListener('click', function() {
+    const btn = this;
+    const statusLabel = document.getElementById('failedStep1Status');
+
+    btn.disabled = true;
+    btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Checking...';
+    lucide.createIcons();
+
+    google.script.run
+      .withSuccessHandler((result) => {
+        if (result.passed) {
+          statusLabel.innerText = '✓ Column M is valid for all filled rows.';
+          statusLabel.className = 'text-[10px] mt-2 font-semibold text-center text-green-600';
+          btn.innerHTML = '<i data-lucide="check-circle" class="w-4 h-4"></i> Complete';
+          btn.className = 'group flex items-center justify-start gap-2 w-full py-2 px-2 bg-green-100 text-green-700 rounded-xl text-sm font-bold border border-green-200 cursor-default';
+          unlockNextStep(1, 'failed-page');
+        } else {
+          statusLabel.innerText = '❌ ' + result.message;
+          statusLabel.className = 'text-[10px] mt-2 font-semibold text-center text-red-600';
+          btn.disabled = false;
+          btn.innerHTML = '<i data-lucide="check-square" class="w-4 h-4"></i> Check Column M';
+        }
+        lucide.createIcons();
+      })
+      .withFailureHandler((err) => {
+        statusLabel.innerText = '❌ ' + err.message;
+        statusLabel.className = 'text-[10px] mt-2 font-semibold text-center text-red-600';
+        btn.disabled = false;
+        btn.innerHTML = '<i data-lucide="check-square" class="w-4 h-4"></i> Check Column M';
+        lucide.createIcons();
+      })
+      .checkFailedColumnL();
+  });
+
+  document.getElementById('runFailedBtn')?.addEventListener('click', function() {
+    const btn = this;
+    const statusLabel = document.getElementById('failedStep2Status');
+
+    btn.disabled = true;
+    btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Processing...';
+    lucide.createIcons();
+    window.setProcessing(true);
+
+    google.script.run
+      .withSuccessHandler((res) => {
+        const generatedApplicants = (res && res.applicants) || (res && res.pdfGeneration && res.pdfGeneration.applicants) || [];
+        const pdfCount = generatedApplicants.length;
+        const lastApplicant = generatedApplicants.length > 0 ? generatedApplicants[generatedApplicants.length - 1] : '';
+        
+        statusLabel.innerHTML = "✓ <span class='text-green-700 font-bold'>" + pdfCount + " PDF(s) generated</span>" +
+          (lastApplicant ? '<br><span class="text-sm text-green-600">Last: ' + lastApplicant + '</span>' : '');
+        statusLabel.className = 'text-[10px] mt-2 font-semibold text-center text-green-600';
+        btn.innerHTML = '<i data-lucide="check-circle" class="w-4 h-4"></i> Complete';
+        btn.className = 'group flex items-center justify-start gap-2 w-full py-2 px-2 bg-green-100 text-green-700 rounded-xl text-sm font-bold border border-green-200 cursor-default';
+
+        unlockNextStep(2, 'failed-page');
+        window.setProcessing(false);
+        lucide.createIcons();
+      })
+      .withFailureHandler((err) => {
+        statusLabel.innerText = '❌ ' + err.message;
+        statusLabel.className = 'text-[10px] mt-2 font-semibold text-center text-red-600';
+        btn.disabled = false;
+        btn.innerHTML = '<i data-lucide="folder-plus" class="w-4 h-4"></i> Create & Generate';
+        window.setProcessing(false);
+        lucide.createIcons();
+      })
+      .runFailedCompleteProcess();
+  });
+
+  document.getElementById('openFailedFolderBtn')?.addEventListener('click', function() {
+    const btn = this;
+    const statusLabel = document.getElementById('failedStep3Status');
+
+    google.script.run
+      .withSuccessHandler((folderUrl) => {
+        if (folderUrl) {
+          window.open(folderUrl, '_blank');
+          statusLabel.innerHTML = '✓ <a href="' + folderUrl + '" target="_blank" class="text-blue-600 hover:text-blue-800 underline">Open Folder</a>';
+          statusLabel.className = 'text-[10px] mt-2 font-semibold text-center';
+
+          btn.disabled = true;
+          btn.innerHTML = '<i data-lucide="check-circle" class="w-4 h-4"></i> Complete';
+          btn.className = 'group flex items-center justify-start gap-2 w-full py-2 px-2 bg-green-100 text-green-700 rounded-xl text-sm font-bold border border-green-200 cursor-default';
+          unlockNextStep(3, 'failed-page');
+          lucide.createIcons();
+        }
+      })
+      .withFailureHandler((err) => {
+        statusLabel.innerText = '❌ ' + err.message;
+        statusLabel.className = 'text-[10px] mt-2 font-semibold text-center text-red-600';
+        lucide.createIcons();
+      })
+      .getFolderUrl('failed');
+  });
+
+  document.getElementById('generateFailedLinksBtn')?.addEventListener('click', function() {
+    const btn = this;
+    const statusLabel = document.getElementById('failedStep4Status');
+
+    btn.disabled = true;
+    btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Generating...';
+    lucide.createIcons();
+
+    google.script.run
+      .withSuccessHandler((message) => {
+        statusLabel.innerText = '✓ ' + message;
+        statusLabel.className = 'text-[10px] mt-2 font-semibold text-center text-green-600';
+        btn.innerHTML = '<i data-lucide="check-circle" class="w-4 h-4"></i> Complete';
+        btn.className = 'group flex items-center justify-start gap-2 w-full py-2 px-2 bg-green-100 text-green-700 rounded-xl text-sm font-bold border border-green-200 cursor-default';
+
+        unlockNextStep(4, 'failed-page');
+        lucide.createIcons();
+      })
+      .withFailureHandler((err) => {
+        statusLabel.innerText = '❌ ' + err.message;
+        statusLabel.className = 'text-[10px] mt-2 font-semibold text-center text-red-600';
+        btn.disabled = false;
+        btn.innerHTML = '<i data-lucide="link" class="w-4 h-4"></i> Generate Links';
+        lucide.createIcons();
+      })
+      .generateGDriveLinks('failed');
+  });
+
+  document.getElementById('verifyFailedLinksBtn')?.addEventListener('click', function() {
+    const btn = this;
+    const statusLabel = document.getElementById('failedStep5Status');
+
+    btn.disabled = true;
+    btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Verifying...';
+    lucide.createIcons();
+
+    google.script.run
+      .withSuccessHandler((result) => {
+        statusLabel.innerText = '✓ ' + result.message;
+        statusLabel.className = 'text-[10px] mt-2 font-semibold text-center text-green-600';
+        btn.innerHTML = '<i data-lucide="check-circle" class="w-4 h-4"></i> Complete';
+        btn.className = 'group flex items-center justify-start gap-2 w-full py-2 px-2 bg-green-100 text-green-700 rounded-xl text-sm font-bold border border-green-200 cursor-default';
+
+        unlockNextStep(5, 'failed-page');
+        lucide.createIcons();
+      })
+      .withFailureHandler((err) => {
+        statusLabel.innerText = '❌ ' + err.message;
+        statusLabel.className = 'text-[10px] mt-2 font-semibold text-center text-red-600';
+        btn.disabled = false;
+        btn.innerHTML = '<i data-lucide="list-check" class="w-4 h-4"></i> Verify Alignment';
+        lucide.createIcons();
+      })
+      .verifyFailedAlignment();
+  });
+
+  document.getElementById('sendFailedEmailsBtn')?.addEventListener('click', function() {
+    const btn = this;
+    const statusLabel = document.getElementById('failedStep6Status');
+
+    btn.disabled = true;
+    btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Sending...';
+    lucide.createIcons();
+    window.setProcessing(true);
+
+    google.script.run
+      .withSuccessHandler((res) => {
+        statusLabel.innerText = '✓ ' + res.status + ' (' + res.count + ' emails)';
+        statusLabel.className = 'text-[10px] mt-2 font-semibold text-center text-green-600';
+        btn.innerHTML = '<i data-lucide="check-circle" class="w-4 h-4"></i> Complete';
+        btn.className = 'group flex items-center justify-start gap-2 w-full py-2 px-2 bg-green-100 text-green-700 rounded-xl text-sm font-bold border border-green-200 cursor-default';
+
+        unlockNextStep(6, 'failed-page');
+        window.setProcessing(false);
+        lucide.createIcons();
+      })
+      .withFailureHandler((err) => {
+        statusLabel.innerText = '❌ ' + err.message;
+        statusLabel.className = 'text-[10px] mt-2 font-semibold text-center text-red-600';
+        btn.disabled = false;
+        btn.innerHTML = '<i data-lucide="send" class="w-4 h-4"></i> Send Emails';
+        window.setProcessing(false);
+        lucide.createIcons();
+      })
+      .sendEmailsToFailedApplicants();
+  });
+
+  document.getElementById('backupFailedBtn')?.addEventListener('click', function() {
+    const btn = this;
+    const statusLabel = document.getElementById('failedStep7Status');
+
+    btn.disabled = true;
+    btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Backing up...';
+    lucide.createIcons();
+    window.setProcessing(true);
+
+    google.script.run
+      .withSuccessHandler((result) => {
+        statusLabel.innerText = '✓ Backup complete!';
+        statusLabel.className = 'text-[10px] mt-2 font-semibold text-center text-green-600';
+        btn.innerHTML = '<i data-lucide="check-circle" class="w-4 h-4"></i> Complete';
+        btn.className = 'group flex items-center justify-start gap-2 w-full py-2 px-2 bg-green-100 text-green-700 rounded-xl text-sm font-bold border border-green-200 cursor-default';
+
+        if (result && result.folderUrl) {
+          statusLabel.innerHTML = '✓ <a href="' + result.folderUrl + '" target="_blank" class="text-blue-600 hover:text-blue-800 underline">Open Folder</a>';
+        }
+        window.setProcessing(false);
+        lucide.createIcons();
+      })
+      .withFailureHandler((err) => {
+        statusLabel.innerText = '❌ ' + err.message;
+        statusLabel.className = 'text-[10px] mt-2 font-semibold text-center text-red-600';
+        btn.disabled = false;
+        btn.innerHTML = '<i data-lucide="archive" class="w-4 h-4"></i> Backup Sheet';
+        window.setProcessing(false);
+        lucide.createIcons();
+      })
+      .backupFailedSheet();
+  });
+
+  document.getElementById('failedHomeBtn')?.addEventListener('click', function() {
+    showLanding();
+  });
+
+  document.getElementById('failedResetBtn')?.addEventListener('click', function() {
+    resetFailedSteps();
+  });
+
+  document.getElementById('failedGotoBackupBtn')?.addEventListener('click', function() {
+    showPage('backup');
+  });
+
   document.getElementById('backBtnInterview').addEventListener('click', showLanding);
 
+  // Backup page navigation
+  document.getElementById('backupBtn')?.addEventListener('click', function() {
+    showPage('backup');
+  });
+
+  document.getElementById('backupBackBtn')?.addEventListener('click', function() {
+    showLanding();
+  });
+
+  // Backup whole sheet
+  document.getElementById('backupWholeSheetBtn')?.addEventListener('click', function() {
+    const btn = this;
+    const statusLabel = document.getElementById('backupStatus');
+    const backBtn = document.getElementById('backupBackBtn');
+
+    btn.disabled = true;
+    if (backBtn) backBtn.disabled = true;
+    btn.innerHTML = '<i data-lucide="loader-2" class="w-5 h-5 animate-spin"></i> Backing up...';
+    statusLabel.innerText = 'Back up on going. DO NOT close this window or go back to the main menu. Wait for the process to complete.';
+    statusLabel.className = 'text-[10px] mt-2 font-semibold text-center text-slate-700';
+    lucide.createIcons();
+    window.setProcessing(true);
+
+    google.script.run
+      .withSuccessHandler((result) => {
+        if (backBtn) backBtn.disabled = false;
+        if (result.success) {
+          let message = '✓ ' + result.message;
+          if (result.folderUrl) {
+            message += ' <br><a href="' + result.folderUrl + '" target="_blank" class="text-blue-600 hover:text-blue-800 underline">Open backup folder</a>';
+          }
+          if (result.backupUrl) {
+            message += ' <br><a href="' + result.backupUrl + '" target="_blank" class="text-blue-600 hover:text-blue-800 underline">Open backup spreadsheet</a>';
+          }
+          statusLabel.innerHTML = message;
+          statusLabel.className = 'text-[10px] mt-2 font-semibold text-center text-green-600';
+          btn.innerHTML = '<i data-lucide="check-circle" class="w-5 h-5"></i> Backup Complete';
+          btn.className = 'group flex items-center justify-start gap-2 w-full py-3 px-3 bg-green-100 text-green-700 rounded-xl text-sm font-bold border border-green-200 cursor-default';
+          window.setProcessing(false);
+          document.getElementById('backupModal').classList.remove('hidden');
+        } else {
+          statusLabel.innerText = '❌ ' + result.message;
+          statusLabel.className = 'text-[10px] mt-2 font-semibold text-center text-red-600';
+          btn.disabled = false;
+          if (backBtn) backBtn.disabled = false;
+          window.setProcessing(false);
+          btn.innerHTML = '<i data-lucide="database" class="w-5 h-5"></i> Backup Whole Google Sheet';
+        }
+        lucide.createIcons();
+      })
+      .withFailureHandler((err) => {
+        if (backBtn) backBtn.disabled = false;
+        statusLabel.innerText = '❌ ' + err.message;
+        statusLabel.className = 'text-[10px] mt-2 font-semibold text-center text-red-600';
+        btn.disabled = false;
+        btn.innerHTML = '<i data-lucide="database" class="w-5 h-5"></i> Backup Whole Google Sheet';
+        window.setProcessing(false);
+        lucide.createIcons();
+      })
+      .backupWholeSheet();
+  });
+  // Close backup modal and navigate to Form Responses 1 (attach reliably)
+  (function() {
+    function attachBackupModalHandler() {
+      var btn = document.getElementById('closeBackupModal');
+      if (!btn) return;
+      btn.addEventListener('click', function() {
+        var modal = document.getElementById('backupModal');
+        if (modal) modal.classList.add('hidden');
+        // Navigate to 'Form Responses 1' sheet
+        google.script.run
+          .withFailureHandler(function(err) {
+            console.log('Navigation to Form Responses 1 attempted');
+          })
+          .setActiveSheetByName('Form Responses 1');
+      });
+    }
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', attachBackupModalHandler);
+    } else {
+      attachBackupModalHandler();
+    }
+  })();
+
+  // Prevent accidental closing of the sidebar via the host-provided X button.
+  // This registers a beforeunload handler which triggers the browser's confirmation dialog.
+  // Note: modern browsers show a generic confirmation message and ignore custom text.
+  (function() {
+    let allowSidebarClose = false;
+
+    // If any part of your UI needs to bypass the confirmation, call `window.enableSidebarClose()`
+    window.enableSidebarClose = function() { allowSidebarClose = true; };
+
+    window.addEventListener('beforeunload', function(e) {
+      const shouldConfirm = (window.confirmationConfig && window.confirmationConfig.mode === 'always') ||
+        ((window.confirmationConfig && window.confirmationConfig.mode === 'during') && !!window._isProcessing);
+      if (allowSidebarClose || !shouldConfirm) return undefined;
+      // Standard pattern to trigger confirmation dialog
+      e.preventDefault();
+      e.returnValue = '';
+      return '';
+    });
+  })();
+
+  // Helper API to control confirmation behavior and processing state.
+  window.confirmationConfig = { mode: 'during' }; // 'during' | 'always' | 'never'
+  window.setConfirmationMode = function(mode) { window.confirmationConfig.mode = mode; };
+  window.setProcessing = function(isProcessing) { window._isProcessing = !!isProcessing; };
+
+  // Wrap host close to ensure the top-right X triggers our confirmation logic.
+  (function() {
+    // Wait for google.script to be available, then wrap host.close.
+    function tryWrapHostClose() {
+      try {
+        if (window.google && google.script && google.script.host && typeof google.script.host.close === 'function') {
+          var origHostClose = google.script.host.close.bind(google.script.host);
+          google.script.host.close = function() {
+            var shouldConfirm = (window.confirmationConfig && window.confirmationConfig.mode === 'always') ||
+              ((window.confirmationConfig && window.confirmationConfig.mode === 'during') && !!window._isProcessing);
+            if (shouldConfirm) {
+              // Use confirm to get a synchronous user decision.
+              if (!confirm('Background tasks are running. Are you sure you want to close the sidebar?')) {
+                return;
+              }
+            }
+            origHostClose();
+          };
+          return true;
+        }
+      } catch (wrapErr) {
+        console.log('Error wrapping google.script.host.close: ' + wrapErr.message);
+      }
+      return false;
+    }
+    
+    // Try immediately and retry if needed.
+    if (!tryWrapHostClose()) {
+      var attempts = 0;
+      var retryInterval = setInterval(function() {
+        if (tryWrapHostClose() || ++attempts > 20) {
+          clearInterval(retryInterval);
+        }
+      }, 100);
+    }
+  })();
+
 </script>
+  <!-- Modal for Backup Message -->
+  <div id="backupModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
+    <div class="bg-white rounded-lg p-6 max-w-md mx-4 shadow-xl">
+      <h3 class="text-lg font-semibold mb-4 text-gray-900">Backup Complete</h3>
+      <p class="text-sm text-gray-700 mb-6">
+        You may now manually delete the responses (in the 'Form Responses 1' sheet) for the position/s which already ended the application process.
+      </p>
+      <div class="flex justify-end">
+        <button id="closeBackupModal" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+          OK
+        </button>
+      </div>
+    </div>
+  </div>
 
 </body>
 </html>
