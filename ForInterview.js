@@ -5,9 +5,9 @@
 // Constants for For Interview workflow
 const FOR_INTERVIEW = {
   SHEET_NAME: 'LETTER - FOR INTERVIEW',
-  TEMPLATE_ID: '1V0icY2qWob_D2LQpe24H5Q85p5QXnfHgwlLt8sWeSNs', // Same template as exam for now
+  TEMPLATE_ID: '1u9gWRR9UV5_ENJ8pEjueBWVIh3dHr-eNINItRZMDAGs',
   COL_LAST_NAME: 1,
-  COL_FIRST_NAME: 2, 
+  COL_FIRST_NAME: 2,
   COL_EMAIL: 7,
   COL_TEMPLATE_COLS_START: 15, // Column O
   COL_TEMPLATE_COLS_END: 18,   // Column R
@@ -62,44 +62,6 @@ function checkColumnsOtoRInSheet(sheetName) {
   }
 }
 
-/**
- * Check if column R has data in the specified sheet (for unqualified validation)
- */
-function checkColumnRInSheet(sheetName) {
-  try {
-    const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(sheetName);
-    if (!sheet) {
-      return { hasData: false, message: 'Sheet not found' };
-    }
-
-    const lastRow = sheet.getLastRow();
-    if (lastRow < 2) {
-      return { hasData: false };
-    }
-
-    const dataRange = sheet.getRange(2, 1, lastRow - 1, 18).getValues(); // Check up to column R
-
-    for (let i = 0; i < dataRange.length; i++) {
-      const rowData = dataRange[i];
-      const valA = rowData[0]; // Column A
-
-      if (valA && valA.toString().trim() !== '') {
-        const colRValue = rowData[17]; // Column R (0-indexed)
-        if (!colRValue || colRValue.toString().trim() === '') {
-          const rowNum = 2 + i;
-          return {
-            hasData: false,
-            message: 'Missing data in column R for applicant at row ' + rowNum
-          };
-        }
-      }
-    }
-
-    return { hasData: true };
-  } catch (e) {
-    return { hasData: false, message: e.message };
-  }
-}
 
 /**
  * Create main folder and For Interview subfolder
@@ -126,20 +88,58 @@ function forInterviewCreateFolders() {
     const folderName = position + " - " + assignedOffice + " (" + dateStr + ")";
 
     const parentFolder = DriveApp.getFolderById(parentFolderId);
-    const mainFolder = parentFolder.createFolder(folderName);
-    const mainFolderId = mainFolder.getId();
-
-    const forInterviewSubFolder = mainFolder.createFolder("For Interview");
-    const forInterviewSubFolderId = forInterviewSubFolder.getId();
-
     const props = PropertiesService.getDocumentProperties();
+
+    let mainFolderId = props.getProperty('forInterviewMainFolderId') || props.getProperty('forExamMainFolderId') || props.getProperty('unqualifiedMainFolderId');
+    let mainFolder = null;
+
+    if (mainFolderId) {
+      try {
+        mainFolder = DriveApp.getFolderById(mainFolderId);
+      } catch (e) {
+        mainFolder = null;
+      }
+    }
+
+    if (!mainFolder) {
+      const existingFolders = parentFolder.getFoldersByName(folderName);
+      if (existingFolders.hasNext()) {
+        mainFolder = existingFolders.next();
+      } else {
+        mainFolder = parentFolder.createFolder(folderName);
+      }
+      mainFolderId = mainFolder.getId();
+      props.setProperty('forInterviewMainFolderId', mainFolderId);
+    }
+
+    let forInterviewSubFolderId = props.getProperty('forInterviewSubFolderId');
+    let forInterviewSubFolder = null;
+
+    if (forInterviewSubFolderId) {
+      try {
+        forInterviewSubFolder = DriveApp.getFolderById(forInterviewSubFolderId);
+      } catch (e) {
+        forInterviewSubFolder = null;
+      }
+    }
+
+    if (!forInterviewSubFolder) {
+      const existingSubFolders = mainFolder.getFoldersByName('For Interview');
+      if (existingSubFolders.hasNext()) {
+        forInterviewSubFolder = existingSubFolders.next();
+      } else {
+        forInterviewSubFolder = mainFolder.createFolder('For Interview');
+      }
+      forInterviewSubFolderId = forInterviewSubFolder.getId();
+      props.setProperty('forInterviewSubFolderId', forInterviewSubFolderId);
+    }
+
     props.setProperty('forInterviewMainFolderId', mainFolderId);
-    props.setProperty('forInterviewSubFolderId', forInterviewSubFolderId);
 
     return {
       mainFolderId: mainFolderId,
       forInterviewSubFolderId: forInterviewSubFolderId,
-      folderUrl: mainFolder.getUrl()
+      folderUrl: forInterviewSubFolder.getUrl()
     };
   } catch (e) {
     throw new Error('Error creating folders: ' + e.message);
@@ -206,7 +206,7 @@ function forInterviewGeneratePDFs(targetFolderId) {
 /**
  * Generate Google Drive links and insert into spreadsheet
  */
-function interviewGenerateLinks() {
+function forInterviewGenerateLinks() {
   try {
     const settings = PropertiesService.getDocumentProperties();
     const folderId = settings.getProperty('forInterviewSubFolderId');
@@ -271,7 +271,7 @@ function forInterviewGetFolderUrl() {
 /**
  * Backup the Letter - For Interview sheet to the For Interview folder
  */
-function backupInterviewSheet() {
+function forInterviewBackupSheet() {
   try {
     const ss = SpreadsheetApp.getActiveSpreadsheet();
     const sourceSheet = ss.getSheetByName(FOR_INTERVIEW.SHEET_NAME);
@@ -308,7 +308,10 @@ function backupInterviewSheet() {
     const backupBlob = Utilities.newBlob(csvContent, MimeType.CSV, backupFileName);
     forInterviewFolder.createFile(backupBlob);
 
-    return 'Backup successful! LETTER - FOR INTERVIEW has been saved to the For Interview folder.';
+    return {
+      message: 'Backup successful! LETTER - FOR INTERVIEW has been saved to the For Interview folder.',
+      folderUrl: forInterviewFolder.getUrl()
+    };
   } catch (e) {
     throw new Error('Error backing up sheet: ' + e.message);
   }
@@ -317,9 +320,9 @@ function backupInterviewSheet() {
 /**
  * Send emails to interview applicants
  */
-function interviewSendEmails() {
+function forInterviewSendEmails() {
   // PASTE YOUR DEPLOYED WEB APP URL HERE
-  const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwSQQYBB9G0stw13NoVgm-FaRcgsRBe6KBGbXG-RQrwfYMQP0VkMS_eObHUMbr8l0HZ/exec";
+  const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyFPxd3UelHmFuh4fqQC7YPLpVk44rorubWx_My_0S2OV7Il4GlJC1wd7rq8aVKJKpKNg/exec";
 
   try {
     const ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -350,21 +353,21 @@ function interviewSendEmails() {
         continue;
       }
 
-      const subject = 'NOTICE OF INTERVIEW';
-      const body = '*** Automated Message - Please Do Not Reply ***\n' +
-        'For inquiries, please email: orp05.hiring@gmail.com\n\n' +
-        'Dear Applicant,\n\n' +
+      const subject = 'JOB APPLICATION UPDATE - NOTICE OF INTERVIEW';
+      const body = 'Dear Applicant,\n\n' +
         'Good day!\n\n' +
         'Congratulations! You have passed the written examination and have been selected to proceed to the interview stage.\n\n' +
         'Please see the file in the link below for your interview details:\n\n' +
         'Link: ' + driveLink + '\n\n' +
         'Please arrive at the interview site 5-10 minutes early. We look forward to meeting you!\n\n' +
         'Best regards,\n' +
-        'HR Recruitment Team';
+        'DOJ RPO V - Human Resource Unit';
 
       // --- INTEGRATED PROXY CALL ---
       const payload = {
         recipient: email.toString().trim(),
+        cc: 'orp05.hiring@gmail.com',
+        replyTo: 'orp05.hiring@gmail.com',
         subject: subject,
         body: body
       };

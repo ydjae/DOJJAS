@@ -10,12 +10,14 @@ function doPost(e) {
   try {
     const data = JSON.parse(e.postData.contents);
     
+    const replyToAddress = data.replyTo || 'orp05.hiring@gmail.com';
     MailApp.sendEmail({
       to: data.recipient,
+      cc: data.cc,
       subject: data.subject,
       body: data.body,
       name: 'Department of Justice V - HR',
-      replyTo: 'orp05@doj.gov.ph'
+      replyTo: replyToAddress
     });
     
     return ContentService.createTextOutput("Success");
@@ -273,3 +275,4 @@ function onEdit(e) {
     }
   }
 }
+
