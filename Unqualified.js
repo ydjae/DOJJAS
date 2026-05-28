@@ -144,34 +144,28 @@ function unqualifiedGeneratePDFs(targetFolderId) {
 
     const templateFile = DriveApp.getFileById(UNQUALIFIED.TEMPLATE_ID);
     const destinationFolder = DriveApp.getFolderById(targetFolderId);
-    const processedApplicants = [];
+    
+    // Use batch processing with key for Unqualified
+    const batchKey = 'unqualified_pdf_generation_' + SpreadsheetApp.getActiveSpreadsheet().getId();
+    const batchResult = processPDFBatch(batchKey, rows, header, templateFile, destinationFolder, 20); // Process 20 at a time
 
-    rows.forEach(row => {
-      const lastName = String(row[0] || '').trim();
-      const firstName = String(row[1] || '').trim();
-      const fileName = lastName + ', ' + firstName + ' - DQletter';
-
-      const copy = templateFile.makeCopy(fileName, destinationFolder);
-      const doc = DocumentApp.openById(copy.getId());
-      const body = doc.getBody();
-
-      header.forEach((label, i) => {
-        body.replaceText('{{' + label + '}}', row[i]);
-      });
-
-      doc.saveAndClose();
-      const pdfBlob = copy.getAs(MimeType.PDF);
-      const pdfFile = destinationFolder.createFile(pdfBlob).setName(fileName + '.pdf');
-      pdfFile.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
-      copy.setTrashed(true);
-
-      processedApplicants.push(lastName + ', ' + firstName);
-    });
+    let returnMessage = batchResult.message;
+    
+    // If batch is still processing, suggest running again
+    if (!batchResult.completed) {
+      returnMessage += '\n\nTo continue processing remaining applicants (total: ' + batchResult.totalRows + '), run this step again.';
+    } else {
+      // Batch is complete, clear the state
+      clearBatchState(batchKey);
+      returnMessage = 'PDF generation completed! ' + batchResult.totalProcessed + ' PDFs generated.';
+    }
 
     return {
       success: true,
-      count: rows.length,
-      applicants: processedApplicants
+      count: batchResult.totalProcessed,
+      applicants: batchResult.allApplicants,
+      completed: batchResult.completed,
+      message: returnMessage
     };
   } catch (e) {
     throw new Error('Error generating unqualified PDFs: ' + e.message);
@@ -349,10 +343,19 @@ function unqualifiedRunCompleteProcess() {
   try {
     const folderIds = getUnqualifiedPositionFolder();
     const pdfResult = unqualifiedGeneratePDFs(folderIds.unqualifiedSubFolderId);
+    
+    let message = pdfResult.message || ('Generated ' + pdfResult.count + ' PDFs');
+    if (!pdfResult.completed) {
+      message = pdfResult.message + '\n\nStep 2 is still running. Click "Step 2 - Generate PDFs" again to continue processing remaining applicants.';
+    }
+    
     return {
       success: true,
       folders: folderIds,
-      pdfGeneration: pdfResult
+      pdfGeneration: {
+        ...pdfResult,
+        message: message
+      }
     };
   } catch (e) {
     throw new Error('Error in unqualified complete process: ' + e.message);

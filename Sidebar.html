@@ -911,14 +911,26 @@
         const generatedApplicants = (res && res.applicants) || (res && res.pdfGeneration && res.pdfGeneration.applicants) || [];
         const pdfCount = generatedApplicants.length;
         const lastApplicant = generatedApplicants.length > 0 ? generatedApplicants[generatedApplicants.length - 1] : '';
+        const isCompleted = (res && res.completed !== false) && (res && res.pdfGeneration && res.pdfGeneration.completed !== false);
         
         statusLabel.innerHTML = "✓ <span class='text-green-700 font-bold'>" + pdfCount + " PDF(s) generated</span>" +
           (lastApplicant ? '<br><span class="text-sm text-green-600">Last: ' + lastApplicant + '</span>' : '');
         statusLabel.className = "text-[10px] px-2 mt-2 font-semibold text-center text-green-600";
-        btn.innerHTML = '<i data-lucide="check-circle" class="w-4 h-4"></i> Complete';
-        btn.className = "group flex items-center justify-start gap-2 w-full py-2 px-2 bg-green-100 text-green-700 rounded-xl text-sm font-bold border border-green-200 cursor-default";
         
-        unlockNextStep(2); // Unlock Step 3
+        if (isCompleted) {
+          // All PDFs generated - show Complete and unlock step 3
+          btn.innerHTML = '<i data-lucide="check-circle" class="w-4 h-4"></i> Complete';
+          btn.className = "group flex items-center justify-start gap-2 w-full py-2 px-2 bg-green-100 text-green-700 rounded-xl text-sm font-bold border border-green-200 cursor-default";
+          btn.disabled = true;
+          unlockNextStep(2); // Unlock Step 3
+        } else {
+          // More PDFs to process - show Continue and keep enabled
+          btn.innerHTML = '<i data-lucide="repeat" class="w-4 h-4"></i> Continue Processing';
+          btn.className = "group flex items-center justify-start gap-2 w-full py-2 px-2 bg-blue-600 text-white rounded-xl text-sm font-bold shadow-md hover:bg-blue-700 transition cursor-pointer";
+          btn.disabled = false;
+          // Don't unlock step 3 yet
+        }
+        
         window.setProcessing(false);
         lucide.createIcons();
       })
@@ -1105,14 +1117,27 @@
         const generatedApplicants = (res && res.applicants) || (res && res.pdfGeneration && res.pdfGeneration.applicants) || [];
         const pdfCount = generatedApplicants.length;
         const lastApplicant = generatedApplicants.length > 0 ? generatedApplicants[generatedApplicants.length - 1] : '';
+        const isCompleted = (res && res.completed !== false) && (res && res.pdfGeneration && res.pdfGeneration.completed !== false);
         
         statusLabel.innerHTML = "✓ <span class='text-green-700 font-bold'>" + pdfCount + " PDF(s) generated</span>" +
           (lastApplicant ? '<br><span class="text-sm text-green-600">Last: ' + lastApplicant + '</span>' : '');
         statusLabel.className = 'text-[10px] mt-2 font-semibold text-center text-green-600';
-        btn.innerHTML = '<i data-lucide="check-circle" class="w-4 h-4"></i> Complete';
-        btn.className = 'group flex items-center justify-start gap-2 w-full py-2 bg-green-100 text-green-700 rounded-xl text-sm font-bold border border-green-200 cursor-default px-4';
-        setButtonEnabled(document.getElementById('openUnqualifiedFolderBtn'), true);
-        setButtonEnabled(document.getElementById('generateUnqualifiedLinksBtn'), false);
+        
+        if (isCompleted) {
+          // All PDFs generated - show Complete and unlock step 3
+          btn.innerHTML = '<i data-lucide="check-circle" class="w-4 h-4"></i> Complete';
+          btn.className = 'group flex items-center justify-start gap-2 w-full py-2 bg-green-100 text-green-700 rounded-xl text-sm font-bold border border-green-200 cursor-default px-4';
+          btn.disabled = true;
+          setButtonEnabled(document.getElementById('openUnqualifiedFolderBtn'), true);
+          setButtonEnabled(document.getElementById('generateUnqualifiedLinksBtn'), false);
+        } else {
+          // More PDFs to process - show Continue and keep enabled
+          btn.innerHTML = '<i data-lucide="repeat" class="w-4 h-4"></i> Continue Processing';
+          btn.className = 'group flex items-center justify-start gap-2 w-full py-2 px-4 bg-indigo-600 text-white rounded-xl text-sm font-bold shadow-md hover:bg-indigo-700 transition cursor-pointer';
+          btn.disabled = false;
+          // Don't unlock next step yet
+        }
+        
         window.setProcessing(false);
         lucide.createIcons();
       })
@@ -1520,14 +1545,26 @@ document.getElementById('runInterviewProcessBtn')?.addEventListener('click', fun
       const generatedApplicants = (res && res.applicants) || (res && res.pdfGeneration && res.pdfGeneration.applicants) || [];
       const pdfCount = generatedApplicants.length;
       const lastApplicant = generatedApplicants.length > 0 ? generatedApplicants[generatedApplicants.length - 1] : '';
+      const isCompleted = (res && res.completed !== false) && (res && res.pdfGeneration && res.pdfGeneration.completed !== false);
       
       statusLabel.innerHTML = "✓ <span class='text-green-700 font-bold'>" + pdfCount + " PDF(s) generated</span>" +
         (lastApplicant ? '<br><span class="text-sm text-green-600">Last: ' + lastApplicant + '</span>' : '');
       statusLabel.className = "text-[10px] px-2 mt-2 font-semibold text-center text-green-600";
-      btn.innerHTML = '<i data-lucide="check-circle" class="w-4 h-4"></i> Complete';
-      btn.className = "group flex items-center justify-start gap-2 w-full py-2 px-2 bg-green-100 text-green-700 rounded-xl text-sm font-bold border border-green-200 cursor-default";
       
-      unlockNextStep(16); 
+      if (isCompleted) {
+        // All PDFs generated - show Complete and unlock step 3
+        btn.innerHTML = '<i data-lucide="check-circle" class="w-4 h-4"></i> Complete';
+        btn.className = "group flex items-center justify-start gap-2 w-full py-2 px-2 bg-green-100 text-green-700 rounded-xl text-sm font-bold border border-green-200 cursor-default";
+        btn.disabled = true;
+        unlockNextStep(16);
+      } else {
+        // More PDFs to process - show Continue and keep enabled
+        btn.innerHTML = '<i data-lucide="repeat" class="w-4 h-4"></i> Continue Processing';
+        btn.className = "group flex items-center justify-start gap-2 w-full py-2 px-2 bg-green-600 text-white rounded-xl text-sm font-bold shadow-md hover:bg-green-700 transition cursor-pointer";
+        btn.disabled = false;
+        // Don't unlock next step yet
+      }
+      
       window.setProcessing(false);
       if (typeof lucide !== 'undefined') lucide.createIcons();
     })
@@ -1813,14 +1850,26 @@ document.getElementById('backupInterviewBtn')?.addEventListener('click', functio
         const generatedApplicants = (res && res.applicants) || (res && res.pdfGeneration && res.pdfGeneration.applicants) || [];
         const pdfCount = generatedApplicants.length;
         const lastApplicant = generatedApplicants.length > 0 ? generatedApplicants[generatedApplicants.length - 1] : '';
+        const isCompleted = (res && res.completed !== false) && (res && res.pdfGeneration && res.pdfGeneration.completed !== false);
         
         statusLabel.innerHTML = "✓ <span class='text-green-700 font-bold'>" + pdfCount + " PDF(s) generated</span>" +
           (lastApplicant ? '<br><span class="text-sm text-green-600">Last: ' + lastApplicant + '</span>' : '');
         statusLabel.className = 'text-[10px] mt-2 font-semibold text-center text-green-600';
-        btn.innerHTML = '<i data-lucide="check-circle" class="w-4 h-4"></i> Complete';
-        btn.className = 'group flex items-center justify-start gap-2 w-full py-2 px-2 bg-green-100 text-green-700 rounded-xl text-sm font-bold border border-green-200 cursor-default';
+        
+        if (isCompleted) {
+          // All PDFs generated - show Complete and unlock step 3
+          btn.innerHTML = '<i data-lucide="check-circle" class="w-4 h-4"></i> Complete';
+          btn.className = 'group flex items-center justify-start gap-2 w-full py-2 px-2 bg-green-100 text-green-700 rounded-xl text-sm font-bold border border-green-200 cursor-default';
+          btn.disabled = true;
+          unlockNextStep(2, 'failed-page');
+        } else {
+          // More PDFs to process - show Continue and keep enabled
+          btn.innerHTML = '<i data-lucide="repeat" class="w-4 h-4"></i> Continue Processing';
+          btn.className = 'group flex items-center justify-start gap-2 w-full py-2 px-2 bg-amber-600 text-white rounded-xl text-sm font-bold shadow-md hover:bg-amber-700 transition cursor-pointer';
+          btn.disabled = false;
+          // Don't unlock next step yet
+        }
 
-        unlockNextStep(2, 'failed-page');
         window.setProcessing(false);
         lucide.createIcons();
       })

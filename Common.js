@@ -276,3 +276,138 @@ function onEdit(e) {
   }
 }
 
+// ==========================================
+// BATCH PROCESSING SYSTEM FOR PDF GENERATION
+// ==========================================
+
+/**
+ * Initialize batch processing for PDF generation
+ */
+function initializeBatchProcessing(batchKey, totalRows) {
+  const props = PropertiesService.getDocumentProperties();
+  const state = {
+    batchKey: batchKey,
+    totalRows: totalRows,
+    currentIndex: 0,
+    completedCount: 0,
+    processedApplicants: [],
+    startTime: new Date().getTime(),
+    status: 'processing'
+  };
+  props.setProperty(batchKey + '_state', JSON.stringify(state));
+  return state;
+}
+
+/**
+ * Get current batch state
+ */
+function getBatchState(batchKey) {
+  const props = PropertiesService.getDocumentProperties();
+  const stateJson = props.getProperty(batchKey + '_state');
+  if (!stateJson) return null;
+  
+  try {
+    return JSON.parse(stateJson);
+  } catch (e) {
+    return null;
+  }
+}
+
+/**
+ * Update batch state
+ */
+function updateBatchState(batchKey, state) {
+  const props = PropertiesService.getDocumentProperties();
+  props.setProperty(batchKey + '_state', JSON.stringify(state));
+}
+
+/**
+ * Process a batch of PDFs with timeout protection
+ * Returns {completed: boolean, processed: number, applicants: array, message: string}
+ */
+function processPDFBatch(batchKey, rows, header, templateFile, destinationFolder, batchSize) {
+  let state = getBatchState(batchKey);
+  
+  if (!state) {
+    state = initializeBatchProcessing(batchKey, rows.length);
+  }
+
+  const startIndex = state.currentIndex;
+  const endIndex = Math.min(startIndex + batchSize, rows.length);
+  const startTime = new Date().getTime();
+  const timeLimit = 5 * 60 * 1000; // 5 minutes (1 minute buffer before 6-minute limit)
+
+  let processedInThisBatch = 0;
+  const newApplicants = [];
+
+  try {
+    for (let i = startIndex; i < endIndex; i++) {
+      const elapsedTime = new Date().getTime() - startTime;
+      if (elapsedTime > timeLimit) {
+        console.log('Time limit approaching, saving progress...');
+        break;
+      }
+
+      const row = rows[i];
+      const lastName = String(row[0] || "").trim();
+      const firstName = String(row[1] || "").trim();
+      const fileName = lastName + ", " + firstName;
+      
+      try {
+        // Create PDF
+        const copy = templateFile.makeCopy(fileName, destinationFolder);
+        const doc = DocumentApp.openById(copy.getId());
+        const body = doc.getBody();
+
+        header.forEach((label, j) => {
+          body.replaceText('{{' + label + '}}', row[j]);
+        });
+
+        doc.saveAndClose();
+        const pdfBlob = copy.getAs(MimeType.PDF);
+        const pdfFile = destinationFolder.createFile(pdfBlob).setName(fileName + ".pdf");
+        pdfFile.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+        copy.setTrashed(true);
+        
+        state.currentIndex = i + 1;
+        state.completedCount++;
+        state.processedApplicants.push(lastName + ', ' + firstName);
+        newApplicants.push(lastName + ', ' + firstName);
+        processedInThisBatch++;
+      } catch (itemError) {
+        console.log('Error processing ' + fileName + ': ' + itemError.message);
+        state.currentIndex = i + 1;
+      }
+    }
+  } catch (e) {
+    console.log('Batch processing error: ' + e.message);
+  }
+
+  const isCompleted = state.currentIndex >= rows.length;
+  
+  if (isCompleted) {
+    state.status = 'completed';
+  }
+
+  updateBatchState(batchKey, state);
+
+  return {
+    completed: isCompleted,
+    processed: processedInThisBatch,
+    totalProcessed: state.completedCount,
+    totalRows: rows.length,
+    applicants: newApplicants,
+    allApplicants: state.processedApplicants,
+    message: processedInThisBatch + ' applicants processed. Total: ' + state.completedCount + ' / ' + rows.length,
+    status: state.status
+  };
+}
+
+/**
+ * Clear batch state
+ */
+function clearBatchState(batchKey) {
+  const props = PropertiesService.getDocumentProperties();
+  props.deleteProperty(batchKey + '_state');
+}
+
