@@ -17,6 +17,7 @@ const FAILED = {
   COL_EMAIL_DATE: 13,        // Column M
   COL_LINK: 14,              // Column N
   COL_STATUS: 15,            // Column O
+  COL_REGENERATE: 16,         // Column P
   START_ROW: 2
 };
 
@@ -291,6 +292,87 @@ function failedSendEmails() {
   }
 
   return { status: 'Emails sent', count: emailCount };
+}
+
+function failedSendSelectedEmails() {
+  const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbyFPxd3UelHmFuh4fqQC7YPLpVk44rorubWx_My_0S2OV7Il4GlJC1wd7rq8aVKJKpKNg/exec';
+
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName(FAILED.SHEET_NAME);
+  if (!sheet) {
+    throw new Error('Sheet "' + FAILED.SHEET_NAME + '" not found.');
+  }
+
+  const lastRow = sheet.getLastRow();
+  if (lastRow < FAILED.START_ROW) {
+    return { status: 'No applicants found', count: 0 };
+  }
+
+  const data = sheet.getRange(FAILED.START_ROW, 1, lastRow - FAILED.START_ROW + 1, FAILED.COL_REGENERATE).getValues();
+  let emailCount = 0;
+  const now = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd HH:mm:ss');
+
+  for (let i = 0; i < data.length; i++) {
+    const row = data[i];
+    const regenerateVal = row[FAILED.COL_REGENERATE - 1];
+    const shouldSend = regenerateVal === true || String(regenerateVal).toLowerCase() === 'true';
+    if (!shouldSend) continue;
+
+    const applicantName = row[0];
+    const email = row[FAILED.COL_EMAIL - 1];
+    const driveLink = row[FAILED.COL_LINK - 1];
+    const position = row[6];
+    const office = row[7];
+    const statusCell = sheet.getRange(FAILED.START_ROW + i, FAILED.COL_STATUS);
+
+    if (!applicantName || applicantName.toString().trim() === '') {
+      statusCell.setValue('Not sent - missing name (' + now + ')');
+      sheet.getRange(FAILED.START_ROW + i, FAILED.COL_REGENERATE).setValue(false);
+      continue;
+    }
+
+    if (!email || email.toString().trim() === '' || !driveLink || driveLink.toString().trim() === '') {
+      statusCell.setValue('Not sent - missing email or link (' + now + ')');
+      sheet.getRange(FAILED.START_ROW + i, FAILED.COL_REGENERATE).setValue(false);
+      continue;
+    }
+
+    const subject = 'JOB APPLICATION UPDATE';
+    const body = 'Dear Applicant,\n\n' +
+      'Good day!\n\n' +
+      'Please see attached file regarding your application.\n\n' +
+      'Link: ' + driveLink + '\n\n' +
+      'Best regards,\n' +
+      'DOJ RPO V - Human Resource Unit';
+
+    const payload = {
+      recipient: email.toString().trim(),
+      cc: 'orp05.hiring@gmail.com',
+      replyTo: 'orp05.hiring@gmail.com',
+      subject: subject,
+      body: body
+    };
+
+    const options = {
+      method: 'post',
+      contentType: 'application/json',
+      payload: JSON.stringify(payload),
+      muteHttpExceptions: true
+    };
+
+    const response = UrlFetchApp.fetch(WEB_APP_URL, options);
+    if (response.getContentText() === 'Success') {
+      statusCell.setValue('Sent (re-sent) (' + now + ')');
+      // Log the sent letter using the reference from Column G and H
+      logSentLetter('LETTER - FAILED', position || '', office || '', applicantName || '');
+      emailCount++;
+      sheet.getRange(FAILED.START_ROW + i, FAILED.COL_REGENERATE).setValue(false);
+    } else {
+      statusCell.setValue('Error: Proxy failed (' + now + ')');
+    }
+  }
+
+  return { status: 'Selected emails processed', count: emailCount };
 }
 
 function failedGeneratePDFs(targetFolderId) {

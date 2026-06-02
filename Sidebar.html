@@ -28,6 +28,13 @@
       content: '';
       position: absolute;
       inset: 0;
+    }
+
+    button:disabled {
+      opacity: 0.5 !important;
+      cursor: not-allowed !important;
+      filter: grayscale(25%);
+    }
       border: 2px solid currentColor;
       border-radius: 12px;
       animation: borderLoad 2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
@@ -216,10 +223,10 @@
           
           <!-- Step 1: Validation (Active State) -->
           <div class="step-container flex items-start gap-3 relative">
-            <div class="bg-slate-600 text-white rounded-full w-8 h-8 flex items-center justify-center text-xs font-bold shrink-0 mt-0.5 z-10 shadow-sm">1</div>
+            <div class="bg-indigo-600 text-white rounded-full w-8 h-8 flex items-center justify-center text-xs font-bold shrink-0 mt-0.5 z-10 shadow-sm">1</div>
             <div class="flex-1">
-              <button id="validateColumnsBtn" class="group relative flex items-center justify-center gap-2 w-full py-2 px-2 bg-slate-600 text-white rounded-xl text-sm font-bold shadow-md active:scale-95 hover:bg-slate-700 transition">
-                <i data-lucide="check-circle" class="w-4 h-4"></i> Check Columns O-R
+              <button id="validateColumnsBtn" class="group relative flex items-center justify-center gap-2 w-full py-2 px-2 bg-indigo-600 text-white rounded-xl text-sm font-bold shadow-md active:scale-95 hover:bg-indigo-500 transition">
+                <i data-lucide="check-circle" class="w-4 h-4"></i> Check columns O-R
                 <span class="absolute bottom-[calc(100%+8px)] left-0 w-full hidden group-hover:block px-2 py-1 text-[10px] font-medium text-white bg-slate-600 rounded-lg shadow-md z-50 pointer-events-none text-center">
                   Ensure that Columns **O to R** in 'LETTER - EXAM SCHED' are completely filled out.
                   <span class="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-600"></span>
@@ -230,22 +237,30 @@
           </div>
 
           <!-- Step 2: Generation (Locked State Example) -->
-          <div class="step-container flex items-start gap-3 relative grayscale opacity-50">
-            <div id="circleStep2" class="bg-blue-600 text-white rounded-full w-8 h-8 flex items-center justify-center text-xs font-bold shrink-0 mt-0.5 z-10">2</div>
-            <div class="flex-1">
-              <button id="runProcessBtn" disabled class="group relative w-full py-2 px-2 bg-blue-600 text-white rounded-xl text-sm font-bold shadow-md flex items-center justify-center gap-2 cursor-not-allowed">
-                <i data-lucide="folder-plus" class="w-4 h-4"></i> Create & Generate
-                <span class="absolute bottom-[calc(100%+8px)] left-0 w-full hidden group-hover:block px-2 py-1 text-[10px] font-medium text-white bg-blue-600 rounded-lg shadow-md z-50 pointer-events-none text-center">
-                  Creates a Drive folder and generates PDF letters.
-                  <span class="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-blue-600"></span>
+          <div class="step-container flex flex-col gap-3 relative grayscale opacity-50">
+            <div class="flex items-center gap-3">
+              <div id="circleStep2" class="bg-blue-600 text-white rounded-full w-8 h-8 flex items-center justify-center text-xs font-bold shrink-0 mt-0.5 z-10">2</div>
+              <button id="runOptionsToggleBtn" disabled class="group relative flex items-center justify-between w-full py-2 px-3 bg-blue-600 text-white rounded-xl text-sm font-bold shadow-md hover:bg-blue-700 transition cursor-not-allowed">
+                <span class="flex items-center gap-2">
+                  <i data-lucide="user" class="w-4 h-4"></i>
+                  Generate Letters
                 </span>
+                <i data-lucide="chevron-down" id="runOptionsChevron" class="w-4 h-4 transition-transform duration-300"></i>
+              </button>
+            </div>
+            <div id="runOptionsPanel" class="hidden rounded-2xl border border-blue-100 bg-blue-50 p-3">
+              <button id="generateAllBtn" class="group relative w-full py-2 px-2 bg-blue-600 text-white rounded-xl text-sm font-bold shadow-md flex items-center justify-center gap-2 mb-3">
+                <i data-lucide="users" class="w-4 h-4"></i> Generate All
+              </button>
+              <button id="generateIndividualBtn" class="group relative w-full py-2 px-2 bg-blue-500 text-white rounded-xl text-sm font-bold shadow-md flex items-center justify-center gap-2">
+                <i data-lucide="user" class="w-4 h-4"></i> Generate Individual
               </button>
               <p id="step2Status" class="text-[10px] mt-2 font-semibold text-center text-blue-700"></p>
             </div>
           </div>
 
           <!-- Step 3: Folder Verification (Locked) -->
-          <div class="step-container flex items-start gap-3 relative grayscale opacity-50">
+          <div class="step-container hidden flex items-start gap-3 relative grayscale opacity-50">
             <div class="bg-amber-600 text-white rounded-full w-8 h-8 flex items-center justify-center text-xs font-bold shrink-0 mt-0.5 z-10">3</div>
             <div class="flex-1">
               <button id="openFolderBtn" disabled class="group relative w-full py-2 px-2 bg-amber-600 text-white rounded-xl text-sm font-bold shadow-md flex items-center justify-center gap-2 cursor-not-allowed">
@@ -260,7 +275,7 @@
           </div>
 
           <!-- Step 4: Link Insertion (Locked) -->
-          <div class="step-container flex items-start gap-3 relative grayscale opacity-50">
+          <div class="step-container hidden flex items-start gap-3 relative grayscale opacity-50">
             <div class="bg-green-600 text-white rounded-full w-8 h-8 flex items-center justify-center text-xs font-bold shrink-0 mt-0.5 z-10">4</div>
             <div class="flex-1">
               <button id="generateLinksBtn" disabled class="group relative w-full py-2 px-2 bg-green-600 text-white rounded-xl text-sm font-bold shadow-md flex items-center justify-center gap-2 cursor-not-allowed">
@@ -275,7 +290,7 @@
           </div>
 
           <!-- Step 5: Manual Alignment Check (Locked) -->
-          <div class="step-container flex items-start gap-3 relative grayscale opacity-50">
+          <div class="step-container hidden flex items-start gap-3 relative grayscale opacity-50">
             <div class="bg-purple-600 text-white rounded-full w-8 h-8 flex items-center justify-center text-xs font-bold shrink-0 mt-0.5 z-10">5</div>
             <div class="flex-1">
               <button id="verifyLinksBtn" disabled class="group relative w-full py-2 px-2 bg-purple-600 text-white rounded-xl text-sm font-bold shadow-md flex items-center justify-center gap-2 cursor-not-allowed">
@@ -293,21 +308,21 @@
           <!-- Step 6: Finalization (Locked) -->
           <div class="step-container flex flex-col gap-3 relative grayscale opacity-50">
             <div class="flex items-center gap-3">
-              <div class="bg-indigo-600 text-white rounded-full w-8 h-8 flex items-center justify-center text-xs font-bold shrink-0 mt-0.5 z-10">6</div>
+              <div class="bg-indigo-600 text-white rounded-full w-8 h-8 flex items-center justify-center text-xs font-bold shrink-0 mt-0.5 z-10">3</div>
               <button id="sendOptionsToggleBtn" disabled class="group relative flex items-center justify-between w-full py-2 px-3 bg-indigo-600 text-white rounded-xl text-sm font-bold shadow-md hover:bg-indigo-700 transition cursor-not-allowed">
                 <span class="flex items-center gap-2">
-                  <i data-lucide="send" class="w-4 h-4"></i>
+                  <i data-lucide="mail" class="w-4 h-4"></i>
                   Send Options
                 </span>
                 <i data-lucide="chevron-down" id="sendOptionsChevron" class="w-4 h-4 transition-transform duration-300"></i>
               </button>
             </div>
             <div id="sendOptionsPanel" class="hidden rounded-2xl border border-indigo-100 bg-indigo-50 p-3">
-              <button id="sendAllBtn" class="group relative w-full py-2 px-2 bg-indigo-600 text-white rounded-xl text-sm font-bold shadow-md flex items-center justify-center gap-2 mb-3">
-                <i data-lucide="send" class="w-4 h-4"></i> Send All
+              <button id="mail" class="group relative w-full py-2 px-2 bg-indigo-600 text-white rounded-xl text-sm font-bold shadow-md flex items-center justify-center gap-2 mb-3">
+                <i data-lucide="mails" class="w-4 h-4"></i> Send All
               </button>
               <button id="sendIndividualBtn" class="group relative w-full py-2 px-2 bg-indigo-500 text-white rounded-xl text-sm font-bold shadow-md flex items-center justify-center gap-2">
-                <i data-lucide="repeat" class="w-4 h-4"></i> Send Individual
+                <i data-lucide="mail" class="w-4 h-4"></i> Send Individual
               </button>
               <p id="step6Status" class="text-[10px] mt-2 font-semibold text-center"></p>
             </div>
@@ -315,7 +330,7 @@
 
           <!-- Step 7: Archive (Locked) -->
           <div class="step-container flex items-start gap-3 relative grayscale opacity-50">
-            <div class="bg-sky-600 text-white rounded-full w-8 h-8 flex items-center justify-center text-xs font-bold shrink-0 mt-0.5 z-10">7</div>
+            <div class="bg-sky-600 text-white rounded-full w-8 h-8 flex items-center justify-center text-xs font-bold shrink-0 mt-0.5 z-10">4</div>
             <div class="flex-1">
               <button id="backupExamBtn" disabled class="group relative w-full py-2 px-2 bg-sky-600 text-white rounded-xl text-sm font-bold shadow-md flex items-center justify-start gap-2 cursor-not-allowed">
                 <i data-lucide="archive" class="w-4 h-4"></i>
@@ -565,7 +580,7 @@
         <div class="bg-blue-600 text-white rounded-full w-8 h-8 flex items-center justify-center text-xs font-bold shrink-0 mt-0.5 z-10">2</div>
         <div class="flex-1">
           <button id="runInterviewProcessBtn" disabled class="group relative w-full py-2 px-2 bg-blue-600 text-white rounded-xl text-sm font-bold shadow-md flex items-center justify-center gap-2 cursor-not-allowed">
-            <i data-lucide="folder-plus" class="w-4 h-4"></i> Create & Generate
+            <i data-lucide="folder-plus" class="w-4 h-4"></i> Generate letters
             <span class="absolute bottom-[calc(100%+8px)] left-0 w-full hidden group-hover:block px-2 py-1 text-[10px] font-medium text-white bg-blue-600 rounded-lg shadow-md z-50 pointer-events-none text-center">
               Creates a Drive folder and generates PDF letters.
               <span class="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-blue-600"></span>
@@ -953,12 +968,31 @@
       .checkColumnsOtoR();
   });
 
-  // --- Step 2: Run Complete Process ---
-  document.getElementById('runProcessBtn')?.addEventListener('click', function() {
+  // --- Step 2: Run Options (Generate All or Individual) ---
+  document.getElementById('runOptionsToggleBtn')?.addEventListener('click', function() {
+    const panel = document.getElementById('runOptionsPanel');
+    const chevron = document.getElementById('runOptionsChevron');
+    if (!panel || !chevron) return;
+
+    const isHidden = panel.classList.contains('hidden');
+    if (isHidden) {
+      panel.classList.remove('hidden');
+      panel.classList.add('block');
+      chevron.classList.add('rotate-180');
+    } else {
+      panel.classList.add('hidden');
+      panel.classList.remove('block');
+      chevron.classList.remove('rotate-180');
+    }
+  });
+
+  document.getElementById('generateAllBtn')?.addEventListener('click', function() {
     const btn = this;
+    const otherBtn = document.getElementById('generateIndividualBtn');
     const statusLabel = document.getElementById('step2Status');
-    
+
     btn.disabled = true;
+    if (otherBtn) otherBtn.disabled = true;
     btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Processing...';
     lucide.createIcons();
     window.setProcessing(true);
@@ -970,30 +1004,92 @@
         const pdfCount = generatedApplicants.length;
         const lastApplicant = generatedApplicants.length > 0 ? generatedApplicants[generatedApplicants.length - 1] : '';
         const isCompleted = (res && res.completed !== false) && (res && res.pdfGeneration && res.pdfGeneration.completed !== false);
-        
+
         statusLabel.innerHTML = "✓ <span class='text-green-700 font-bold'>" + pdfCount + " PDF(s) generated</span>" +
           (lastApplicant ? '<br><span class="text-sm text-green-600">Last: ' + lastApplicant + '</span>' : '');
         statusLabel.className = "text-[10px] px-2 mt-2 font-semibold text-center text-green-600";
-        
+
+        // Append folder link
+        google.script.run
+          .withSuccessHandler((folderUrl) => {
+            if (folderUrl && statusLabel) {
+              statusLabel.innerHTML += '<br><a href="' + folderUrl + '" target="_blank" class="text-blue-600 hover:text-blue-800 underline">GO TO FOLDER</a>';
+            }
+          })
+          .getFolderUrl('forExam');
+
         if (isCompleted) {
-          // All PDFs generated - show Complete and unlock step 3
           btn.innerHTML = '<i data-lucide="check-circle" class="w-4 h-4"></i> Complete';
           btn.className = "group flex items-center justify-start gap-2 w-full py-2 px-2 bg-green-100 text-green-700 rounded-xl text-sm font-bold border border-green-200 cursor-default";
           btn.disabled = true;
-          unlockNextStep(2); // Unlock Step 3
+          unlockNextStep(5); // Unlock Step 6 directly
         } else {
-          // More PDFs to process - show Continue and keep enabled
           btn.innerHTML = '<i data-lucide="repeat" class="w-4 h-4"></i> Continue Processing';
           btn.className = "group flex items-center justify-start gap-2 w-full py-2 px-2 bg-blue-600 text-white rounded-xl text-sm font-bold shadow-md hover:bg-blue-700 transition cursor-pointer";
           btn.disabled = false;
-          // Don't unlock step 3 yet
         }
-        
+
+        window.setProcessing(false);
+        lucide.createIcons();
+      })
+      .withFailureHandler((err) => {
+        statusLabel.innerText = '❌ ' + err.message;
+        statusLabel.className = 'text-[10px] px-2 mt-2 font-semibold text-center text-red-600';
+        btn.disabled = false;
+        if (otherBtn) otherBtn.disabled = false;
+        btn.innerHTML = '<i data-lucide="layers" class="w-4 h-4"></i> Generate All';
         window.setProcessing(false);
         lucide.createIcons();
       })
       .runCompleteProcess();
-      
+  });
+
+  document.getElementById('generateIndividualBtn')?.addEventListener('click', function() {
+    const btn = this;
+    const otherBtn = document.getElementById('generateAllBtn');
+    const statusLabel = document.getElementById('step2Status');
+
+    btn.disabled = true;
+    if (otherBtn) otherBtn.disabled = true;
+    btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Generating...';
+    lucide.createIcons();
+    window.setProcessing(true);
+
+    google.script.run
+      .withSuccessHandler((res) => {
+        const pdfCount = (res && res.count) || 0;
+        const lastApplicant = (res && res.applicants && res.applicants.length > 0) ? res.applicants[res.applicants.length - 1] : '';
+        statusLabel.innerHTML = "✓ <span class='text-green-700 font-bold'>" + pdfCount + " PDF(s) generated</span>" +
+          (lastApplicant ? '<br><span class="text-sm text-green-600">Last: ' + lastApplicant + '</span>' : '');
+        statusLabel.className = "text-[10px] px-2 mt-2 font-semibold text-center text-green-600";
+        stepStatus.step2 = true;
+        unlockNextStep(5); // Unlock Send Options
+
+        // Append folder link
+        google.script.run
+          .withSuccessHandler((folderUrl) => {
+            if (folderUrl && statusLabel) {
+              statusLabel.innerHTML += '<br><a href="' + folderUrl + '" target="_blank" class="text-blue-600 hover:text-blue-800 underline">GO TO FOLDER</a>';
+            }
+          })
+          .getFolderUrl('forExam');
+
+        btn.innerHTML = '<i data-lucide="check-circle" class="w-4 h-4"></i> Generated';
+        btn.className = "group flex items-center justify-start gap-2 w-full py-2 px-2 bg-green-100 text-green-700 rounded-xl text-sm font-bold border border-green-200 cursor-default";
+        btn.disabled = true;
+        window.setProcessing(false);
+        lucide.createIcons();
+      })
+      .withFailureHandler((err) => {
+        statusLabel.innerText = '❌ ' + err.message;
+        statusLabel.className = 'text-[10px] px-2 mt-2 font-semibold text-center text-red-600';
+        btn.disabled = false;
+        if (otherBtn) otherBtn.disabled = false;
+        btn.innerHTML = '<i data-lucide="check-square" class="w-4 h-4"></i> Generate Individual';
+        window.setProcessing(false);
+        lucide.createIcons();
+      })
+      .forExamGenerateIndividualPDFs();
   });
 
   // --- Step 3: Open Folder ---
@@ -1109,9 +1205,11 @@
 
   document.getElementById('sendAllBtn')?.addEventListener('click', function() {
     const btn = this;
+    const otherBtn = document.getElementById('sendIndividualBtn');
     const statusLabel = document.getElementById('step6Status');
 
     btn.disabled = true;
+    if (otherBtn) otherBtn.disabled = true;
     btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Sending...';
     lucide.createIcons();
     window.setProcessing(true);
@@ -1135,6 +1233,7 @@
           statusLabel.className = "text-[10px] px-2 mt-2 font-semibold text-center text-red-600";
         }
         btn.disabled = false;
+        if (otherBtn) otherBtn.disabled = false;
         btn.innerHTML = '<i data-lucide="send" class="w-4 h-4"></i> Send All';
         window.setProcessing(false);
         lucide.createIcons();
@@ -1144,6 +1243,7 @@
 
   document.getElementById('sendIndividualBtn')?.addEventListener('click', function() {
     const btn = this;
+    const otherBtn = document.getElementById('sendAllBtn');
     const statusLabel = document.getElementById('step6Status');
 
     const confirmed = window.confirm('Are you sure you want to resend exam letters for only the checked applicants?');
@@ -1152,6 +1252,7 @@
     }
 
     btn.disabled = true;
+    if (otherBtn) otherBtn.disabled = true;
     btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Sending...';
     lucide.createIcons();
     window.setProcessing(true);
@@ -1175,6 +1276,7 @@
           statusLabel.className = 'text-[10px] px-2 mt-2 font-semibold text-center text-red-600';
         }
         btn.disabled = false;
+        if (otherBtn) otherBtn.disabled = false;
         btn.innerHTML = '<i data-lucide="repeat" class="w-4 h-4"></i> Send Individual';
         window.setProcessing(false);
         lucide.createIcons();
@@ -1407,7 +1509,7 @@
 
     // Reset Steps 2-7
     const stepsData = [
-      { btnId: 'runProcessBtn', statusId: 'step2Status', icon: 'folder-plus', text: 'Create & Generate', containerIndex: 1 },
+      { btnId: 'runOptionsToggleBtn', statusId: 'step2Status', icon: 'folder-plus', text: 'Create & Generate', containerIndex: 1 },
       { btnId: 'openFolderBtn', statusId: 'step3Status', icon: 'eye', text: 'Verify PDFs', containerIndex: 2 },
       { btnId: 'generateLinksBtn', statusId: 'step4Status', icon: 'link', text: 'Generate Links', containerIndex: 3 },
       { btnId: 'verifyLinksBtn', statusId: 'step5Status', icon: 'list-check', text: 'Verify File Alignment', containerIndex: 4 },

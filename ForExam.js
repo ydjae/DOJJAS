@@ -71,12 +71,12 @@ function forExamCreateFolders() {
     const parentFolderId = "16Os72EpQfNxY6mFLd78qWnqlKMB5ZS03";
     const ss = SpreadsheetApp.getActiveSpreadsheet();
     const sheet = ss.getSheetByName("SELECT POSITION");
-    
+
     if (!sheet) throw new Error("Sheet 'SELECT POSITION' not found.");
-    
+
     const position = sheet.getRange("B2").getValue();
     const assignedOffice = sheet.getRange("C2").getValue();
-    
+
     if (!position || position.toString().trim() === "") {
       throw new Error("Position (Cell B2) is empty.");
     }
@@ -88,20 +88,62 @@ function forExamCreateFolders() {
     const folderName = position + " - " + assignedOffice + " (" + dateStr + ")";
 
     const parentFolder = DriveApp.getFolderById(parentFolderId);
-    const mainFolder = parentFolder.createFolder(folderName);
-    const mainFolderId = mainFolder.getId();
-    
-    const forExamSubFolder = mainFolder.createFolder("For Exam");
-    const forExamSubFolderId = forExamSubFolder.getId();
-    
     const props = PropertiesService.getDocumentProperties();
-    props.setProperty('forExamMainFolderId', mainFolderId);
-    props.setProperty('forExamSubFolderId', forExamSubFolderId);
-    
+
+    let mainFolderId = props.getProperty('forExamMainFolderId');
+    let mainFolder = null;
+
+    if (mainFolderId) {
+      try {
+        const tempFolder = DriveApp.getFolderById(mainFolderId);
+        if (tempFolder.getName() === folderName) {
+          mainFolder = tempFolder;
+        }
+      } catch (e) {
+        mainFolder = null;
+      }
+    }
+
+    if (!mainFolder) {
+      const existingFolders = parentFolder.getFoldersByName(folderName);
+      if (existingFolders.hasNext()) {
+        mainFolder = existingFolders.next();
+      } else {
+        mainFolder = parentFolder.createFolder(folderName);
+      }
+      mainFolderId = mainFolder.getId();
+      props.setProperty('forExamMainFolderId', mainFolderId);
+    }
+
+    let forExamSubFolderId = props.getProperty('forExamSubFolderId');
+    let forExamSubFolder = null;
+
+    if (forExamSubFolderId) {
+      try {
+        const tempSubFolder = DriveApp.getFolderById(forExamSubFolderId);
+        if (tempSubFolder.getParents().hasNext() && tempSubFolder.getParents().next().getId() === mainFolderId) {
+          forExamSubFolder = tempSubFolder;
+        }
+      } catch (e) {
+        forExamSubFolder = null;
+      }
+    }
+
+    if (!forExamSubFolder) {
+      const existingSubFolders = mainFolder.getFoldersByName('For Exam');
+      if (existingSubFolders.hasNext()) {
+        forExamSubFolder = existingSubFolders.next();
+      } else {
+        forExamSubFolder = mainFolder.createFolder('For Exam');
+      }
+      forExamSubFolderId = forExamSubFolder.getId();
+      props.setProperty('forExamSubFolderId', forExamSubFolderId);
+    }
+
     return {
       mainFolderId: mainFolderId,
       forExamSubFolderId: forExamSubFolderId,
-      folderUrl: mainFolder.getUrl()
+      folderUrl: forExamSubFolder.getUrl()
     };
   } catch (e) {
     throw new Error('Error creating folders: ' + e.message);
@@ -120,13 +162,33 @@ function forExamGeneratePDFs(targetFolderId) {
     
     const data = sheet.getDataRange().getDisplayValues();
     const header = data[0];
-    const rows = data.slice(1).filter(row => row[FOR_EXAM.COL_TEMPLATE_COLS_START - 1] && row[FOR_EXAM.COL_TEMPLATE_COLS_START - 1].toString().trim() !== "");
-    
+    const rows = [];
+
+    for (let i = 1; i < data.length; i++) {
+      const row = data[i];
+      const rowIndex = FOR_EXAM.START_ROW + i - 1;
+      if (row[FOR_EXAM.COL_TEMPLATE_COLS_START - 1] && row[FOR_EXAM.COL_TEMPLATE_COLS_START - 1].toString().trim() !== "") {
+        rows.push({ row: row, rowIndex: rowIndex });
+      }
+    }
+
+    if (rows.length === 0) {
+      return {
+        success: true,
+        count: 0,
+        applicants: [],
+        completed: true,
+        message: 'No eligible rows found for PDF generation.'
+      };
+    }
+
     rows.sort((a, b) => {
-      const lastNameA = String(a[0] || "").trim().toLowerCase();
-      const lastNameB = String(b[0] || "").trim().toLowerCase();
+      const lastNameA = String(a.row[0] || "").trim().toLowerCase();
+      const lastNameB = String(b.row[0] || "").trim().toLowerCase();
       if (lastNameA !== lastNameB) return lastNameA.localeCompare(lastNameB);
-      return String(a[1] || "").trim().toLowerCase().localeCompare(String(b[1] || "").trim().toLowerCase());
+      const firstNameA = String(a.row[1] || "").trim().toLowerCase();
+      const firstNameB = String(b.row[1] || "").trim().toLowerCase();
+      return firstNameA.localeCompare(firstNameB);
     });
     
     const templateFile = DriveApp.getFileById(FOR_EXAM.TEMPLATE_ID);
@@ -134,7 +196,7 @@ function forExamGeneratePDFs(targetFolderId) {
     
     // Use batch processing with key for For Exam
     const batchKey = 'forExam_pdf_generation_' + SpreadsheetApp.getActiveSpreadsheet().getId();
-    const batchResult = processPDFBatch(batchKey, rows, header, templateFile, destinationFolder, 20); // Process 20 at a time
+    const batchResult = processForExamPDFBatch(batchKey, rows, header, templateFile, destinationFolder, 20, sheet);
 
     let returnMessage = batchResult.message;
     
@@ -156,6 +218,186 @@ function forExamGeneratePDFs(targetFolderId) {
     };
   } catch (e) {
     throw new Error('Error generating PDFs: ' + e.message);
+  }
+}
+
+function processForExamPDFBatch(batchKey, rows, header, templateFile, destinationFolder, batchSize, sheet) {
+  let state = getBatchState(batchKey);
+
+  if (!state) {
+    state = initializeBatchProcessing(batchKey, rows.length);
+  }
+
+  const startIndex = state.currentIndex;
+  const endIndex = Math.min(startIndex + batchSize, rows.length);
+  const startTime = new Date().getTime();
+  const timeLimit = 5 * 60 * 1000;
+
+  let processedInThisBatch = 0;
+  const newApplicants = [];
+
+  try {
+    for (let i = startIndex; i < endIndex; i++) {
+      const elapsedTime = new Date().getTime() - startTime;
+      if (elapsedTime > timeLimit) {
+        console.log('Time limit approaching, saving progress...');
+        break;
+      }
+
+      const rowObj = rows[i];
+      const row = rowObj.row;
+      const rowIndex = rowObj.rowIndex;
+      const lastName = String(row[0] || "").trim();
+      const firstName = String(row[1] || "").trim();
+      const fileName = lastName + ", " + firstName;
+
+      try {
+        const copy = templateFile.makeCopy(fileName, destinationFolder);
+        const doc = DocumentApp.openById(copy.getId());
+        const body = doc.getBody();
+
+        header.forEach((label, j) => {
+          body.replaceText('{{' + label + '}}', row[j]);
+        });
+
+        doc.saveAndClose();
+        const pdfBlob = copy.getAs(MimeType.PDF);
+        const pdfFile = destinationFolder.createFile(pdfBlob).setName(fileName + ".pdf");
+        pdfFile.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+        copy.setTrashed(true);
+
+        const pdfUrl = pdfFile.getUrl();
+        sheet.getRange(rowIndex, FOR_EXAM.COL_EXAM_LINK).setValue(pdfUrl);
+
+        state.currentIndex = i + 1;
+        state.completedCount++;
+        state.processedApplicants.push(lastName + ', ' + firstName);
+        newApplicants.push(lastName + ', ' + firstName);
+        processedInThisBatch++;
+      } catch (itemError) {
+        console.log('Error processing ' + fileName + ': ' + itemError.message);
+        state.currentIndex = i + 1;
+      }
+    }
+  } catch (e) {
+    console.log('Batch processing error: ' + e.message);
+  }
+
+  const isCompleted = state.currentIndex >= rows.length;
+  if (isCompleted) {
+    state.status = 'completed';
+  }
+
+  updateBatchState(batchKey, state);
+
+  return {
+    completed: isCompleted,
+    processed: processedInThisBatch,
+    totalProcessed: state.completedCount,
+    totalRows: rows.length,
+    applicants: newApplicants,
+    allApplicants: state.processedApplicants,
+    message: processedInThisBatch + ' applicants processed. Total: ' + state.completedCount + ' / ' + rows.length,
+    status: state.status
+  };
+}
+
+/**
+ * Generate PDFs only for rows with the REGENERATE checkbox checked (Column U).
+ * Writes the Drive PDF link to Column S immediately. Does NOT clear the checkbox.
+ */
+function forExamGenerateIndividualPDFs() {
+  try {
+    const props = PropertiesService.getDocumentProperties();
+    let folderId = props.getProperty('forExamSubFolderId');
+    let destinationFolder = null;
+
+    if (folderId) {
+      try {
+        destinationFolder = DriveApp.getFolderById(folderId);
+      } catch (folderError) {
+        console.log('Stored For Exam subfolder ID invalid. Recreating folder: ' + folderError.message);
+        const created = forExamCreateFolders();
+        folderId = created.forExamSubFolderId;
+        destinationFolder = DriveApp.getFolderById(folderId);
+      }
+    }
+
+    if (!destinationFolder) {
+      const created = forExamCreateFolders();
+      folderId = created.forExamSubFolderId;
+      destinationFolder = DriveApp.getFolderById(folderId);
+    }
+
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const sheet = ss.getSheetByName(FOR_EXAM.SHEET_NAME);
+    if (!sheet) throw new Error('Sheet "' + FOR_EXAM.SHEET_NAME + '" not found.');
+
+    const data = sheet.getDataRange().getDisplayValues();
+    const header = data[0] || [];
+    const rowsToProcess = [];
+
+    for (let i = 1; i < data.length; i++) {
+      const row = data[i];
+      const rowIndex = FOR_EXAM.START_ROW + i - 1;
+      const regenerateVal = row[FOR_EXAM.COL_REGENERATE - 1];
+      const shouldProcess = regenerateVal === true || String(regenerateVal).toLowerCase() === 'true';
+      if (!shouldProcess) continue;
+      if (!row[FOR_EXAM.COL_TEMPLATE_COLS_START - 1] || row[FOR_EXAM.COL_TEMPLATE_COLS_START - 1].toString().trim() === '') continue;
+      rowsToProcess.push({ row: row, rowIndex: rowIndex });
+    }
+
+    if (rowsToProcess.length === 0) {
+      return { success: true, count: 0, applicants: [] };
+    }
+
+    let templateFile;
+    try {
+      templateFile = DriveApp.getFileById(FOR_EXAM.TEMPLATE_ID);
+    } catch (idError) {
+      throw new Error('Error loading template file: ' + idError.message + '. Please verify FOR_EXAM.TEMPLATE_ID is a valid, accessible Google Docs template.');
+    }
+    if (templateFile.getMimeType() !== MimeType.GOOGLE_DOCS) {
+      throw new Error('Template file is not a Google Doc. Please use a Google Docs template for FOR EXAM letters.');
+    }
+
+    const processed = [];
+
+    for (let k = 0; k < rowsToProcess.length; k++) {
+      const rowObj = rowsToProcess[k];
+      const row = rowObj.row;
+      const rowIndex = rowObj.rowIndex;
+      const lastName = String(row[FOR_EXAM.COL_LAST_NAME - 1] || "").trim();
+      const firstName = String(row[FOR_EXAM.COL_FIRST_NAME - 1] || "").trim();
+      const fileName = (lastName || 'Applicant') + (firstName ? (', ' + firstName) : '');
+
+      try {
+        const copy = templateFile.makeCopy(fileName, destinationFolder);
+        const doc = DocumentApp.openById(copy.getId());
+        const body = doc.getBody();
+
+        header.forEach((label, j) => {
+          body.replaceText('{{' + label + '}}', row[j]);
+        });
+
+        doc.saveAndClose();
+        const pdfBlob = copy.getAs(MimeType.PDF);
+        const pdfFile = destinationFolder.createFile(pdfBlob).setName(fileName + ".pdf");
+        pdfFile.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+        copy.setTrashed(true);
+
+        const pdfUrl = pdfFile.getUrl();
+        sheet.getRange(rowIndex, FOR_EXAM.COL_EXAM_LINK).setValue(pdfUrl);
+
+        processed.push(lastName + (firstName ? (', ' + firstName) : ''));
+      } catch (itemError) {
+        console.log('Error generating individual PDF for row ' + rowIndex + ': ' + itemError.message);
+      }
+    }
+
+    return { success: true, count: processed.length, applicants: processed };
+  } catch (e) {
+    throw new Error('Error generating individual PDFs: ' + e.message);
   }
 }
 

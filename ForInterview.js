@@ -13,6 +13,7 @@ const FOR_INTERVIEW = {
   COL_TEMPLATE_COLS_END: 18,   // Column R
   COL_INTERVIEW_LINK: 19,      // Column S
   COL_INTERVIEW_PROGRESS: 20,  // Column T
+  COL_REGENERATE: 21,          // Column U
   START_ROW: 2
 };
 
@@ -397,6 +398,171 @@ function forInterviewSendEmails() {
     return { status: 'Emails sent', count: emailCount };
   } catch (e) {
     throw new Error('Error sending email notifications: ' + e.message);
+  }
+}
+
+function forInterviewGenerateIndividualPDFs() {
+  try {
+    const props = PropertiesService.getDocumentProperties();
+    let folderId = props.getProperty('forInterviewSubFolderId');
+    let destinationFolder = null;
+
+    if (folderId) {
+      try {
+        destinationFolder = DriveApp.getFolderById(folderId);
+      } catch (folderError) {
+        const created = forInterviewCreateFolders();
+        folderId = created.forInterviewSubFolderId;
+        destinationFolder = DriveApp.getFolderById(folderId);
+      }
+    }
+
+    if (!destinationFolder) {
+      const created = forInterviewCreateFolders();
+      folderId = created.forInterviewSubFolderId;
+      destinationFolder = DriveApp.getFolderById(folderId);
+    }
+
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const sheet = ss.getSheetByName(FOR_INTERVIEW.SHEET_NAME);
+    if (!sheet) throw new Error('Sheet "' + FOR_INTERVIEW.SHEET_NAME + '" not found.');
+
+    const data = sheet.getDataRange().getDisplayValues();
+    const header = data[0] || [];
+    const rowsToProcess = [];
+
+    for (let i = 1; i < data.length; i++) {
+      const row = data[i];
+      const rowIndex = FOR_INTERVIEW.START_ROW + i - 1;
+      const regenerateVal = row[FOR_INTERVIEW.COL_REGENERATE - 1];
+      const shouldProcess = regenerateVal === true || String(regenerateVal).toLowerCase() === 'true';
+      if (!shouldProcess) continue;
+      if (!row[FOR_INTERVIEW.COL_TEMPLATE_COLS_START - 1] || row[FOR_INTERVIEW.COL_TEMPLATE_COLS_START - 1].toString().trim() === '') continue;
+      rowsToProcess.push({ row: row, rowIndex: rowIndex });
+    }
+
+    if (rowsToProcess.length === 0) {
+      return { success: true, count: 0, applicants: [] };
+    }
+
+    const templateFile = DriveApp.getFileById(FOR_INTERVIEW.TEMPLATE_ID);
+    const processed = [];
+
+    rowsToProcess.forEach((rowObj) => {
+      const row = rowObj.row;
+      const rowIndex = rowObj.rowIndex;
+      const lastName = String(row[FOR_INTERVIEW.COL_LAST_NAME - 1] || '').trim();
+      const firstName = String(row[FOR_INTERVIEW.COL_FIRST_NAME - 1] || '').trim();
+      const fileName = (lastName || 'Applicant') + (firstName ? (', ' + firstName) : '');
+
+      try {
+        const copy = templateFile.makeCopy(fileName, destinationFolder);
+        const doc = DocumentApp.openById(copy.getId());
+        const body = doc.getBody();
+
+        header.forEach((label, j) => {
+          body.replaceText('{{' + label + '}}', row[j]);
+        });
+
+        doc.saveAndClose();
+        const pdfBlob = copy.getAs(MimeType.PDF);
+        const pdfFile = destinationFolder.createFile(pdfBlob).setName(fileName + '.pdf');
+        pdfFile.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+        copy.setTrashed(true);
+
+        const pdfUrl = pdfFile.getUrl();
+        sheet.getRange(rowIndex, FOR_INTERVIEW.COL_INTERVIEW_LINK).setValue(pdfUrl);
+        processed.push(fileName);
+      } catch (itemError) {
+        console.log('Error generating interview PDF for row ' + rowIndex + ': ' + itemError.message);
+      }
+    });
+
+    return { success: true, count: processed.length, applicants: processed };
+  } catch (e) {
+    throw new Error('Error generating individual interview PDFs: ' + e.message);
+  }
+}
+
+function forInterviewSendSelectedEmails() {
+  const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyFPxd3UelHmFuh4fqQC7YPLpVk44rorubWx_My_0S2OV7Il4GlJC1wd7rq8aVKJKpKNg/exec";
+
+  try {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const sheet = ss.getSheetByName(FOR_INTERVIEW.SHEET_NAME);
+    if (!sheet) throw new Error('Sheet "' + FOR_INTERVIEW.SHEET_NAME + '" not found.');
+
+    const lastRow = sheet.getLastRow();
+    if (lastRow < FOR_INTERVIEW.START_ROW) {
+      return { status: 'No applicants found', count: 0 };
+    }
+
+    const data = sheet.getRange(FOR_INTERVIEW.START_ROW, 1, lastRow - FOR_INTERVIEW.START_ROW + 1, FOR_INTERVIEW.COL_REGENERATE).getValues();
+    let emailCount = 0;
+    const now = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd HH:mm:ss');
+
+    for (let i = 0; i < data.length; i++) {
+      const row = data[i];
+      const regenerateVal = row[FOR_INTERVIEW.COL_REGENERATE - 1];
+      const shouldSend = regenerateVal === true || String(regenerateVal).toLowerCase() === 'true';
+      if (!shouldSend) continue;
+
+      const applicantName = row[0];
+      const email = row[FOR_INTERVIEW.COL_EMAIL - 1];
+      const driveLink = row[FOR_INTERVIEW.COL_INTERVIEW_LINK - 1];
+      const position = row[7];
+      const office = row[8];
+      const statusCell = sheet.getRange(FOR_INTERVIEW.START_ROW + i, FOR_INTERVIEW.COL_INTERVIEW_PROGRESS);
+
+      if (!applicantName || applicantName.toString().trim() === '') {
+        statusCell.setValue('Not sent - missing name (' + now + ')');
+        sheet.getRange(FOR_INTERVIEW.START_ROW + i, FOR_INTERVIEW.COL_REGENERATE).setValue(false);
+        continue;
+      }
+
+      if (!email || email.toString().trim() === '' || !driveLink || driveLink.toString().trim() === '') {
+        statusCell.setValue('Not sent - missing email or link (' + now + ')');
+        sheet.getRange(FOR_INTERVIEW.START_ROW + i, FOR_INTERVIEW.COL_REGENERATE).setValue(false);
+        continue;
+      }
+
+      const subject = 'JOB APPLICATION UPDATE - NOTICE OF INTERVIEW';
+      const body = 'Dear Applicant,\n\n' +
+        'Good day!\n\n' +
+        'Congratulations! You have passed the written examination and have been selected to proceed to the interview stage.\n\n' +
+        'Link: ' + driveLink + '\n\n' +
+        'Please arrive at the interview site 5-10 minutes early. We look forward to meeting you!\n\n' +
+        'Best regards,\nDOJ RPO V - Human Resource Unit';
+
+      const payload = {
+        recipient: email.toString().trim(),
+        cc: 'orp05.hiring@gmail.com',
+        replyTo: 'orp05.hiring@gmail.com',
+        subject: subject,
+        body: body
+      };
+
+      const options = {
+        method: 'post',
+        contentType: 'application/json',
+        payload: JSON.stringify(payload),
+        muteHttpExceptions: true
+      };
+
+      const response = UrlFetchApp.fetch(WEB_APP_URL, options);
+      if (response.getContentText() === 'Success') {
+        statusCell.setValue('Sent (re-sent) (' + now + ')');
+        logSentLetter('LETTER - FOR INTERVIEW', position || '', office || '', applicantName || '');
+        emailCount++;
+        sheet.getRange(FOR_INTERVIEW.START_ROW + i, FOR_INTERVIEW.COL_REGENERATE).setValue(false);
+      } else {
+        statusCell.setValue('Error: Proxy failed (' + now + ')');
+      }
+    }
+
+    return { status: 'Selected emails processed', count: emailCount };
+  } catch (e) {
+    throw new Error('Error sending selected interview emails: ' + e.message);
   }
 }
 

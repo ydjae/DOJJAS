@@ -11,6 +11,7 @@ const UNQUALIFIED = {
   COL_REASON: 10,
   COL_LINK: 16, // Column P
   COL_STATUS: 17, // Column Q
+  COL_REGENERATE: 19, // Column S
   START_ROW: 2
 };
 
@@ -347,6 +348,92 @@ function unqualifiedSendEmails() {
     }
 
     return { status: 'Emails sent', count: emailCount };
+  } catch (e) {
+    throw new Error('Error sending email notifications: ' + e.message);
+  }
+}
+
+function unqualifiedSendSelectedEmails() {
+  const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyFPxd3UelHmFuh4fqQC7YPLpVk44rorubWx_My_0S2OV7Il4GlJC1wd7rq8aVKJKpKNg/exec";
+
+  try {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const sheet = ss.getSheetByName(UNQUALIFIED.SHEET_NAME);
+    if (!sheet) throw new Error('Sheet "' + UNQUALIFIED.SHEET_NAME + '" not found.');
+
+    const lastRow = sheet.getLastRow();
+    if (lastRow < UNQUALIFIED.START_ROW) {
+      return { status: 'No applicants found', count: 0 };
+    }
+
+    const data = sheet.getRange(UNQUALIFIED.START_ROW, 1, lastRow - UNQUALIFIED.START_ROW + 1, UNQUALIFIED.COL_REGENERATE).getValues();
+    let emailCount = 0;
+    const now = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd HH:mm:ss');
+
+    for (let i = 0; i < data.length; i++) {
+      const row = data[i];
+      const regenerateVal = row[UNQUALIFIED.COL_REGENERATE - 1];
+      const shouldSend = regenerateVal === true || String(regenerateVal).toLowerCase() === 'true';
+      if (!shouldSend) continue;
+
+      const applicantName = row[0];
+      const email = row[UNQUALIFIED.COL_EMAIL - 1];
+      const driveLink = row[UNQUALIFIED.COL_LINK - 1];
+      const position = row[7];
+      const office = row[8];
+      const statusCell = sheet.getRange(UNQUALIFIED.START_ROW + i, UNQUALIFIED.COL_STATUS);
+
+      if (!applicantName || applicantName.toString().trim() === '') {
+        statusCell.setValue('Not sent - missing name (' + now + ')');
+        sheet.getRange(UNQUALIFIED.START_ROW + i, UNQUALIFIED.COL_REGENERATE).setValue(false);
+        continue;
+      }
+
+      if (!email || email.toString().trim() === '' || !driveLink || driveLink.toString().trim() === '') {
+        statusCell.setValue('Not sent - missing email or link (' + now + ')');
+        sheet.getRange(UNQUALIFIED.START_ROW + i, UNQUALIFIED.COL_REGENERATE).setValue(false);
+        continue;
+      }
+
+      const subject = 'JOB APPLICATION UPDATE';
+      const body = 'Dear Applicant,\n\n' +
+        'Good day!\n\n' +
+        'Please see attached file regarding your application.\n\n' +
+        'Link: ' + driveLink;
+
+      const payload = {
+        recipient: email.toString().trim(),
+        cc: 'orp05.hiring@gmail.com',
+        replyTo: 'orp05.hiring@gmail.com',
+        subject: subject,
+        body: body
+      };
+
+      const options = {
+        method: 'post',
+        contentType: 'application/json',
+        payload: JSON.stringify(payload),
+        muteHttpExceptions: true
+      };
+
+      const response = UrlFetchApp.fetch(WEB_APP_URL, options);
+      if (response.getContentText() === 'Success') {
+        statusCell.setValue('Sent (re-sent) (' + now + ')');
+        logSentLetter('LETTER - DQ', position || '', office || '', applicantName || '');
+        emailCount++;
+        sheet.getRange(UNQUALIFIED.START_ROW + i, UNQUALIFIED.COL_REGENERATE).setValue(false);
+      } else {
+        statusCell.setValue('Error: Proxy failed (' + now + ')');
+      }
+    }
+
+    return { status: 'Selected emails processed', count: emailCount };
+  } catch (e) {
+    throw new Error('Error sending selected emails: ' + e.message);
+  }
+}
+
+function unqualifiedRunCompleteProcess() {
   } catch (e) {
     throw new Error('Error sending email notifications: ' + e.message);
   }
