@@ -78,8 +78,21 @@
   <!-- Landing Page -->
   <div id="landingPage" class="bg-white border border-gray-300 rounded-xl p-4 shadow-lg w-full max-w-md mx-auto flex flex-col">
     <div class="w-full text-center">
+      
+      <header class="flex items-center justify-center bg-gradient-to-r from-blue-700 via-blue-800 to-indigo-900 text-white px-4 py-4 border-b border-blue-900 shadow-md shrink-0 rounded-2xl">
+        <div class="flex items-center gap-3">
+          <div class="flex-shrink-0">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/7/79/Department_of_Justice_%28DOJ%29.svg" class="w-14 h-14 "></i>
+          </div>
+          <div class="flex flex-col items-start border-1 border-white px-3 py-1 rounded-md">
+            <h1 class="text-sm font-black tracking-wider uppercase text-blue-100">DOJ RPO V</h1>
+            <p class="text-start text-xs text-slate-300 font-medium">Recruitment Process Automation</p>
+          </div>
+        </div>
+      </header>
+      <br/>
       <h2 class="text-xl font-semibold mb-2 text-gray-900">ACTIONS</h2>
-      <p class="text-xs italic text-gray-600 mb-4">Select an action to be performed</p>
+      <p class="text-xs italic text-gray-600 mb-4">Select an action to be performed.</p>
       
       <div class="flex flex-col gap-3">
 
@@ -159,6 +172,21 @@
         </div>
       </button>
 
+      <button id="summaryToolsBtn" class="group flex flex-col w-full px-4 py-3 bg-[#6366f1] hover:bg-indigo-600 text-white rounded-[24px] transition-colors duration-300 ease-in-out shadow-sm hover:shadow-md border-none outline-none">
+        <div class="flex items-center w-full">
+          <i data-lucide="list-check" class="w-5 h-5 mr-3 flex-shrink-0"></i>
+          <span class="font-semibold text-sm flex-1 text-left">Summary Tools</span>
+          <i data-lucide="chevron-right" class="w-4 h-4 transition-transform duration-300 group-hover:rotate-90"></i>
+        </div>
+        <div class="grid grid-rows-[0fr] transition-[grid-template-rows] duration-300 ease-in-out group-hover:grid-rows-[1fr]">
+          <div class="overflow-hidden">
+            <p class="pt-2 text-xs text-blue-100 opacity-0 transition-opacity duration-300 delay-100 group-hover:opacity-100 text-white text-left">
+              Generate summary and sort applicants based on the status of their application.
+            </p>
+          </div>
+        </div>
+      </button>
+
       </div>
     </div>
   </div>
@@ -166,10 +194,10 @@
   
 <!-- FOR EXAM SECTION -->
 <div id="forExamPage" class="hidden bg-white border border-gray-300 rounded-xl p-6 shadow-xl w-full max-w-md mx-auto">
-      <div class="flex items-center mb-6">
+      <div class="flex items-center mb-6 rounded-2xl px-4 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white shrink-0">
         <!-- Added 'relative' here -->
-        <button id="backBtn" class="group relative p-2 bg-gray-100 mr-2 hover:bg-black rounded-lg transition-colors duration-300 ease-in-out">
-          <i data-lucide="chevron-left" class="w-5 h-5 text-gray-500 group-hover:text-white transition-colors"></i>
+        <button id="backBtn" class="group relative p-2 bg-blue-600 mr-2 hover:bg-white rounded-2xl transition-colors duration-300 ease-in-out">
+          <i data-lucide="chevron-left" class="w-6 h-6 text-gray-500 text-white group-hover:text-black transition-colors"></i>
           
           <!-- Tooltip -->
           <span class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block px-2 py-1 text-[10px] font-medium text-white bg-gray-800 rounded shadow-sm whitespace-nowrap z-50">
@@ -178,7 +206,7 @@
             <span class="absolute top-full left-1/2 -translate-x-1/2 -mt-1 border-4 border-transparent border-t-gray-800"></span>
           </span>
         </button>
-        <h2 class="text-md font-bold text-gray-900 tracking-tight">FOR EXAMINATION | Generate Letters & Send Emails</h2>
+        <h2 class="text-xs font-bold text-white-900 tracking-tight">FOR EXAMINATION | <br/>Generate & Send Letters</h2>
       </div>
 
 
@@ -263,17 +291,24 @@
           </div>
 
           <!-- Step 6: Finalization (Locked) -->
-          <div class="step-container flex items-start gap-3 relative grayscale opacity-50">
-            <div class="bg-indigo-600 text-white rounded-full w-8 h-8 flex items-center justify-center text-xs font-bold shrink-0 mt-0.5 z-10">6</div>
-            <div class="flex-1">
-              <button id="sendExamBtn" disabled class="group relative w-full py-2 px-2 bg-indigo-600 text-white rounded-xl text-sm font-bold shadow-md flex items-center justify-center gap-2 cursor-not-allowed">
-                <i data-lucide="send" class="w-4 h-4"></i> Send Emails
-                <span class="absolute bottom-[calc(100%+8px)] left-0 w-full hidden group-hover:block px-2 py-1 text-[10px] font-medium text-white bg-purple-600 rounded-lg shadow-md z-50 pointer-events-none text-center">
-                  Double check everything before sending out emails to applicants.
-                  <span class="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-purple-600"></span>
+          <div class="step-container flex flex-col gap-3 relative grayscale opacity-50">
+            <div class="flex items-center gap-3">
+              <div class="bg-indigo-600 text-white rounded-full w-8 h-8 flex items-center justify-center text-xs font-bold shrink-0 mt-0.5 z-10">6</div>
+              <button id="sendOptionsToggleBtn" disabled class="group relative flex items-center justify-between w-full py-2 px-3 bg-indigo-600 text-white rounded-xl text-sm font-bold shadow-md hover:bg-indigo-700 transition cursor-not-allowed">
+                <span class="flex items-center gap-2">
+                  <i data-lucide="send" class="w-4 h-4"></i>
+                  Send Options
                 </span>
+                <i data-lucide="chevron-down" id="sendOptionsChevron" class="w-4 h-4 transition-transform duration-300"></i>
               </button>
-              <!-- Add the status label here -->
+            </div>
+            <div id="sendOptionsPanel" class="hidden rounded-2xl border border-indigo-100 bg-indigo-50 p-3">
+              <button id="sendAllBtn" class="group relative w-full py-2 px-2 bg-indigo-600 text-white rounded-xl text-sm font-bold shadow-md flex items-center justify-center gap-2 mb-3">
+                <i data-lucide="send" class="w-4 h-4"></i> Send All
+              </button>
+              <button id="sendIndividualBtn" class="group relative w-full py-2 px-2 bg-indigo-500 text-white rounded-xl text-sm font-bold shadow-md flex items-center justify-center gap-2">
+                <i data-lucide="repeat" class="w-4 h-4"></i> Send Individual
+              </button>
               <p id="step6Status" class="text-[10px] mt-2 font-semibold text-center"></p>
             </div>
           </div>
@@ -330,15 +365,15 @@
 
   <!-- UNQUALIFIED PAGE -->
   <div id="unqualified-page" class="hidden bg-white border border-gray-300 rounded-xl p-6 shadow-xl w-full max-w-md mx-auto">
-    <div class="flex items-center mb-6">
-      <button id="backBtnUnqualified" class="group relative p-2 bg-gray-100 mr-2 hover:bg-black rounded-lg transition-colors duration-300 ease-in-out">
-        <i data-lucide="chevron-left" class="w-5 h-5 text-gray-500 group-hover:text-white transition-colors"></i>
+    <div class="flex items-center mb-6 rounded-2xl px-4 py-3 bg-gradient-to-r from-red-600 to-rose-600 text-white shrink-0">
+      <button id="backBtnUnqualified" class="group relative p-2 bg-red-500 mr-2 hover:bg-white rounded-lg transition-colors duration-300 ease-in-out">
+        <i data-lucide="chevron-left" class="w-5 h-5 text-white-500 group-hover:text-black transition-colors"></i>
         <span class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block px-2 py-1 text-[10px] font-medium text-white bg-gray-800 rounded shadow-sm whitespace-nowrap z-50">
           Go Back
           <span class="absolute top-full left-1/2 -translate-x-1/2 -mt-1 border-4 border-transparent border-t-gray-800"></span>
         </span>
       </button>
-      <h2 class="text-md font-bold text-gray-900 tracking-tight">UNQUALIFIED | Generate Letters & Send Emails</h2>
+      <h2 class="text-xs font-bold text-white-900 tracking-tight">UNQUALIFIED | <br/>Generate & Send Letters</h2>
     </div>
 
     <div class="space-y-4 mb-6">
@@ -474,17 +509,39 @@
     </div>
   </div>
 
+<!-- SUMMARY PAGE -->
+<div id="summary-page" class="hidden bg-white border border-gray-300 rounded-xl p-6 shadow-xl w-full max-w-md mx-auto">
+  <div class="flex items-center mb-6 rounded-2xl px-4 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 text-white shrink-0">
+    <button id="summaryBackBtn" class="group relative p-2 bg-white-700 mr-2 hover:bg-white rounded-2xl transition-colors duration-300 ease-in-out">
+      <i data-lucide="chevron-left" class="w-6 h-6 text-gray-500 text-white group-hover:text-black transition-colors"></i>
+    </button>
+    <h2 class="text-xs font-bold text-white-900 tracking-tight">Summary Tools</h2>
+  </div>
+
+  <div class="space-y-3 mb-6">
+    <button id="generateSummaryRunBtn" class="flex flex-center group relative w-full py-3 px-5 bg-sky-600 text-white rounded-3xl text-sm font-bold shadow-md hover:bg-sky-700 active:scale-95 transition">
+      <i data-lucide="file-text" class="w-5 h-5 mr-4"></i> 
+      <h3>Generate Summary</h3>
+    </button>
+
+    <button id="sortSummaryBtn" class=" flex flex-centergroup relative w-full py-3 px-5 bg-rose-600 text-white rounded-3xl text-sm font-bold shadow-md hover:bg-rose-700 active:scale-95 transition">
+      <i data-lucide="settings" class="w-5 h-5 mr-4"></i> 
+      <h3>Sort Summary</h3>
+    </button>
+  </div>
+</div>
+
   <!-- FOR INTERVIEW PAGE -->
   <div id="for-interview-page" class="hidden bg-white border border-gray-300 rounded-xl p-6 shadow-xl w-full max-w-md mx-auto">
-    <div class="flex items-center mb-6">
-      <button id="backBtnInterview" class="group relative p-2 bg-gray-100 mr-2 hover:bg-black rounded-lg transition-colors duration-300 ease-in-out">
-        <i data-lucide="chevron-left" class="w-5 h-5 text-gray-500 group-hover:text-white transition-colors"></i>
+    <div class="flex items-center mb-6 rounded-2xl px-4 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white shrink-0">
+      <button id="backBtnInterview" class="group relative p-2 bg-green-600 mr-2 hover:bg-white rounded-lg transition-colors duration-300 ease-in-out">
+        <i data-lucide="chevron-left" class="w-5 h-5 text-white-500 group-hover:text-black transition-colors"></i>
         <span class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block px-2 py-1 text-[10px] font-medium text-white bg-gray-800 rounded shadow-sm whitespace-nowrap z-50">
           Go Back
           <span class="absolute top-full left-1/2 -translate-x-1/2 -mt-1 border-4 border-transparent border-t-gray-800"></span>
         </span>
       </button>
-      <h2 class="text-md font-bold text-gray-900 tracking-tight">FOR INTERVIEW | Generate Letters & Send Emails</h2>
+      <h2 class="text-xs font-bold text-white-900 tracking-tight">FOR INTERVIEW | <br/>Generate & Send Letters</h2>
     </div>
 
     <div class="space-y-4 mb-6">
@@ -627,15 +684,15 @@
 
   <!-- FAILED PAGE -->
   <div id="failed-page" class="hidden bg-white border border-gray-300 rounded-xl p-6 shadow-xl w-full max-w-md mx-auto">
-    <div class="flex items-center justify-between mb-6">
-      <button id="backBtnFailed" class="group relative p-2 bg-gray-100 mr-2 hover:bg-black rounded-lg transition-colors duration-300 ease-in-out">
-        <i data-lucide="chevron-left" class="w-5 h-5 text-gray-500 group-hover:text-white transition-colors"></i>
+    <div class="flex items-center mb-6 rounded-2xl px-4 py-3 bg-gradient-to-r from-yellow-600 to-amber-600 text-white shrink-0">
+      <button id="backBtnFailed" class="group relative p-2 bg-yellow-700 mr-2 hover:bg-white rounded-lg transition-colors duration-300 ease-in-out">
+        <i data-lucide="chevron-left" class="w-5 h-5 text-white-500 group-hover:text-black transition-colors"></i>
         <span class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block px-2 py-1 text-[10px] font-medium text-white bg-gray-800 rounded shadow-sm whitespace-nowrap z-50">
           Go Back
           <span class="absolute top-full left-1/2 -translate-x-1/2 -mt-1 border-4 border-transparent border-t-gray-800"></span>
         </span>
       </button>
-      <h2 class="text-xl font-bold text-gray-900 tracking-tight">FAILED | Generate Letters & Send Emails</h2>
+      <h2 class="text-xs font-bold text-white-900 tracking-tight">FAILED | <br/>Generate & Send Letters</h2>
     </div>
 
     <div class="space-y-4">
@@ -742,9 +799,9 @@
 
   <!-- BACKUP PAGE -->
   <div id="backup-page" class="hidden bg-white border border-gray-300 rounded-xl p-6 shadow-xl w-full max-w-md mx-auto">
-    <div class="flex items-center mb-6">
-      <button id="backupBackBtn" class="group relative p-2 bg-gray-100 mr-2 hover:bg-black rounded-lg transition-colors duration-300 ease-in-out">
-        <i data-lucide="chevron-left" class="w-5 h-5 text-gray-500 group-hover:text-white transition-colors"></i>
+    <div class="flex items-center mb-6 rounded-2xl px-4 py-3 bg-gradient-to-r from-gray-600 to-slate-600 text-white shrink-0">
+      <button id="backupBackBtn" class="group relative p-2 bg-white-700 mr-2 hover:bg-black rounded-lg transition-colors duration-300 ease-in-out">
+        <i data-lucide="chevron-left" class="w-5 h-5 text-white-700 group-hover:text-white transition-colors"></i>
         
         <!-- Tooltip -->
         <span class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block px-2 py-1 text-[10px] font-medium text-white bg-gray-800 rounded shadow-sm whitespace-nowrap z-50">
@@ -752,7 +809,7 @@
           <span class="absolute top-full left-1/2 -translate-x-1/2 -mt-1 border-4 border-transparent border-t-gray-800"></span>
         </span>
       </button>
-      <h2 class="text-md font-bold text-gray-900 tracking-tight">BACKUP | Google Sheet</h2>
+      <h2 class="text-xs font-bold text-white-900 tracking-tight">BACKUP | Google Sheet</h2>
     </div>
 
     <div class="space-y-4">
@@ -831,7 +888,7 @@
   function showLanding() {
     landingPage.classList.remove('hidden');
     landingPage.classList.add('flex');
-    ['forExamPage', 'unqualified-page', 'for-interview-page', 'failed-page', 'backup-page'].forEach(id => {
+    ['forExamPage', 'unqualified-page', 'for-interview-page', 'failed-page', 'backup-page', 'summary-page'].forEach(id => {
       const page = document.getElementById(id);
       if (page) {
         page.classList.add('hidden');
@@ -842,7 +899,7 @@
 
   function showPage(type) {
     currentLetterType = type;
-    ['landingPage', 'forExamPage', 'unqualified-page', 'for-interview-page', 'failed-page', 'backup-page'].forEach(id => {
+    ['landingPage', 'forExamPage', 'unqualified-page', 'for-interview-page', 'failed-page', 'backup-page', 'summary-page'].forEach(id => {
       const page = document.getElementById(id);
       if (page) {
         page.classList.add('hidden');
@@ -855,7 +912,8 @@
       unqualified: 'unqualified-page',
       forInterview: 'for-interview-page',
       failed: 'failed-page',
-      backup: 'backup-page'
+      backup: 'backup-page',
+      summary: 'summary-page'
     }[type];
     const page = document.getElementById(pageId);
     if (page) {
@@ -1031,11 +1089,28 @@
       lucide.createIcons();
     });
 
-// --- Step 6: Send Emails (Simulated) ---
-  document.getElementById('sendExamBtn')?.addEventListener('click', function() {
+// --- Step 6: Send Options ---
+  document.getElementById('sendOptionsToggleBtn')?.addEventListener('click', function() {
+    const panel = document.getElementById('sendOptionsPanel');
+    const chevron = document.getElementById('sendOptionsChevron');
+    if (!panel || !chevron) return;
+
+    const isHidden = panel.classList.contains('hidden');
+    if (isHidden) {
+      panel.classList.remove('hidden');
+      panel.classList.add('block');
+      chevron.classList.add('rotate-180');
+    } else {
+      panel.classList.add('hidden');
+      panel.classList.remove('block');
+      chevron.classList.remove('rotate-180');
+    }
+  });
+
+  document.getElementById('sendAllBtn')?.addEventListener('click', function() {
     const btn = this;
     const statusLabel = document.getElementById('step6Status');
-    
+
     btn.disabled = true;
     btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Sending...';
     lucide.createIcons();
@@ -1048,10 +1123,8 @@
           statusLabel.innerText = "✓ " + res.status + " (" + res.count + " emails)";
           statusLabel.className = "text-[10px] px-2 mt-2 font-semibold text-center text-green-600";
         }
-        
-        btn.innerHTML = '<i data-lucide="check-circle" class="w-4 h-4"></i> Complete';
-        btn.className = "group flex items-center justify-start gap-2 w-full py-2 px-2 bg-green-100 text-green-700 rounded-xl text-sm font-bold border border-green-200 cursor-default px-4";
-        
+        btn.innerHTML = '<i data-lucide="check-circle" class="w-4 h-4"></i> Sent All';
+        btn.className = "group flex items-center justify-start gap-2 w-full py-2 px-2 bg-green-100 text-green-700 rounded-xl text-sm font-bold border border-green-200 cursor-default";
         unlockNextStep(6); // Unlocks Step 7
         window.setProcessing(false);
         lucide.createIcons();
@@ -1062,11 +1135,51 @@
           statusLabel.className = "text-[10px] px-2 mt-2 font-semibold text-center text-red-600";
         }
         btn.disabled = false;
-        btn.innerHTML = '<i data-lucide="send" class="w-4 h-4"></i> Send Emails';
+        btn.innerHTML = '<i data-lucide="send" class="w-4 h-4"></i> Send All';
         window.setProcessing(false);
         lucide.createIcons();
       })
-      .forExamSendEmails(); // Updated to match the .gs function name
+      .forExamSendEmails();
+  });
+
+  document.getElementById('sendIndividualBtn')?.addEventListener('click', function() {
+    const btn = this;
+    const statusLabel = document.getElementById('step6Status');
+
+    const confirmed = window.confirm('Are you sure you want to resend exam letters for only the checked applicants?');
+    if (!confirmed) {
+      return;
+    }
+
+    btn.disabled = true;
+    btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Sending...';
+    lucide.createIcons();
+    window.setProcessing(true);
+
+    google.script.run
+      .withSuccessHandler((res) => {
+        stepStatus.step6 = true;
+        if (statusLabel) {
+          statusLabel.innerText = "✓ " + res.status + " (" + res.count + " emails)";
+          statusLabel.className = "text-[10px] px-2 mt-2 font-semibold text-center text-green-600";
+        }
+        btn.innerHTML = '<i data-lucide="check-circle" class="w-4 h-4"></i> Sent Individual';
+        btn.className = "group flex items-center justify-start gap-2 w-full py-2 px-2 bg-green-100 text-green-700 rounded-xl text-sm font-bold border border-green-200 cursor-default";
+        unlockNextStep(6); // Unlocks Step 7
+        window.setProcessing(false);
+        lucide.createIcons();
+      })
+      .withFailureHandler((err) => {
+        if (statusLabel) {
+          statusLabel.innerText = '❌ ' + err.message;
+          statusLabel.className = 'text-[10px] px-2 mt-2 font-semibold text-center text-red-600';
+        }
+        btn.disabled = false;
+        btn.innerHTML = '<i data-lucide="repeat" class="w-4 h-4"></i> Send Individual';
+        window.setProcessing(false);
+        lucide.createIcons();
+      })
+      .forExamSendIndividualEmails();
   });
 
   // --- Step 7: Backup Sheet ---
@@ -1298,7 +1411,7 @@
       { btnId: 'openFolderBtn', statusId: 'step3Status', icon: 'eye', text: 'Verify PDFs', containerIndex: 2 },
       { btnId: 'generateLinksBtn', statusId: 'step4Status', icon: 'link', text: 'Generate Links', containerIndex: 3 },
       { btnId: 'verifyLinksBtn', statusId: 'step5Status', icon: 'list-check', text: 'Verify File Alignment', containerIndex: 4 },
-      { btnId: 'sendExamBtn', statusId: 'step6Status', icon: 'send', text: 'Send Emails', containerIndex: 5 },
+      { btnId: 'sendOptionsToggleBtn', statusId: 'step6Status', icon: 'send', text: 'Send Options', containerIndex: 5 },
       { btnId: 'backupExamBtn', statusId: 'step7Status', icon: 'archive', text: 'Backup Sheet', containerIndex: 6 }
     ];
 
@@ -1324,6 +1437,16 @@
         statusEl.className = 'text-[10px] mt-2 font-semibold text-center';
       }
     });
+
+    const sendOptionsPanel = document.getElementById('sendOptionsPanel');
+    if (sendOptionsPanel) {
+      sendOptionsPanel.classList.add('hidden');
+      sendOptionsPanel.classList.remove('block');
+    }
+    const sendOptionsChevron = document.getElementById('sendOptionsChevron');
+    if (sendOptionsChevron) {
+      sendOptionsChevron.classList.remove('rotate-180');
+    }
 
     lucide.createIcons();
   }
@@ -2049,6 +2172,43 @@ document.getElementById('backupInterviewBtn')?.addEventListener('click', functio
     showPage('backup');
   });
 
+  document.getElementById('summaryToolsBtn')?.addEventListener('click', function() {
+    showPage('summary');
+  });
+
+  // Summary page handlers
+  document.getElementById('summaryBackBtn')?.addEventListener('click', function() { showLanding(); });
+
+  document.getElementById('generateSummaryRunBtn')?.addEventListener('click', function() {
+    const btn = this;
+    const orig = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Generating...';
+    lucide.createIcons();
+    google.script.run.withSuccessHandler((res) => {
+      btn.innerHTML = '<i data-lucide="check-circle" class="w-4 h-4"></i> Complete';
+      window.alert('SUMMARY updated with ' + res.rowsWritten + ' row(s).');
+      lucide.createIcons();
+    }).withFailureHandler((err) => {
+      btn.disabled = false; btn.innerHTML = orig; window.alert('Failed: ' + err.message);
+    }).generateSummary();
+  });
+
+  document.getElementById('sortSummaryBtn')?.addEventListener('click', function() {
+    const btn = this;
+    const orig = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Sorting...';
+    lucide.createIcons();
+    google.script.run.withSuccessHandler((res) => {
+      btn.innerHTML = '<i data-lucide="check-circle" class="w-4 h-4"></i> Sorted';
+      window.alert('SUMMARY sorted: ' + res.rowsSorted + ' row(s).');
+      lucide.createIcons();
+    }).withFailureHandler((err) => {
+      btn.disabled = false; btn.innerHTML = orig; window.alert('Failed: ' + err.message);
+    }).sortSummary();
+  });
+
   document.getElementById('backupBackBtn')?.addEventListener('click', function() {
     showLanding();
   });
@@ -2189,6 +2349,43 @@ document.getElementById('backupInterviewBtn')?.addEventListener('click', functio
       }, 100);
     }
   })();
+
+  // ========================================================
+  // LIVE AUTOMATED STATE CLEANUP ON BACKEND DROPDOWN MATCHES
+  // ========================================================
+  
+  /**
+   * Universal router function that clears statuses, resets buttons to default styles,
+   * un-grayscales structures, and drops the view container back to the starting menu.
+   */
+  function handleGlobalPositionChangeReset() {
+    console.log("Position change confirmed on backend sheet cell B2. Executing global wipe...");
+    
+    // 1. Call your existing individual page reset subroutines
+    if (typeof resetForExamSteps === 'function') resetForExamSteps();
+    if (typeof resetUnqualifiedSteps === 'function') resetUnqualifiedSteps();
+    if (typeof resetInterviewSteps === 'function') resetInterviewSteps();
+    if (typeof resetFailedSteps === 'function') resetFailedSteps();
+    
+    // 2. Route view panel safely back to your main menu layout view
+    if (typeof showLanding === 'function') showLanding();
+  }
+
+  // Set up an automated check interval loop running every 2.5 seconds to watch for changes
+  setInterval(function() {
+    if (window._isProcessing) return; // Skip checking if a long-running batch generate background task is active
+    
+    google.script.run
+      .withSuccessHandler(function(wasChanged) {
+        if (wasChanged) {
+          handleGlobalPositionChangeReset();
+        }
+      })
+      .withFailureHandler(function(err) {
+        console.warn("Background position status poll check paused: " + err.message);
+      })
+      .checkAndClearPositionChangedFlag();
+  }, 2500);
 
 </script>
   <!-- Modal for Backup Message -->

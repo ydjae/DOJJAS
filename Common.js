@@ -139,6 +139,7 @@ function clearAllWorkingSheets() {
 
   const sheetExam = ss.getSheetByName('LETTER - EXAM SCHED');
   if (sheetExam && sheetExam.getLastRow() >= 2) {
+    // Clear O through T only in the exam sheet
     sheetExam.getRange(2, 15, sheetExam.getLastRow() - 1, 6).clearContent();
   }
 
@@ -153,10 +154,12 @@ function clearAllWorkingSheets() {
   }
 
   const sheetFailed = ss.getSheetByName('LETTER - FAILED');
-  if (sheetFailed && sheetFailed.getLastRow() >= 2) {
-    sheetFailed.getRange(2, 12, sheetFailed.getLastRow() - 1, 3).clearContent();
-  }
+    if (sheetFailed && sheetFailed.getLastRow() >= 2) {
+      // Clear M through O in the failed sheet
+      sheetFailed.getRange(2, 13, sheetFailed.getLastRow() - 1, 3).clearContent();
+    }
 }
+
 
 /**
  * Backup all sheets to folder
@@ -215,6 +218,24 @@ function backupSheetToFolder() {
     const defaultSheet = backupSS.getSheetByName('Sheet1');
     if (defaultSheet) { backupSS.deleteSheet(defaultSheet); }
 
+    // --- CRITICAL FORM DUPLICATION CLEANUP FIXED HERE ---
+    try {
+      const ORIGINAL_FORM_ID = '1t4xIKDQWg5SFQaN6f7_lStH3Ydmekv2RG2gsRtOywrg';
+      Utilities.sleep(2500); // Give drive background tasks time to register files
+      
+      const files = destFolder.searchFiles('mimeType = "application/vnd.google-apps.form"');
+      while (files.hasNext()) {
+        const f = files.next();
+        if (f.getId() !== ORIGINAL_FORM_ID) {
+          console.log('Removing duplicated form from common backup folder: ' + f.getName());
+          f.setTrashed(true);
+        }
+      }
+    } catch (formErr) {
+      console.log('Common file form cleanup error: ' + formErr.message);
+    }
+    // ----------------------------------------------------
+
     // Clear data in original sheets
     clearAllWorkingSheets();
 
@@ -238,7 +259,7 @@ function backupSheetToFolder() {
 
 /**
  * Handle edit events - Warns user before changing position
- */
+
 function onEdit(e) {
   const range = e.range;
   const sheet = range.getSheet();
@@ -274,6 +295,62 @@ function onEdit(e) {
       range.setValue(oldValue);
     }
   }
+}
+*/
+/**
+ * Handle edit events - Warns user before changing position
+ */
+function onEdit(e) {
+  const range = e.range;
+  const sheet = range.getSheet();
+
+  // Only trigger if editing the specific Dropdown Cell in the SELECT POSITION sheet
+  if (sheet.getName() === CONFIG.SHEET_NAME && range.getA1Notation() === CONFIG.DROPDOWN_CELL) {
+    const newValue = range.getValue();
+    const oldValue = e.oldValue;
+
+    // If the cell was cleared manually, do nothing
+    if (!newValue) return;
+
+    // Prompt the user for confirmation
+    const ui = SpreadsheetApp.getUi();
+    const response = ui.alert(
+      'Changing Position',
+      'Warning: Changing the position will clear all entered data in all working sheets (Exam, DQ, Interview, Failed). \n\nDo you want to proceed?',
+      ui.ButtonSet.YES_NO
+    );
+
+    if (response === ui.Button.YES) {
+      // 1. User clicked "Accept & Clear" (YES)
+      clearAllWorkingSheets();
+
+      // 2. Mark that position was changed so sidebar resets dynamically
+      const properties = PropertiesService.getDocumentProperties();
+      properties.setProperty('positionChanged', 'true');
+
+      ui.alert("Sheets cleared. All sidebar steps have been completely reset for the new position.");
+    } else {
+      // 3. User clicked "Cancel" (NO)
+      // Revert the cell to the previous value without triggering a loop
+      range.setValue(oldValue);
+    }
+  }
+}
+
+/**
+ * Checks if the position has changed, then clears the flag.
+ * Called continuously by the sidebar client panel to perform live hot-swaps.
+ * 
+ * @return {boolean} True if the position was modified and accepted by user.
+ */
+function checkAndClearPositionChangedFlag() {
+  const properties = PropertiesService.getDocumentProperties();
+  const flag = properties.getProperty('positionChanged');
+  if (flag === 'true') {
+    properties.setProperty('positionChanged', 'false');
+    return true;
+  }
+  return false;
 }
 
 // ==========================================
@@ -409,5 +486,47 @@ function processPDFBatch(batchKey, rows, header, templateFile, destinationFolder
 function clearBatchState(batchKey) {
   const props = PropertiesService.getDocumentProperties();
   props.deleteProperty(batchKey + '_state');
+}
+
+/**
+ * Log sent letter to LOGS sheet
+ * @param {string} letterType - Type of letter (e.g., 'LETTER - EXAM SCHED', 'LETTER - DQ', 'LETTER - FAILED', 'LETTER - FOR INTERVIEW')
+ * @param {string} position - Position from the applicant sheet
+ * @param {string} office - Office/Assigned Office from the applicant sheet
+ */
+function logSentLetter(letterType, position, office, lastName) {
+  try {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    
+    // Get or create LOGS sheet
+    let logsSheet = ss.getSheetByName('LOGS');
+    if (!logsSheet) {
+      logsSheet = ss.insertSheet('LOGS');
+      // Add headers
+      const headerRange = logsSheet.getRange(1, 1, 1, 6);
+      headerRange.setValues([['Letter Type', 'Position', 'Office', 'Date', 'Time', 'Last Name']]);
+      headerRange.setFontWeight('bold');
+      headerRange.setBackground('#cccccc');
+    }
+    
+    // Get current date and time
+    const now = new Date();
+    const timezone = Session.getScriptTimeZone();
+    const dateStr = Utilities.formatDate(now, timezone, 'yyyy-MM-dd');
+    const timeStr = Utilities.formatDate(now, timezone, 'HH:mm:ss');
+    
+    // Find next available row (starting from row 2)
+    const lastRow = logsSheet.getLastRow();
+    const nextRow = Math.max(2, lastRow + 1);
+    
+    // Add entry
+    logsSheet.getRange(nextRow, 1, 1, 6).setValues([
+      [letterType, position, office, dateStr, timeStr, lastName || '']
+    ]);
+    
+  } catch (e) {
+    // Log error but don't break the email sending process
+    console.log('Error logging sent letter: ' + e.message);
+  }
 }
 

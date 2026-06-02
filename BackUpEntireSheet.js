@@ -15,6 +15,8 @@ function getOrCreateFolder(parentFolder, folderName) {
 
 /**
  * Backup the entire spreadsheet to the position folder containing the 4 generated folders.
+ * Does not unlink the form, does not clear any source data, and explicitly trashes 
+ * any auto-duplicated form copies created by Google Drive during the process.
  */
 function backupWholeSheet_() {
   try {
@@ -40,31 +42,32 @@ function backupWholeSheet_() {
     ].join('-');
     const backupName = `Backup_${position}_${backupDate}_${backupTime}`;
     
-    // 1. Create a true, exact file copy of the spreadsheet.
-    // This leaves your original sheet data completely safe and untouched!
+    // 1. Create a clean file copy of the spreadsheet.
+    // Leaves your original sheet data completely safe and untouched!
     const backupFile = DriveApp.getFileById(ss.getId()).makeCopy(backupName, positionFolder);
 
-    // 2. Erase the auto-duplicated form copy inside the backup folder.
-    // Because Drive creates this duplicate asynchronously, we use a targeted lookup 
-    // to find any Google Form in this exact destination folder that isn't the master form.
+    // 2. CRITICAL BACKGROUND CLEANUP: Erase the auto-duplicated form copy
     try {
       const ORIGINAL_FORM_ID = '1t4xIKDQWg5SFQaN6f7_lStH3Ydmekv2RG2gsRtOywrg';
+      const TARGET_FORM_FOLDER_ID = '1lrgvdvE1uy9IhszAvjc0834PSeicz-M3';
       
-      // Short pause to allow Google Drive's backend to finish generating the file reference
-      Utilities.sleep(2000); 
+      // Give Google Drive's asynchronous background task up to 4 seconds to finish creating the form copy
+      Utilities.sleep(4000); 
 
-      // Search specifically for any Google Form inside the destination backup folder
-      const files = positionFolder.searchFiles('mimeType = "application/vnd.google-apps.form"');
+      // Directly target the specific folder where Google Form copies land
+      const targetFolder = DriveApp.getFolderById(TARGET_FORM_FOLDER_ID);
+      const files = targetFolder.searchFiles('mimeType = "application/vnd.google-apps.form"');
+      
       while (files.hasNext()) {
         const f = files.next();
-        // If it's a form file and it's NOT our live production form, destroy it immediately
+        // If it's a form file inside that folder, and it's NOT our live production master form, trash it!
         if (f.getId() !== ORIGINAL_FORM_ID) {
-          console.log('Trashing auto-duplicated form file: ' + f.getName() + ' (' + f.getId() + ')');
+          console.log('Automatically trashing auto-duplicated form file: ' + f.getName() + ' (' + f.getId() + ')');
           f.setTrashed(true);
         }
       }
     } catch (cleanupErr) {
-      console.log('Form cleanup error (non-fatal): ' + cleanupErr.message);
+      console.log('Form automatic trashing warning (non-fatal): ' + cleanupErr.message);
     }
 
     return { 

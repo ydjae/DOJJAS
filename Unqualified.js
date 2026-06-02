@@ -36,16 +36,22 @@ function getUnqualifiedPositionFolder() {
   const parentFolder = DriveApp.getFolderById(parentFolderId);
   const props = PropertiesService.getDocumentProperties();
 
-  let mainFolderId = props.getProperty('unqualifiedMainFolderId') || props.getProperty('forExamMainFolderId');
-  let mainFolder;
+  let mainFolderId = props.getProperty('unqualifiedMainFolderId');
+  let mainFolder = null;
+  
   if (mainFolderId) {
     try {
-      mainFolder = DriveApp.getFolderById(mainFolderId);
+      const tempFolder = DriveApp.getFolderById(mainFolderId);
+      // FIX: Only reuse if it matches our current target position folder name
+      if (tempFolder.getName() === folderName) {
+        mainFolder = tempFolder;
+      }
     } catch (e) {
       mainFolder = null;
     }
   }
 
+  // If no cached folder exists OR it didn't match the new position name
   if (!mainFolder) {
     const existingFolders = parentFolder.getFoldersByName(folderName);
     if (existingFolders.hasNext()) {
@@ -55,16 +61,19 @@ function getUnqualifiedPositionFolder() {
     }
     mainFolderId = mainFolder.getId();
     props.setProperty('unqualifiedMainFolderId', mainFolderId);
-    if (!props.getProperty('forExamMainFolderId')) {
-      props.setProperty('forExamMainFolderId', mainFolderId);
-    }
   }
 
+  // Handle the 'Unqualified' specific subfolder
   let unqualifiedFolderId = props.getProperty('unqualifiedSubFolderId');
-  let unqualifiedFolder;
+  let unqualifiedFolder = null;
+  
   if (unqualifiedFolderId) {
     try {
-      unqualifiedFolder = DriveApp.getFolderById(unqualifiedFolderId);
+      const tempSub = DriveApp.getFolderById(unqualifiedFolderId);
+      // Ensure the subfolder's parent is actually our current main position folder
+      if (tempSub.getParents().hasNext() && tempSub.getParents().next().getId() === mainFolderId) {
+        unqualifiedFolder = tempSub;
+      }
     } catch (e) {
       unqualifiedFolder = null;
     }
@@ -286,6 +295,8 @@ function unqualifiedSendEmails() {
       const applicantName = row[0];
       const email = row[UNQUALIFIED.COL_EMAIL - 1];
       const driveLink = row[UNQUALIFIED.COL_LINK - 1];
+      const position = row[7]; // Column H
+      const office = row[8]; // Column I
       const statusCell = sheet.getRange(UNQUALIFIED.START_ROW + i, UNQUALIFIED.COL_STATUS);
 
       if (!applicantName || applicantName.toString().trim() === '') continue;
@@ -297,7 +308,7 @@ function unqualifiedSendEmails() {
 
       const subject = 'JOB APPLICATION UPDATE';
       const body = 'Dear Applicant,\n\n' +
-        'Good Day,\n' +
+        'Good day!\n\n' +
         'Please see attached file regarding your application.\n\n' +
         'Link: ' + driveLink;
 
@@ -321,6 +332,8 @@ function unqualifiedSendEmails() {
 
       if (response.getContentText() === "Success") {
         statusCell.setValue('Sent (' + now + ')');
+        // Log the sent letter
+        logSentLetter('LETTER - DQ', position || '', office || '', applicantName || '');
         emailCount++;
       } else {
         statusCell.setValue('Error: Proxy failed (' + now + ')');

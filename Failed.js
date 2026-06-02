@@ -7,10 +7,16 @@ const FAILED = {
   TEMPLATE_ID: '1-08ufjwnG0bCV9nrZ6LbOwA_DDBlr8nfUNZYncwFGP8',
   COL_LAST_NAME: 1,
   COL_FIRST_NAME: 2,
-  COL_EMAIL: 7,
-  COL_EMAIL_DATE: 13, // Column M
-  COL_LINK: 14, // Column N
-  COL_STATUS: 15, // Column O
+  COL_EMAIL: 6,              // Column F
+  // --- INTEGRATED NOTES FOR LETTER RECIPIENT FIELDS ---
+  COL_UPPER_SALUTATION: 9,   // Column I
+  COL_UPPER_FULLNAME: 10,    // Column J
+  COL_PROPER_SALUTATION: 11, // Column K
+  COL_PROPER_LASTNAME: 12,   // Column L
+  // --------------------------------------------------
+  COL_EMAIL_DATE: 13,        // Column M
+  COL_LINK: 14,              // Column N
+  COL_STATUS: 15,            // Column O
   START_ROW: 2
 };
 
@@ -36,14 +42,15 @@ function getFailedPositionFolder() {
   const parentFolder = DriveApp.getFolderById(parentFolderId);
   const props = PropertiesService.getDocumentProperties();
 
-  let mainFolderId = props.getProperty('failedMainFolderId')
-    || props.getProperty('forInterviewMainFolderId')
-    || props.getProperty('unqualifiedMainFolderId')
-    || props.getProperty('forExamMainFolderId');
-  let mainFolder;
+  let mainFolderId = props.getProperty('failedMainFolderId');
+  let mainFolder = null;
+  
   if (mainFolderId) {
     try {
-      mainFolder = DriveApp.getFolderById(mainFolderId);
+      const tempFolder = DriveApp.getFolderById(mainFolderId);
+      if (tempFolder.getName() === folderName) {
+        mainFolder = tempFolder;
+      }
     } catch (e) {
       mainFolder = null;
     }
@@ -58,16 +65,17 @@ function getFailedPositionFolder() {
     }
     mainFolderId = mainFolder.getId();
     props.setProperty('failedMainFolderId', mainFolderId);
-    if (!props.getProperty('forExamMainFolderId')) {
-      props.setProperty('forExamMainFolderId', mainFolderId);
-    }
   }
 
   let failedFolderId = props.getProperty('failedSubFolderId');
-  let failedFolder;
+  let failedFolder = null;
+  
   if (failedFolderId) {
     try {
-      failedFolder = DriveApp.getFolderById(failedFolderId);
+      const tempSub = DriveApp.getFolderById(failedFolderId);
+      if (tempSub.getParents().hasNext() && tempSub.getParents().next().getId() === mainFolderId) {
+        failedFolder = tempSub;
+      }
     } catch (e) {
       failedFolder = null;
     }
@@ -175,10 +183,10 @@ function failedVerifyAlignment() {
   const expectedNames = [];
 
   for (let i = 0; i < rows.length; i++) {
-    const lastName = String(rows[i][1] || '').trim();
-    const firstName = String(rows[i][2] || '').trim();
+    const lastName = String(rows[i][0] || '').trim(); // Column A
+    const firstName = String(rows[i][1] || '').trim(); // Column B
     if (lastName && lastName !== '') {
-      expectedNames.push(lastName + ', ' + firstName + ' - FailedLetter');
+      expectedNames.push(lastName + ', ' + firstName);
     }
   }
 
@@ -202,7 +210,7 @@ function failedVerifyAlignment() {
     if (expectedNames[index].toLowerCase() !== normalizedFileName.toLowerCase()) {
       return {
         passed: false,
-        message: 'Alignment verified'
+        message: 'Alignment mismatch discovered at entry indexes.'
       };
     }
   }
@@ -230,9 +238,15 @@ function failedSendEmails() {
 
   for (let i = 0; i < data.length; i++) {
     const row = data[i];
-    const applicantName = row[0];
-    const email = row[FAILED.COL_EMAIL - 1];
-    const driveLink = row[FAILED.COL_LINK - 1];
+    const applicantName = row[0]; // Column A
+    const email = row[FAILED.COL_EMAIL - 1]; // Column F
+    const driveLink = row[FAILED.COL_LINK - 1]; // Column N
+    
+    // --- MATCHES YOUR SHEET LAYOUT VISUALS ---
+    const position = row[6]; // Index 6 is Column G (POSITION EXT)
+    const office = row[7];   // Index 7 is Column H (ASSIGNED OFFICE)
+    // ----------------------------------------
+    
     const statusCell = sheet.getRange(FAILED.START_ROW + i, FAILED.COL_STATUS);
 
     if (!applicantName || applicantName.toString().trim() === '') continue;
@@ -245,7 +259,7 @@ function failedSendEmails() {
     const subject = 'JOB APPLICATION UPDATE';
     const body = 'Dear Applicant,\n\n' +
       'Good day!\n\n' +
-      'Please see your failed letter document at the link below:\n\n' +
+      'Please see attached file regarding your application.\n\n' +
       'Link: ' + driveLink + '\n\n' +
       'Best regards,\n' +
       'DOJ RPO V - Human Resource Unit';
@@ -268,6 +282,8 @@ function failedSendEmails() {
     const response = UrlFetchApp.fetch(WEB_APP_URL, options);
     if (response.getContentText() === 'Success') {
       statusCell.setValue('Sent (' + now + ')');
+      // Log the sent letter using the reference from Column G and H
+      logSentLetter('LETTER - FAILED', position || '', office || '', applicantName || '');
       emailCount++;
     } else {
       statusCell.setValue('Error: Proxy failed (' + now + ')');
@@ -284,14 +300,40 @@ function failedGeneratePDFs(targetFolderId) {
     if (!sheet) throw new Error('Sheet "' + FAILED.SHEET_NAME + '" not found!');
 
     const data = sheet.getDataRange().getDisplayValues();
-    const header = data[0];
-    const rows = data.slice(1).filter(row => row[0] && row[0].toString().trim() !== '');
+    
+    // Create a copy of the header row and add our two new combined fields
+    const header = [...data[0]];
+    header.push("RECIPIENT_BLOCK", "DEAR_BLOCK");
 
+    const rawRows = data.slice(1).filter(row => row[0] && row[0].toString().trim() !== '');
+
+    // --- INTEGRATED NOTE: Combine the requested columns per row ---
+    const rows = rawRows.map(row => {
+      const newRow = [...row];
+      
+      // Pull values using our mapped constants (subtracting 1 for 0-indexed arrays)
+      const upperSalutation = newRow[FAILED.COL_UPPER_SALUTATION - 1] || "";
+      const upperFullName = newRow[FAILED.COL_UPPER_FULLNAME - 1] || "";
+      const properSalutation = newRow[FAILED.COL_PROPER_SALUTATION - 1] || "";
+      const properLastName = newRow[FAILED.COL_PROPER_LASTNAME - 1] || "";
+
+      // Combine Column I and J for the "Recipient" part
+      const recipientBlock = (upperSalutation + " " + upperFullName).trim();
+      
+      // Combine Column K and L for the "Dear" part
+      const dearBlock = (properSalutation + " " + properLastName).trim();
+
+      // Push them to the end of the array so processPDFBatch can map them to the template tags
+      newRow.push(recipientBlock, dearBlock);
+      return newRow;
+    });
+
+    // Sort rows alphabetically matching the layout configuration
     rows.sort((a, b) => {
-      const lastNameA = String(a[1] || '').trim().toLowerCase();
-      const lastNameB = String(b[1] || '').trim().toLowerCase();
+      const lastNameA = String(a[0] || '').trim().toLowerCase();
+      const lastNameB = String(b[0] || '').trim().toLowerCase();
       if (lastNameA !== lastNameB) return lastNameA.localeCompare(lastNameB);
-      return String(a[2] || '').trim().toLowerCase().localeCompare(String(b[2] || '').trim().toLowerCase());
+      return String(a[1] || '').trim().toLowerCase().localeCompare(String(b[1] || '').trim().toLowerCase());
     });
 
     const templateFile = DriveApp.getFileById(FAILED.TEMPLATE_ID);
@@ -299,6 +341,8 @@ function failedGeneratePDFs(targetFolderId) {
     
     // Use batch processing with key for Failed
     const batchKey = 'failed_pdf_generation_' + SpreadsheetApp.getActiveSpreadsheet().getId();
+    
+    // Since we appended the combined blocks to 'rows' and 'header', processPDFBatch will handle them automatically
     const batchResult = processPDFBatch(batchKey, rows, header, templateFile, destinationFolder, 20); // Process 20 at a time
 
     let returnMessage = batchResult.message;

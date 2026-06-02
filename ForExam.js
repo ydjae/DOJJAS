@@ -13,6 +13,7 @@ const FOR_EXAM = {
   COL_TEMPLATE_COLS_END: 18,   // Column R
   COL_EXAM_LINK: 19,           // Column S
   COL_EXAM_PROGRESS: 20,       // Column T
+  COL_REGENERATE: 21,         // Column U - REGENERATE and RESEND checkbox
   START_ROW: 2
 };
 
@@ -296,6 +297,8 @@ function forExamSendEmails() {
       const applicantName = row[0];
       const email = row[FOR_EXAM.COL_EMAIL - 1];
       const driveLink = row[FOR_EXAM.COL_EXAM_LINK - 1];
+      const position = row[7]; // Column H
+      const office = row[8]; // Column I
       const statusCell = sheet.getRange(FOR_EXAM.START_ROW + i, FOR_EXAM.COL_EXAM_PROGRESS);
 
       if (!applicantName || applicantName.toString().trim() === '') continue;
@@ -337,6 +340,8 @@ function forExamSendEmails() {
       
       if (response.getContentText() === "Success") {
         statusCell.setValue('Sent (' + now + ')');
+        // Log the sent letter
+        logSentLetter('LETTER - EXAM SCHED', position || '', office || '', applicantName || '');
         emailCount++;
       } else {
         statusCell.setValue('Error: Proxy failed (' + now + ')');
@@ -346,6 +351,102 @@ function forExamSendEmails() {
     return { status: 'Emails sent', count: emailCount };
   } catch (e) {
     throw new Error('Error sending email notifications: ' + e.message);
+  }
+}
+
+/**
+ * Send emails only for rows with the REGENERATE checkbox (Column U) checked.
+ * This allows regenerating/resending an individual applicant's exam letter.
+ */
+function forExamSendIndividualEmails() {
+  // PASTE YOUR DEPLOYED WEB APP URL HERE
+  const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyFPxd3UelHmFuh4fqQC7YPLpVk44rorubWx_My_0S2OV7Il4GlJC1wd7rq8aVKJKpKNg/exec"; 
+
+  try {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const sheet = ss.getSheetByName(FOR_EXAM.SHEET_NAME);
+    
+    if (!sheet) throw new Error('Sheet "' + FOR_EXAM.SHEET_NAME + '" not found.');
+
+    const lastRow = sheet.getLastRow();
+    if (lastRow < FOR_EXAM.START_ROW) {
+      return { status: 'No applicants found', count: 0 };
+    }
+
+    // Read up through the regenerate column (U)
+    const data = sheet.getRange(FOR_EXAM.START_ROW, 1, lastRow - FOR_EXAM.START_ROW + 1, FOR_EXAM.COL_REGENERATE).getValues();
+    let emailCount = 0;
+    const now = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd HH:mm:ss');
+
+    for (let i = 0; i < data.length; i++) {
+      const row = data[i];
+      const regenerateVal = row[FOR_EXAM.COL_REGENERATE - 1];
+      const shouldProcess = regenerateVal === true || String(regenerateVal).toLowerCase() === 'true';
+      if (!shouldProcess) continue;
+
+      const applicantName = row[FOR_EXAM.COL_LAST_NAME - 1];
+      const email = row[FOR_EXAM.COL_EMAIL - 1];
+      const driveLink = row[FOR_EXAM.COL_EXAM_LINK - 1];
+      const position = row[7]; // Column H
+      const office = row[8]; // Column I
+      const statusCell = sheet.getRange(FOR_EXAM.START_ROW + i, FOR_EXAM.COL_EXAM_PROGRESS);
+
+      if (!applicantName || applicantName.toString().trim() === '') {
+        statusCell.setValue('Not sent - missing name (' + now + ')');
+        // clear checkbox so it won't keep attempting
+        sheet.getRange(FOR_EXAM.START_ROW + i, FOR_EXAM.COL_REGENERATE).setValue(false);
+        continue;
+      }
+
+      if (!email || email.toString().trim() === '' || !driveLink || driveLink.toString().trim() === '') {
+        statusCell.setValue('Not sent - missing email or link (' + now + ')');
+        sheet.getRange(FOR_EXAM.START_ROW + i, FOR_EXAM.COL_REGENERATE).setValue(false);
+        continue;
+      }
+
+      const subject = 'JOB APPLICATION UPDATE - NOTICE OF WRITTEN EXAM';
+      const body = 'Dear Applicant,\n\n' +
+        'Good day!\n\n' +
+        'Thank you for your interest in the vacant position at our office. We have ' +
+        'received your application and appreciate the time you took to apply.\n\n' +
+        'Please see the file in the link below for your written examination details:\n\n' +
+        'Link: ' + driveLink + '\n\n' +
+        'Reminder: Please arrive at the site 5-10 minutes early. Late examinees ' +
+        'without a valid reason will not be permitted to take the exam.\n\n' +
+        'Best regards,\n' +
+        'DOJ RPO V - Human Resource Unit';
+
+      const payload = {
+        recipient: email.toString().trim(),
+        cc: 'orp05.hiring@gmail.com',
+        replyTo: 'orp05.hiring@gmail.com',
+        subject: subject,
+        body: body
+      };
+
+      const options = {
+        method: "post",
+        contentType: "application/json",
+        payload: JSON.stringify(payload),
+        muteHttpExceptions: true
+      };
+
+      const response = UrlFetchApp.fetch(WEB_APP_URL, options);
+      if (response.getContentText() === "Success") {
+        statusCell.setValue('Sent (re-sent) (' + now + ')');
+        // Log the sent letter
+        logSentLetter('LETTER - EXAM SCHED', position || '', office || '', applicantName || '');
+        emailCount++;
+        // clear checkbox to mark done
+        sheet.getRange(FOR_EXAM.START_ROW + i, FOR_EXAM.COL_REGENERATE).setValue(false);
+      } else {
+        statusCell.setValue('Error: Proxy failed (' + now + ')');
+      }
+    }
+
+    return { status: 'Individual emails processed', count: emailCount };
+  } catch (e) {
+    throw new Error('Error sending individual emails: ' + e.message);
   }
 }
 

@@ -90,12 +90,17 @@ function forInterviewCreateFolders() {
     const parentFolder = DriveApp.getFolderById(parentFolderId);
     const props = PropertiesService.getDocumentProperties();
 
-    let mainFolderId = props.getProperty('forInterviewMainFolderId') || props.getProperty('forExamMainFolderId') || props.getProperty('unqualifiedMainFolderId');
+    // INTEGRATED FIX: Check specific property and validate against current folder name
+    let mainFolderId = props.getProperty('forInterviewMainFolderId');
     let mainFolder = null;
 
     if (mainFolderId) {
       try {
-        mainFolder = DriveApp.getFolderById(mainFolderId);
+        const tempFolder = DriveApp.getFolderById(mainFolderId);
+        // Verify if the stored ID actually matches our new target position folder name
+        if (tempFolder.getName() === folderName) {
+          mainFolder = tempFolder;
+        }
       } catch (e) {
         mainFolder = null;
       }
@@ -112,12 +117,16 @@ function forInterviewCreateFolders() {
       props.setProperty('forInterviewMainFolderId', mainFolderId);
     }
 
+    // INTEGRATED FIX: Ensure the subfolder's parent matches the current main folder
     let forInterviewSubFolderId = props.getProperty('forInterviewSubFolderId');
     let forInterviewSubFolder = null;
 
     if (forInterviewSubFolderId) {
       try {
-        forInterviewSubFolder = DriveApp.getFolderById(forInterviewSubFolderId);
+        const tempSub = DriveApp.getFolderById(forInterviewSubFolderId);
+        if (tempSub.getParents().hasNext() && tempSub.getParents().next().getId() === mainFolderId) {
+          forInterviewSubFolder = tempSub;
+        }
       } catch (e) {
         forInterviewSubFolder = null;
       }
@@ -133,8 +142,6 @@ function forInterviewCreateFolders() {
       forInterviewSubFolderId = forInterviewSubFolder.getId();
       props.setProperty('forInterviewSubFolderId', forInterviewSubFolderId);
     }
-
-    props.setProperty('forInterviewMainFolderId', mainFolderId);
 
     return {
       mainFolderId: mainFolderId,
@@ -338,6 +345,8 @@ function forInterviewSendEmails() {
       const applicantName = row[0];
       const email = row[FOR_INTERVIEW.COL_EMAIL - 1];
       const driveLink = row[FOR_INTERVIEW.COL_INTERVIEW_LINK - 1];
+      const position = row[7]; // Column H
+      const office = row[8]; // Column I
       const statusCell = sheet.getRange(FOR_INTERVIEW.START_ROW + i, FOR_INTERVIEW.COL_INTERVIEW_PROGRESS);
 
       if (!applicantName || applicantName.toString().trim() === '') continue;
@@ -377,6 +386,8 @@ function forInterviewSendEmails() {
 
       if (response.getContentText() === "Success") {
         statusCell.setValue('Sent (' + now + ')');
+        // Log the sent letter
+        logSentLetter('LETTER - FOR INTERVIEW', position || '', office || '', applicantName || '');
         emailCount++;
       } else {
         statusCell.setValue('Error: Proxy failed (' + now + ')');
