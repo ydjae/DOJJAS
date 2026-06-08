@@ -408,6 +408,29 @@
             </div>
           </div>
         </button>
+        <!--Final Notice -->
+        <button id="finalNoticeBtn"
+          class="group flex flex-col w-full px-5 py-4 bg-white border border-gray-200 hover:border-transparent hover:shadow-sm text-gray-800 rounded-2xl transition-all duration-300 ease-in-out outline-none btn-glow-hover">
+          <span class="btn-glow-hover-inner" aria-hidden="true"></span>
+          <div class="flex items-center w-full">
+            <div
+              class="bg-blue-50 text-blue-600 p-2 rounded-xl mr-4 group-hover:bg-white group-hover:text-blue-700 transition-colors">
+              <i data-lucide="file-user" class="w-5 h-5"></i>
+            </div>
+            <span class="font-bold text-[15px] flex-1 text-left">Final Notice</span>
+            <i data-lucide="chevron-right"
+              class="w-4 h-4 text-gray-400 transition-transform duration-300 group-hover:translate-x-1 group-hover:text-blue-600"></i>
+          </div>
+          <div
+            class="grid grid-rows-[0fr] transition-[grid-template-rows] duration-300 ease-in-out group-hover:grid-rows-[1fr]">
+            <div class="overflow-hidden">
+              <p
+                class="pt-3 text-xs text-gray-500 opacity-0 transition-opacity duration-300 delay-100 group-hover:opacity-100 text-left leading-relaxed">
+                Generate google drive file link for exam letters and send them to applicants.
+              </p>
+            </div>
+          </div>
+        </button>
 
         <!-- Backup -->
         <button id="backupBtn"
@@ -1551,7 +1574,7 @@
           const generatedApplicants = (res && res.applicants) || (res && res.pdfGeneration && res.pdfGeneration.applicants) || [];
           const pdfCount = generatedApplicants.length;
           const lastApplicant = generatedApplicants.length > 0 ? generatedApplicants[generatedApplicants.length - 1] : '';
-          
+
           if (isCancelled) {
             statusLabel.innerHTML = `<span class="block text-red-600 font-semibold">❌ Process Cancelled</span>` +
               `<span class="block text-gray-700">PDF Created: ${pdfCount}</span>` +
@@ -1561,7 +1584,7 @@
             btn.disabled = false;
             btn.className = 'group/btn relative w-full py-2.5 px-3 bg-gray-50 border border-gray-200 text-gray-700 rounded-xl text-sm font-semibold hover:bg-white flex items-center gap-2 active:scale-95 transition cursor-pointer';
             btn.innerHTML = '<i data-lucide="users" class="w-4 h-4 text-blue-500"></i> Generate All';
-            
+
             if (otherBtn) {
               otherBtn.disabled = false;
               otherBtn.className = 'group/btn relative w-full py-2.5 px-3 bg-gray-50 border border-gray-200 text-gray-700 rounded-xl text-sm font-semibold hover:bg-white flex items-center gap-2 active:scale-95 transition cursor-pointer';
@@ -1655,7 +1678,7 @@
             btn.disabled = false;
             btn.className = 'group/btn relative w-full py-2.5 px-3 bg-gray-50 border border-gray-200 text-gray-700 rounded-xl text-sm font-semibold hover:bg-white flex items-center gap-2 active:scale-95 transition cursor-pointer';
             btn.innerHTML = '<i data-lucide="user" class="w-4 h-4 text-blue-500"></i> Generate Individual';
-            
+
             if (otherBtn) {
               otherBtn.disabled = false;
               otherBtn.className = 'group/btn relative w-full py-2.5 px-3 bg-gray-50 border border-gray-200 text-gray-700 rounded-xl text-sm font-semibold hover:bg-white flex items-center gap-2 active:scale-95 transition cursor-pointer';
@@ -2457,7 +2480,7 @@
 
     document.getElementById('cancelRunBtn')?.addEventListener('click', function () {
       window.isRunCancelled = true;
-      
+
       // Update UI immediately
       setCancelButtonState('cancelRunBtn', false);
 
