@@ -7,10 +7,17 @@ const FAILED = {
   TEMPLATE_ID: '1-08ufjwnG0bCV9nrZ6LbOwA_DDBlr8nfUNZYncwFGP8',
   COL_LAST_NAME: 1,
   COL_FIRST_NAME: 2,
-  COL_EMAIL: 7,
-  COL_EMAIL_DATE: 13, // Column M
-  COL_LINK: 14, // Column N
-  COL_STATUS: 15, // Column O
+  COL_EMAIL: 6,              // Column F
+  // --- INTEGRATED NOTES FOR LETTER RECIPIENT FIELDS ---
+  COL_UPPER_SALUTATION: 9,   // Column I
+  COL_UPPER_FULLNAME: 10,    // Column J
+  COL_PROPER_SALUTATION: 11, // Column K
+  COL_PROPER_LASTNAME: 12,   // Column L
+  // --------------------------------------------------
+  COL_EMAIL_DATE: 13,        // Column M
+  COL_LINK: 14,              // Column N
+  COL_STATUS: 15,            // Column O
+  COL_REGENERATE: 16,         // Column P
   START_ROW: 2
 };
 
@@ -36,14 +43,15 @@ function getFailedPositionFolder() {
   const parentFolder = DriveApp.getFolderById(parentFolderId);
   const props = PropertiesService.getDocumentProperties();
 
-  let mainFolderId = props.getProperty('failedMainFolderId')
-    || props.getProperty('forInterviewMainFolderId')
-    || props.getProperty('unqualifiedMainFolderId')
-    || props.getProperty('forExamMainFolderId');
-  let mainFolder;
+  let mainFolderId = props.getProperty('failedMainFolderId');
+  let mainFolder = null;
+  
   if (mainFolderId) {
     try {
-      mainFolder = DriveApp.getFolderById(mainFolderId);
+      const tempFolder = DriveApp.getFolderById(mainFolderId);
+      if (tempFolder.getName() === folderName) {
+        mainFolder = tempFolder;
+      }
     } catch (e) {
       mainFolder = null;
     }
@@ -58,16 +66,17 @@ function getFailedPositionFolder() {
     }
     mainFolderId = mainFolder.getId();
     props.setProperty('failedMainFolderId', mainFolderId);
-    if (!props.getProperty('forExamMainFolderId')) {
-      props.setProperty('forExamMainFolderId', mainFolderId);
-    }
   }
 
   let failedFolderId = props.getProperty('failedSubFolderId');
-  let failedFolder;
+  let failedFolder = null;
+  
   if (failedFolderId) {
     try {
-      failedFolder = DriveApp.getFolderById(failedFolderId);
+      const tempSub = DriveApp.getFolderById(failedFolderId);
+      if (tempSub.getParents().hasNext() && tempSub.getParents().next().getId() === mainFolderId) {
+        failedFolder = tempSub;
+      }
     } catch (e) {
       failedFolder = null;
     }
@@ -175,10 +184,10 @@ function failedVerifyAlignment() {
   const expectedNames = [];
 
   for (let i = 0; i < rows.length; i++) {
-    const lastName = String(rows[i][1] || '').trim();
-    const firstName = String(rows[i][2] || '').trim();
+    const lastName = String(rows[i][0] || '').trim(); // Column A
+    const firstName = String(rows[i][1] || '').trim(); // Column B
     if (lastName && lastName !== '') {
-      expectedNames.push(lastName + ', ' + firstName + ' - FailedLetter');
+      expectedNames.push(lastName + ', ' + firstName);
     }
   }
 
@@ -202,7 +211,7 @@ function failedVerifyAlignment() {
     if (expectedNames[index].toLowerCase() !== normalizedFileName.toLowerCase()) {
       return {
         passed: false,
-        message: 'Alignment verified'
+        message: 'Alignment mismatch discovered at entry indexes.'
       };
     }
   }
@@ -211,7 +220,7 @@ function failedVerifyAlignment() {
 }
 
 function failedSendEmails() {
-  const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbyFPxd3UelHmFuh4fqQC7YPLpVk44rorubWx_My_0S2OV7Il4GlJC1wd7rq8aVKJKpKNg/exec';
+  const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxJpyg6KPFUMxeHSOdOVnVe4WyN6JssT9DhoufEn2pE7vIp02joOQ6jZVD-FwZCLKW7FQ/exec";
 
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   const sheet = ss.getSheetByName(FAILED.SHEET_NAME);
@@ -230,9 +239,17 @@ function failedSendEmails() {
 
   for (let i = 0; i < data.length; i++) {
     const row = data[i];
-    const applicantName = row[0];
-    const email = row[FAILED.COL_EMAIL - 1];
-    const driveLink = row[FAILED.COL_LINK - 1];
+    const applicantName = row[0]; // Column A
+    const applicantLName = row[11]; // Column L
+    const salutation = row[10]; // Column K
+    const email = row[FAILED.COL_EMAIL - 1]; // Column F
+    const driveLink = row[FAILED.COL_LINK - 1]; // Column N
+    
+    // --- MATCHES YOUR SHEET LAYOUT VISUALS ---
+    const position = row[6]; // Index 6 is Column G (POSITION EXT)
+    const office = row[7];   // Index 7 is Column H (ASSIGNED OFFICE)
+    // ----------------------------------------
+    
     const statusCell = sheet.getRange(FAILED.START_ROW + i, FAILED.COL_STATUS);
 
     if (!applicantName || applicantName.toString().trim() === '') continue;
@@ -242,15 +259,14 @@ function failedSendEmails() {
       continue;
     }
 
-    const subject = 'FAILED APPLICATION NOTICE';
-    const body = '*** Automated Message - Please Do Not Reply ***\n' +
-      'For inquiries, please email: orp05.hiring@gmail.com\n\n' +
-      'Dear Applicant,\n\n' +
+    const subject = 'Job Application Update ' + '[' + position + ']';
+    const body = 'Dear ' + salutation + ' ' + applicantLName + ',\n\n' +
       'Good day!\n\n' +
-      'Please see your failed letter document at the link below:\n\n' +
+      'Please see attached file regarding your application.\n\n' +
       'Link: ' + driveLink + '\n\n' +
+      'Kindly acknowledge receipt of this email.\n\n' +
       'Best regards,\n' +
-      'HR Recruitment Team';
+      'DOJ RPO V - Human Resource Unit';
 
     const payload = {
       recipient: email.toString().trim(),
@@ -270,6 +286,8 @@ function failedSendEmails() {
     const response = UrlFetchApp.fetch(WEB_APP_URL, options);
     if (response.getContentText() === 'Success') {
       statusCell.setValue('Sent (' + now + ')');
+      // Log the sent letter using the reference from Column G and H
+      logSentLetter('LETTER - FAILED', position || '', office || '', applicantName || '');
       emailCount++;
     } else {
       statusCell.setValue('Error: Proxy failed (' + now + ')');
@@ -279,6 +297,164 @@ function failedSendEmails() {
   return { status: 'Emails sent', count: emailCount };
 }
 
+function failedGenerateIndividualPDFs() {
+  try {
+    const folderIds = getFailedPositionFolder();
+    const targetFolderId = folderIds.failedSubFolderId;
+
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const sheet = ss.getSheetByName(FAILED.SHEET_NAME);
+    if (!sheet) throw new Error('Sheet "' + FAILED.SHEET_NAME + '" not found.');
+
+    const data = sheet.getDataRange().getDisplayValues();
+    const header = [...data[0]];
+    header.push('RECIPIENT_BLOCK', 'DEAR_BLOCK');
+
+    const selectedRows = [];
+    for (let i = 1; i < data.length; i++) {
+      const row = data[i];
+      const regenerateVal = row[FAILED.COL_REGENERATE - 1];
+      const shouldGenerate = regenerateVal === true || String(regenerateVal).toLowerCase() === 'true';
+      if (!shouldGenerate) continue;
+      if (!row[0] || row[0].toString().trim() === '') continue;
+
+      const upperSalutation = row[FAILED.COL_UPPER_SALUTATION - 1] || '';
+      const upperFullName = row[FAILED.COL_UPPER_FULLNAME - 1] || '';
+      const properSalutation = row[FAILED.COL_PROPER_SALUTATION - 1] || '';
+      const properLastName = row[FAILED.COL_PROPER_LASTNAME - 1] || '';
+      const recipientBlock = (upperSalutation + ' ' + upperFullName).trim();
+      const dearBlock = (properSalutation + ' ' + properLastName).trim();
+
+      const rowCopy = [...row];
+      rowCopy.push(recipientBlock, dearBlock);
+      selectedRows.push({ row: rowCopy, rowIndex: FAILED.START_ROW + i - 1 });
+    }
+
+    if (selectedRows.length === 0) {
+      throw new Error('No items checked in REGENERATE column (P). Please check at least one checkbox to proceed.');
+    }
+
+    const templateFile = DriveApp.getFileById(FAILED.TEMPLATE_ID);
+    const destinationFolder = DriveApp.getFolderById(targetFolderId);
+    const batchKey = 'failed_individual_pdf_generation_' + SpreadsheetApp.getActiveSpreadsheet().getId();
+
+    const rows = selectedRows.map(item => item.row);
+    const batchResult = processPDFBatch(batchKey, rows, header, templateFile, destinationFolder, 20);
+
+    if (!batchResult.completed) {
+      return {
+        success: true,
+        count: batchResult.totalProcessed,
+        applicants: batchResult.allApplicants,
+        completed: false,
+        message: batchResult.message
+      };
+    }
+
+    // Clear the regenerate checkbox for processed rows
+    selectedRows.forEach((item) => {
+      sheet.getRange(item.rowIndex, FAILED.COL_REGENERATE).setValue(false);
+    });
+
+    return { success: true, count: batchResult.totalProcessed, applicants: batchResult.allApplicants };
+  } catch (e) {
+    throw new Error('Error generating selected failed PDFs: ' + e.message);
+  }
+}
+
+function failedSendSelectedEmails() {
+  const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxJpyg6KPFUMxeHSOdOVnVe4WyN6JssT9DhoufEn2pE7vIp02joOQ6jZVD-FwZCLKW7FQ/exec";
+
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName(FAILED.SHEET_NAME);
+  if (!sheet) {
+    throw new Error('Sheet "' + FAILED.SHEET_NAME + '" not found.');
+  }
+
+  const lastRow = sheet.getLastRow();
+  if (lastRow < FAILED.START_ROW) {
+    return { status: 'No applicants found', count: 0 };
+  }
+
+  const data = sheet.getRange(FAILED.START_ROW, 1, lastRow - FAILED.START_ROW + 1, FAILED.COL_REGENERATE).getValues();
+
+  const hasSelected = data.some(row => {
+    const val = row[FAILED.COL_REGENERATE - 1];
+    return val === true || String(val).toLowerCase() === 'true';
+  });
+  if (!hasSelected) {
+    throw new Error('No items checked in REGENERATE column. Please check at least one checkbox to proceed.');
+  }
+
+  let emailCount = 0;
+  const now = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd HH:mm:ss');
+
+  for (let i = 0; i < data.length; i++) {
+    const row = data[i];
+    const regenerateVal = row[FAILED.COL_REGENERATE - 1];
+    const shouldSend = regenerateVal === true || String(regenerateVal).toLowerCase() === 'true';
+    if (!shouldSend) continue;
+
+    const applicantName = row[0];
+    const applicantLName = row[11]; // Column L
+    const salutation = row[10]; // Column K
+    const email = row[FAILED.COL_EMAIL - 1];
+    const driveLink = row[FAILED.COL_LINK - 1];
+    const position = row[6];
+    const office = row[7];
+    const statusCell = sheet.getRange(FAILED.START_ROW + i, FAILED.COL_STATUS);
+
+    if (!applicantName || applicantName.toString().trim() === '') {
+      statusCell.setValue('Not sent - missing name (' + now + ')');
+      sheet.getRange(FAILED.START_ROW + i, FAILED.COL_REGENERATE).setValue(false);
+      continue;
+    }
+
+    if (!email || email.toString().trim() === '' || !driveLink || driveLink.toString().trim() === '') {
+      statusCell.setValue('Not sent - missing email or link (' + now + ')');
+      sheet.getRange(FAILED.START_ROW + i, FAILED.COL_REGENERATE).setValue(false);
+      continue;
+    }
+
+    const subject = 'Job Application Update ' + '[' + position + ']';
+    const body = 'Dear ' + salutation + ' ' + applicantLName + ',\n\n' +
+      'Good day!\n\n' +
+      'Please see attached file regarding your application.\n\n' +
+      'Link: ' + driveLink + '\n\n' +
+      'Kindly acknowledge receipt of this email.\n\n' +
+      'Best regards,\n' +
+      'DOJ RPO V - Human Resource Unit';
+
+    const payload = {
+      recipient: email.toString().trim(),
+      cc: 'orp05.hiring@gmail.com',
+      replyTo: 'orp05.hiring@gmail.com',
+      subject: subject,
+      body: body
+    };
+
+    const options = {
+      method: 'post',
+      contentType: 'application/json',
+      payload: JSON.stringify(payload),
+      muteHttpExceptions: true
+    };
+
+    const response = UrlFetchApp.fetch(WEB_APP_URL, options);
+    if (response.getContentText() === 'Success') {
+      statusCell.setValue('Sent (re-sent) (' + now + ')');
+      // Log the sent letter using the reference from Column G and H
+      logSentLetter('LETTER - FAILED', position || '', office || '', applicantName || '');
+      emailCount++;
+      sheet.getRange(FAILED.START_ROW + i, FAILED.COL_REGENERATE).setValue(false);
+    } else {
+      statusCell.setValue('Error: Proxy failed (' + now + ')');
+    }
+  }
+
+  return { status: 'Selected emails processed', count: emailCount };
+}
+
 function failedGeneratePDFs(targetFolderId) {
   try {
     const ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -286,46 +462,68 @@ function failedGeneratePDFs(targetFolderId) {
     if (!sheet) throw new Error('Sheet "' + FAILED.SHEET_NAME + '" not found!');
 
     const data = sheet.getDataRange().getDisplayValues();
-    const header = data[0];
-    const rows = data.slice(1).filter(row => row[0] && row[0].toString().trim() !== '');
+    
+    // Create a copy of the header row and add our two new combined fields
+    const header = [...data[0]];
+    header.push("RECIPIENT_BLOCK", "DEAR_BLOCK");
 
+    const rawRows = data.slice(1).filter(row => row[0] && row[0].toString().trim() !== '');
+
+    // --- INTEGRATED NOTE: Combine the requested columns per row ---
+    const rows = rawRows.map(row => {
+      const newRow = [...row];
+      
+      // Pull values using our mapped constants (subtracting 1 for 0-indexed arrays)
+      const upperSalutation = newRow[FAILED.COL_UPPER_SALUTATION - 1] || "";
+      const upperFullName = newRow[FAILED.COL_UPPER_FULLNAME - 1] || "";
+      const properSalutation = newRow[FAILED.COL_PROPER_SALUTATION - 1] || "";
+      const properLastName = newRow[FAILED.COL_PROPER_LASTNAME - 1] || "";
+
+      // Combine Column I and J for the "Recipient" part
+      const recipientBlock = (upperSalutation + " " + upperFullName).trim();
+      
+      // Combine Column K and L for the "Dear" part
+      const dearBlock = (properSalutation + " " + properLastName).trim();
+
+      // Push them to the end of the array so processPDFBatch can map them to the template tags
+      newRow.push(recipientBlock, dearBlock);
+      return newRow;
+    });
+
+    // Sort rows alphabetically matching the layout configuration
     rows.sort((a, b) => {
-      const lastNameA = String(a[1] || '').trim().toLowerCase();
-      const lastNameB = String(b[1] || '').trim().toLowerCase();
+      const lastNameA = String(a[0] || '').trim().toLowerCase();
+      const lastNameB = String(b[0] || '').trim().toLowerCase();
       if (lastNameA !== lastNameB) return lastNameA.localeCompare(lastNameB);
-      return String(a[2] || '').trim().toLowerCase().localeCompare(String(b[2] || '').trim().toLowerCase());
+      return String(a[1] || '').trim().toLowerCase().localeCompare(String(b[1] || '').trim().toLowerCase());
     });
 
     const templateFile = DriveApp.getFileById(FAILED.TEMPLATE_ID);
     const destinationFolder = DriveApp.getFolderById(targetFolderId);
-    const processedApplicants = [];
+    
+    // Use batch processing with key for Failed
+    const batchKey = 'failed_pdf_generation_' + SpreadsheetApp.getActiveSpreadsheet().getId();
+    
+    // Since we appended the combined blocks to 'rows' and 'header', processPDFBatch will handle them automatically
+    const batchResult = processPDFBatch(batchKey, rows, header, templateFile, destinationFolder, 20); // Process 20 at a time
 
-    rows.forEach(row => {
-      const lastName = String(row[1] || '').trim();
-      const firstName = String(row[2] || '').trim();
-      const fileName = lastName + ', ' + firstName + ' - FailedLetter';
-
-      const copy = templateFile.makeCopy(fileName, destinationFolder);
-      const doc = DocumentApp.openById(copy.getId());
-      const body = doc.getBody();
-
-      header.forEach((label, i) => {
-        body.replaceText('{{' + label + '}}', row[i]);
-      });
-
-      doc.saveAndClose();
-      const pdfBlob = copy.getAs(MimeType.PDF);
-      const pdfFile = destinationFolder.createFile(pdfBlob).setName(fileName + '.pdf');
-      pdfFile.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
-      copy.setTrashed(true);
-
-      processedApplicants.push(lastName + ', ' + firstName);
-    });
+    let returnMessage = batchResult.message;
+    
+    // If batch is still processing, suggest running again
+    if (!batchResult.completed) {
+      returnMessage += '\n\nTo continue processing remaining applicants (total: ' + batchResult.totalRows + '), run this step again.';
+    } else {
+      // Batch is complete, clear the state
+      clearBatchState(batchKey);
+      returnMessage = 'PDF generation completed! ' + batchResult.totalProcessed + ' PDFs generated.';
+    }
 
     return {
       success: true,
-      count: rows.length,
-      applicants: processedApplicants
+      count: batchResult.totalProcessed,
+      applicants: batchResult.allApplicants,
+      completed: batchResult.completed,
+      message: returnMessage
     };
   } catch (e) {
     throw new Error('Error generating failed PDFs: ' + e.message);
@@ -426,10 +624,19 @@ function failedRunCompleteProcess() {
   try {
     const folderIds = getFailedPositionFolder();
     const pdfResult = failedGeneratePDFs(folderIds.failedSubFolderId);
+    
+    let message = pdfResult.message || ('Generated ' + pdfResult.count + ' PDFs');
+    if (!pdfResult.completed) {
+      message = pdfResult.message + '\n\nStep 2 is still running. Click "Step 2 - Generate PDFs" again to continue processing remaining applicants.';
+    }
+    
     return {
       success: true,
       folders: folderIds,
-      pdfGeneration: pdfResult
+      pdfGeneration: {
+        ...pdfResult,
+        message: message
+      }
     };
   } catch (e) {
     throw new Error('Error in failed complete process: ' + e.message);

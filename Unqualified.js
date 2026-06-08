@@ -11,6 +11,7 @@ const UNQUALIFIED = {
   COL_REASON: 10,
   COL_LINK: 16, // Column P
   COL_STATUS: 17, // Column Q
+  COL_REGENERATE: 19, // Column S
   START_ROW: 2
 };
 
@@ -36,16 +37,22 @@ function getUnqualifiedPositionFolder() {
   const parentFolder = DriveApp.getFolderById(parentFolderId);
   const props = PropertiesService.getDocumentProperties();
 
-  let mainFolderId = props.getProperty('unqualifiedMainFolderId') || props.getProperty('forExamMainFolderId');
-  let mainFolder;
+  let mainFolderId = props.getProperty('unqualifiedMainFolderId');
+  let mainFolder = null;
+  
   if (mainFolderId) {
     try {
-      mainFolder = DriveApp.getFolderById(mainFolderId);
+      const tempFolder = DriveApp.getFolderById(mainFolderId);
+      // FIX: Only reuse if it matches our current target position folder name
+      if (tempFolder.getName() === folderName) {
+        mainFolder = tempFolder;
+      }
     } catch (e) {
       mainFolder = null;
     }
   }
 
+  // If no cached folder exists OR it didn't match the new position name
   if (!mainFolder) {
     const existingFolders = parentFolder.getFoldersByName(folderName);
     if (existingFolders.hasNext()) {
@@ -55,16 +62,19 @@ function getUnqualifiedPositionFolder() {
     }
     mainFolderId = mainFolder.getId();
     props.setProperty('unqualifiedMainFolderId', mainFolderId);
-    if (!props.getProperty('forExamMainFolderId')) {
-      props.setProperty('forExamMainFolderId', mainFolderId);
-    }
   }
 
+  // Handle the 'Unqualified' specific subfolder
   let unqualifiedFolderId = props.getProperty('unqualifiedSubFolderId');
-  let unqualifiedFolder;
+  let unqualifiedFolder = null;
+  
   if (unqualifiedFolderId) {
     try {
-      unqualifiedFolder = DriveApp.getFolderById(unqualifiedFolderId);
+      const tempSub = DriveApp.getFolderById(unqualifiedFolderId);
+      // Ensure the subfolder's parent is actually our current main position folder
+      if (tempSub.getParents().hasNext() && tempSub.getParents().next().getId() === mainFolderId) {
+        unqualifiedFolder = tempSub;
+      }
     } catch (e) {
       unqualifiedFolder = null;
     }
@@ -144,37 +154,98 @@ function unqualifiedGeneratePDFs(targetFolderId) {
 
     const templateFile = DriveApp.getFileById(UNQUALIFIED.TEMPLATE_ID);
     const destinationFolder = DriveApp.getFolderById(targetFolderId);
-    const processedApplicants = [];
+    
+    // Use batch processing with key for Unqualified
+    const batchKey = 'unqualified_pdf_generation_' + SpreadsheetApp.getActiveSpreadsheet().getId();
+    const batchResult = processPDFBatch(batchKey, rows, header, templateFile, destinationFolder, 20); // Process 20 at a time
 
-    rows.forEach(row => {
-      const lastName = String(row[0] || '').trim();
-      const firstName = String(row[1] || '').trim();
-      const fileName = lastName + ', ' + firstName + ' - DQletter';
-
-      const copy = templateFile.makeCopy(fileName, destinationFolder);
-      const doc = DocumentApp.openById(copy.getId());
-      const body = doc.getBody();
-
-      header.forEach((label, i) => {
-        body.replaceText('{{' + label + '}}', row[i]);
-      });
-
-      doc.saveAndClose();
-      const pdfBlob = copy.getAs(MimeType.PDF);
-      const pdfFile = destinationFolder.createFile(pdfBlob).setName(fileName + '.pdf');
-      pdfFile.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
-      copy.setTrashed(true);
-
-      processedApplicants.push(lastName + ', ' + firstName);
-    });
+    let returnMessage = batchResult.message;
+    
+    // If batch is still processing, suggest running again
+    if (!batchResult.completed) {
+      returnMessage += '\n\nTo continue processing remaining applicants (total: ' + batchResult.totalRows + '), run this step again.';
+    } else {
+      // Batch is complete, clear the state
+      clearBatchState(batchKey);
+      returnMessage = 'PDF generation completed! ' + batchResult.totalProcessed + ' PDFs generated.';
+    }
 
     return {
       success: true,
-      count: rows.length,
-      applicants: processedApplicants
+      count: batchResult.totalProcessed,
+      applicants: batchResult.allApplicants,
+      completed: batchResult.completed,
+      message: returnMessage
     };
   } catch (e) {
     throw new Error('Error generating unqualified PDFs: ' + e.message);
+  }
+}
+
+function unqualifiedGenerateIndividualPDFs() {
+  try {
+    const folderIds = getUnqualifiedPositionFolder();
+    const targetFolderId = folderIds.unqualifiedSubFolderId;
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const sheet = ss.getSheetByName(UNQUALIFIED.SHEET_NAME);
+    if (!sheet) throw new Error('Sheet "' + UNQUALIFIED.SHEET_NAME + '" not found.');
+
+    const data = sheet.getDataRange().getDisplayValues();
+    if (data.length <= 1) {
+      throw new Error('No items checked in REGENERATE column (S). Please check at least one checkbox to proceed.');
+    }
+
+    const header = data[0];
+    const selectedRows = [];
+
+    for (let i = 1; i < data.length; i++) {
+      const row = data[i];
+      const regenerateVal = row[UNQUALIFIED.COL_REGENERATE - 1];
+      const shouldGenerate = regenerateVal === true || String(regenerateVal).toLowerCase() === 'true';
+      if (!shouldGenerate) continue;
+      if (!row[0] || row[0].toString().trim() === '') continue;
+      selectedRows.push({ row, rowIndex: UNQUALIFIED.START_ROW + i - 1 });
+    }
+
+    if (selectedRows.length === 0) {
+      throw new Error('No items checked in REGENERATE column (S). Please check at least one checkbox to proceed.');
+    }
+
+    const templateFile = DriveApp.getFileById(UNQUALIFIED.TEMPLATE_ID);
+    const destinationFolder = DriveApp.getFolderById(targetFolderId);
+    const processed = [];
+
+    selectedRows.forEach(({ row, rowIndex }) => {
+      const lastName = String(row[UNQUALIFIED.COL_LAST_NAME - 1] || '').trim();
+      const firstName = String(row[UNQUALIFIED.COL_FIRST_NAME - 1] || '').trim();
+      const fileName = (lastName || 'Applicant') + (firstName ? (', ' + firstName) : '');
+
+      try {
+        const copy = templateFile.makeCopy(fileName, destinationFolder);
+        const doc = DocumentApp.openById(copy.getId());
+        const body = doc.getBody();
+
+        header.forEach((label, j) => {
+          body.replaceText('{{' + label + '}}', row[j]);
+        });
+
+        doc.saveAndClose();
+        const pdfBlob = copy.getAs(MimeType.PDF);
+        const pdfFile = destinationFolder.createFile(pdfBlob).setName(fileName + '.pdf');
+        pdfFile.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+        copy.setTrashed(true);
+        const pdfUrl = pdfFile.getUrl();
+        sheet.getRange(rowIndex, UNQUALIFIED.COL_LINK).setValue(pdfUrl);
+        sheet.getRange(rowIndex, UNQUALIFIED.COL_REGENERATE).setValue(false);
+        processed.push(fileName);
+      } catch (itemError) {
+        console.log('Error generating unqualified PDF for row ' + rowIndex + ': ' + itemError.message);
+      }
+    });
+
+    return { success: true, count: processed.length, applicants: processed };
+  } catch (e) {
+    throw new Error('Error generating selected unqualified PDFs: ' + e.message);
   }
 }
 
@@ -270,7 +341,7 @@ function unqualifiedBackupSheet() {
 
 function unqualifiedSendEmails() {
   // PASTE YOUR DEPLOYED WEB APP URL HERE
-  const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyFPxd3UelHmFuh4fqQC7YPLpVk44rorubWx_My_0S2OV7Il4GlJC1wd7rq8aVKJKpKNg/exec";
+  const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxJpyg6KPFUMxeHSOdOVnVe4WyN6JssT9DhoufEn2pE7vIp02joOQ6jZVD-FwZCLKW7FQ/exec";
 
   try {
     const ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -290,8 +361,12 @@ function unqualifiedSendEmails() {
     for (let i = 0; i < data.length; i++) {
       const row = data[i];
       const applicantName = row[0];
+      const applicantLName = row[13]; // Column N
+      const salutation = row[12]; // Column M
       const email = row[UNQUALIFIED.COL_EMAIL - 1];
       const driveLink = row[UNQUALIFIED.COL_LINK - 1];
+      const position = row[7]; // Column H
+      const office = row[8]; // Column I
       const statusCell = sheet.getRange(UNQUALIFIED.START_ROW + i, UNQUALIFIED.COL_STATUS);
 
       if (!applicantName || applicantName.toString().trim() === '') continue;
@@ -301,13 +376,14 @@ function unqualifiedSendEmails() {
         continue;
       }
 
-      const subject = 'UPDATE ON JOB APPLICATION';
-      const body = '*** Automated Message - Please Do Not Reply ***\n' +
-        'For inquiries, please email: orp05.hiring@gmail.com\n\n' +
-        'Dear Applicant,\n\n' +
-        'Good Day,\n' +
+      const subject = 'Job Application Update ' + '[' + position + ']';
+      const body = 'Dear ' + salutation + ' ' + applicantLName + ',\n\n' +
+        'Good day!\n\n' +
         'Please see attached file regarding your application.\n\n' +
-        'Link: ' + driveLink;
+        'Link: ' + driveLink + '\n\n' +
+        'Kindly acknowledge receipt of this email.\n\n' +
+        'Best regards,\n' +
+        'DOJ RPO V - Human Resource Unit';
 
       // --- INTEGRATED PROXY CALL ---
       const payload = {
@@ -329,6 +405,8 @@ function unqualifiedSendEmails() {
 
       if (response.getContentText() === "Success") {
         statusCell.setValue('Sent (' + now + ')');
+        // Log the sent letter
+        logSentLetter('LETTER - DQ', position || '', office || '', applicantName || '');
         emailCount++;
       } else {
         statusCell.setValue('Error: Proxy failed (' + now + ')');
@@ -347,14 +425,117 @@ function unqualifiedSendEmails() {
   }
 }
 
+function unqualifiedSendSelectedEmails() {
+  const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxJpyg6KPFUMxeHSOdOVnVe4WyN6JssT9DhoufEn2pE7vIp02joOQ6jZVD-FwZCLKW7FQ/exec";
+
+  try {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const sheet = ss.getSheetByName(UNQUALIFIED.SHEET_NAME);
+    if (!sheet) throw new Error('Sheet "' + UNQUALIFIED.SHEET_NAME + '" not found.');
+
+    const lastRow = sheet.getLastRow();
+    if (lastRow < UNQUALIFIED.START_ROW) {
+      return { status: 'No applicants found', count: 0 };
+    }
+
+    const data = sheet.getRange(UNQUALIFIED.START_ROW, 1, lastRow - UNQUALIFIED.START_ROW + 1, UNQUALIFIED.COL_REGENERATE).getValues();
+
+    const hasSelected = data.some(row => {
+      const val = row[UNQUALIFIED.COL_REGENERATE - 1];
+      return val === true || String(val).toLowerCase() === 'true';
+    });
+    if (!hasSelected) {
+      throw new Error('No items checked in REGENERATE column. Please check at least one checkbox to proceed.');
+    }
+
+    let emailCount = 0;
+    const now = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd HH:mm:ss');
+
+    for (let i = 0; i < data.length; i++) {
+      const row = data[i];
+      const regenerateVal = row[UNQUALIFIED.COL_REGENERATE - 1];
+      const shouldSend = regenerateVal === true || String(regenerateVal).toLowerCase() === 'true';
+      if (!shouldSend) continue;
+
+      const applicantName = row[0];
+      const applicantLName = row[13]; // Column N
+      const salutation = row[12]; // Column M
+      const email = row[UNQUALIFIED.COL_EMAIL - 1];
+      const driveLink = row[UNQUALIFIED.COL_LINK - 1];
+      const position = row[7];
+      const office = row[8];
+      const statusCell = sheet.getRange(UNQUALIFIED.START_ROW + i, UNQUALIFIED.COL_STATUS);
+
+      if (!applicantName || applicantName.toString().trim() === '') {
+        statusCell.setValue('Not sent - missing name (' + now + ')');
+        sheet.getRange(UNQUALIFIED.START_ROW + i, UNQUALIFIED.COL_REGENERATE).setValue(false);
+        continue;
+      }
+
+      if (!email || email.toString().trim() === '' || !driveLink || driveLink.toString().trim() === '') {
+        statusCell.setValue('Not sent - missing email or link (' + now + ')');
+        sheet.getRange(UNQUALIFIED.START_ROW + i, UNQUALIFIED.COL_REGENERATE).setValue(false);
+        continue;
+      }
+
+      const subject = 'Job Application Update ' + '[' + position + ']';
+      const body = 'Dear ' + salutation + ' ' + applicantLName + ',\n\n' +
+        'Good day!\n\n' +
+        'Please see attached file regarding your application.\n\n' +
+        'Link: ' + driveLink + '\n\n' +
+        'Kindly acknowledge receipt of this email.\n\n' +
+        'Best regards,\n' +
+        'DOJ RPO V - Human Resource Unit';
+
+      const payload = {
+        recipient: email.toString().trim(),
+        cc: 'orp05.hiring@gmail.com',
+        replyTo: 'orp05.hiring@gmail.com',
+        subject: subject,
+        body: body
+      };
+
+      const options = {
+        method: 'post',
+        contentType: 'application/json',
+        payload: JSON.stringify(payload),
+        muteHttpExceptions: true
+      };
+
+      const response = UrlFetchApp.fetch(WEB_APP_URL, options);
+      if (response.getContentText() === 'Success') {
+        statusCell.setValue('Sent (re-sent) (' + now + ')');
+        logSentLetter('LETTER - DQ', position || '', office || '', applicantName || '');
+        emailCount++;
+        sheet.getRange(UNQUALIFIED.START_ROW + i, UNQUALIFIED.COL_REGENERATE).setValue(false);
+      } else {
+        statusCell.setValue('Error: Proxy failed (' + now + ')');
+      }
+    }
+
+    return { status: 'Selected emails processed', count: emailCount };
+  } catch (e) {
+    throw new Error('Error sending selected emails: ' + e.message);
+  }
+}
+
 function unqualifiedRunCompleteProcess() {
   try {
     const folderIds = getUnqualifiedPositionFolder();
     const pdfResult = unqualifiedGeneratePDFs(folderIds.unqualifiedSubFolderId);
+    
+    let message = pdfResult.message || ('Generated ' + pdfResult.count + ' PDFs');
+    if (!pdfResult.completed) {
+      message = pdfResult.message + '\n\nStep 2 is still running. Click "Step 2 - Generate PDFs" again to continue processing remaining applicants.';
+    }
+    
     return {
       success: true,
       folders: folderIds,
-      pdfGeneration: pdfResult
+      pdfGeneration: {
+        ...pdfResult,
+        message: message
+      }
     };
   } catch (e) {
     throw new Error('Error in unqualified complete process: ' + e.message);
