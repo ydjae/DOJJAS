@@ -1462,6 +1462,14 @@
       });
     }
 
+    function goHomeWithReset() {
+      if (typeof resetForExamSteps === 'function') resetForExamSteps();
+      if (typeof resetUnqualifiedSteps === 'function') resetUnqualifiedSteps();
+      if (typeof resetInterviewSteps === 'function') resetInterviewSteps();
+      if (typeof resetFailedSteps === 'function') resetFailedSteps();
+      showLanding();
+    }
+
     function showPage(type) {
       currentLetterType = type;
       ['landingPage', 'forExamPage', 'unqualified-page', 'for-interview-page', 'failed-page', 'backup-page', 'summary-page'].forEach(id => {
@@ -2524,7 +2532,7 @@
     });
 
     document.getElementById('mainMenuBtn')?.addEventListener('click', function () {
-      showLanding();
+      goHomeWithReset();
     });
 
     document.getElementById('resetBtn')?.addEventListener('click', function () {
@@ -2554,9 +2562,9 @@
     navButtons.unqualified.onclick = () => showPage('unqualified');
     navButtons.forInterview.onclick = () => showPage('forInterview');
     navButtons.failed.onclick = () => showPage('failed');
-    document.getElementById('backBtn')?.addEventListener('click', showLanding);
-    document.getElementById('backBtnUnqualified')?.addEventListener('click', showLanding);
-    document.getElementById('backBtnInterview')?.addEventListener('click', showLanding);
+    document.getElementById('backBtn')?.addEventListener('click', goHomeWithReset);
+    document.getElementById('backBtnUnqualified')?.addEventListener('click', goHomeWithReset);
+    document.getElementById('backBtnInterview')?.addEventListener('click', goHomeWithReset);
 
     // ==== UNQUALIFIED PAGE EVENT LISTENERS ====
 
@@ -2690,7 +2698,7 @@
     }
 
     document.getElementById('mainMenuBtnUQ').addEventListener('click', function () {
-      showLanding();
+      goHomeWithReset();
     });
 
     document.getElementById('resetBtnUQ').addEventListener('click', function () {
@@ -3037,7 +3045,7 @@
 
     // Navigation and Reset logic
     document.getElementById('mainMenuBtnInterview')?.addEventListener('click', function () {
-      showLanding();
+      goHomeWithReset();
     });
 
     document.getElementById('resetBtnInterview')?.addEventListener('click', function () {
@@ -3135,7 +3143,7 @@
         .setActiveSheetByName('LETTER - FAILED');
     });
 
-    document.getElementById('backBtnFailed')?.addEventListener('click', showLanding);
+    document.getElementById('backBtnFailed')?.addEventListener('click', goHomeWithReset);
 
     document.getElementById('checkFailedColumnLBtn')?.addEventListener('click', function () {
       const btn = this;
@@ -3439,7 +3447,7 @@
     });
 
     document.getElementById('failedHomeBtn')?.addEventListener('click', function () {
-      showLanding();
+      goHomeWithReset();
     });
 
     document.getElementById('failedResetBtn')?.addEventListener('click', function () {
@@ -3450,7 +3458,7 @@
       showPage('backup');
     });
 
-    document.getElementById('backBtnInterview').addEventListener('click', showLanding);
+    document.getElementById('backBtnInterview').addEventListener('click', goHomeWithReset);
 
     // Backup page navigation
     document.getElementById('backupBtn')?.addEventListener('click', function () {
@@ -3462,7 +3470,7 @@
     });
 
     // Summary page handlers
-    document.getElementById('summaryBackBtn')?.addEventListener('click', function () { showLanding(); });
+    document.getElementById('summaryBackBtn')?.addEventListener('click', function () { goHomeWithReset(); });
 
     document.getElementById('generateSummaryRunBtn')?.addEventListener('click', function () {
       const btn = this;
@@ -3495,7 +3503,7 @@
     });
 
     document.getElementById('backupBackBtn')?.addEventListener('click', function () {
-      showLanding();
+      goHomeWithReset();
     });
 
     // Backup whole sheet
@@ -3645,15 +3653,7 @@
      */
     function handleGlobalPositionChangeReset() {
       console.log("Position change confirmed on backend sheet cell B2. Executing global wipe...");
-
-      // 1. Call your existing individual page reset subroutines
-      if (typeof resetForExamSteps === 'function') resetForExamSteps();
-      if (typeof resetUnqualifiedSteps === 'function') resetUnqualifiedSteps();
-      if (typeof resetInterviewSteps === 'function') resetInterviewSteps();
-      if (typeof resetFailedSteps === 'function') resetFailedSteps();
-
-      // 2. Route view panel safely back to your main menu layout view
-      if (typeof showLanding === 'function') showLanding();
+      if (typeof goHomeWithReset === 'function') goHomeWithReset();
     }
 
     // Set up an automated check interval loop running every 2.5 seconds to watch for changes
