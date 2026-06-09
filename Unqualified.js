@@ -182,6 +182,73 @@ function unqualifiedGeneratePDFs(targetFolderId) {
   }
 }
 
+function unqualifiedGenerateIndividualPDFs() {
+  try {
+    const folderIds = getUnqualifiedPositionFolder();
+    const targetFolderId = folderIds.unqualifiedSubFolderId;
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const sheet = ss.getSheetByName(UNQUALIFIED.SHEET_NAME);
+    if (!sheet) throw new Error('Sheet "' + UNQUALIFIED.SHEET_NAME + '" not found.');
+
+    const data = sheet.getDataRange().getDisplayValues();
+    if (data.length <= 1) {
+      throw new Error('No items checked in REGENERATE column (S). Please check at least one checkbox to proceed.');
+    }
+
+    const header = data[0];
+    const selectedRows = [];
+
+    for (let i = 1; i < data.length; i++) {
+      const row = data[i];
+      const regenerateVal = row[UNQUALIFIED.COL_REGENERATE - 1];
+      const shouldGenerate = regenerateVal === true || String(regenerateVal).toLowerCase() === 'true';
+      if (!shouldGenerate) continue;
+      if (!row[0] || row[0].toString().trim() === '') continue;
+      selectedRows.push({ row, rowIndex: UNQUALIFIED.START_ROW + i - 1 });
+    }
+
+    if (selectedRows.length === 0) {
+      throw new Error('No items checked in REGENERATE column (S). Please check at least one checkbox to proceed.');
+    }
+
+    const templateFile = DriveApp.getFileById(UNQUALIFIED.TEMPLATE_ID);
+    const destinationFolder = DriveApp.getFolderById(targetFolderId);
+    const processed = [];
+
+    selectedRows.forEach(({ row, rowIndex }) => {
+      const lastName = String(row[UNQUALIFIED.COL_LAST_NAME - 1] || '').trim();
+      const firstName = String(row[UNQUALIFIED.COL_FIRST_NAME - 1] || '').trim();
+      const fileName = (lastName || 'Applicant') + (firstName ? (', ' + firstName) : '');
+
+      try {
+        const copy = templateFile.makeCopy(fileName, destinationFolder);
+        const doc = DocumentApp.openById(copy.getId());
+        const body = doc.getBody();
+
+        header.forEach((label, j) => {
+          body.replaceText('{{' + label + '}}', row[j]);
+        });
+
+        doc.saveAndClose();
+        const pdfBlob = copy.getAs(MimeType.PDF);
+        const pdfFile = destinationFolder.createFile(pdfBlob).setName(fileName + '.pdf');
+        pdfFile.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+        copy.setTrashed(true);
+        const pdfUrl = pdfFile.getUrl();
+        sheet.getRange(rowIndex, UNQUALIFIED.COL_LINK).setValue(pdfUrl);
+        sheet.getRange(rowIndex, UNQUALIFIED.COL_REGENERATE).setValue(false);
+        processed.push(fileName);
+      } catch (itemError) {
+        console.log('Error generating unqualified PDF for row ' + rowIndex + ': ' + itemError.message);
+      }
+    });
+
+    return { success: true, count: processed.length, applicants: processed };
+  } catch (e) {
+    throw new Error('Error generating selected unqualified PDFs: ' + e.message);
+  }
+}
+
 function unqualifiedGenerateLinks() {
   try {
     const settings = PropertiesService.getDocumentProperties();
@@ -274,7 +341,7 @@ function unqualifiedBackupSheet() {
 
 function unqualifiedSendEmails() {
   // PASTE YOUR DEPLOYED WEB APP URL HERE
-  const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyFPxd3UelHmFuh4fqQC7YPLpVk44rorubWx_My_0S2OV7Il4GlJC1wd7rq8aVKJKpKNg/exec";
+  const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxJpyg6KPFUMxeHSOdOVnVe4WyN6JssT9DhoufEn2pE7vIp02joOQ6jZVD-FwZCLKW7FQ/exec";
 
   try {
     const ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -294,6 +361,8 @@ function unqualifiedSendEmails() {
     for (let i = 0; i < data.length; i++) {
       const row = data[i];
       const applicantName = row[0];
+      const applicantLName = row[13]; // Column N
+      const salutation = row[12]; // Column M
       const email = row[UNQUALIFIED.COL_EMAIL - 1];
       const driveLink = row[UNQUALIFIED.COL_LINK - 1];
       const position = row[7]; // Column H
@@ -307,11 +376,14 @@ function unqualifiedSendEmails() {
         continue;
       }
 
-      const subject = 'JOB APPLICATION UPDATE';
-      const body = 'Dear Applicant,\n\n' +
+      const subject = 'Job Application Update ' + '[' + position + ']';
+      const body = 'Dear ' + salutation + ' ' + applicantLName + ',\n\n' +
         'Good day!\n\n' +
         'Please see attached file regarding your application.\n\n' +
-        'Link: ' + driveLink;
+        'Link: ' + driveLink + '\n\n' +
+        'Kindly acknowledge receipt of this email.\n\n' +
+        'Best regards,\n' +
+        'DOJ RPO V - Human Resource Unit';
 
       // --- INTEGRATED PROXY CALL ---
       const payload = {
@@ -354,7 +426,7 @@ function unqualifiedSendEmails() {
 }
 
 function unqualifiedSendSelectedEmails() {
-  const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyFPxd3UelHmFuh4fqQC7YPLpVk44rorubWx_My_0S2OV7Il4GlJC1wd7rq8aVKJKpKNg/exec";
+  const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxJpyg6KPFUMxeHSOdOVnVe4WyN6JssT9DhoufEn2pE7vIp02joOQ6jZVD-FwZCLKW7FQ/exec";
 
   try {
     const ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -367,6 +439,15 @@ function unqualifiedSendSelectedEmails() {
     }
 
     const data = sheet.getRange(UNQUALIFIED.START_ROW, 1, lastRow - UNQUALIFIED.START_ROW + 1, UNQUALIFIED.COL_REGENERATE).getValues();
+
+    const hasSelected = data.some(row => {
+      const val = row[UNQUALIFIED.COL_REGENERATE - 1];
+      return val === true || String(val).toLowerCase() === 'true';
+    });
+    if (!hasSelected) {
+      throw new Error('No items checked in REGENERATE column. Please check at least one checkbox to proceed.');
+    }
+
     let emailCount = 0;
     const now = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd HH:mm:ss');
 
@@ -377,6 +458,8 @@ function unqualifiedSendSelectedEmails() {
       if (!shouldSend) continue;
 
       const applicantName = row[0];
+      const applicantLName = row[13]; // Column N
+      const salutation = row[12]; // Column M
       const email = row[UNQUALIFIED.COL_EMAIL - 1];
       const driveLink = row[UNQUALIFIED.COL_LINK - 1];
       const position = row[7];
@@ -395,11 +478,14 @@ function unqualifiedSendSelectedEmails() {
         continue;
       }
 
-      const subject = 'JOB APPLICATION UPDATE';
-      const body = 'Dear Applicant,\n\n' +
+      const subject = 'Job Application Update ' + '[' + position + ']';
+      const body = 'Dear ' + salutation + ' ' + applicantLName + ',\n\n' +
         'Good day!\n\n' +
         'Please see attached file regarding your application.\n\n' +
-        'Link: ' + driveLink;
+        'Link: ' + driveLink + '\n\n' +
+        'Kindly acknowledge receipt of this email.\n\n' +
+        'Best regards,\n' +
+        'DOJ RPO V - Human Resource Unit';
 
       const payload = {
         recipient: email.toString().trim(),
@@ -430,12 +516,6 @@ function unqualifiedSendSelectedEmails() {
     return { status: 'Selected emails processed', count: emailCount };
   } catch (e) {
     throw new Error('Error sending selected emails: ' + e.message);
-  }
-}
-
-function unqualifiedRunCompleteProcess() {
-  } catch (e) {
-    throw new Error('Error sending email notifications: ' + e.message);
   }
 }
 

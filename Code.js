@@ -135,11 +135,26 @@ function sendEmailsToFailedApplicants() {
   return failedSendEmails();
 }
 
+function sendSelectedFailedEmails() {
+  return failedSendSelectedEmails();
+}
+
+function generateIndividualFailedPDFs() {
+  return failedGenerateIndividualPDFs();
+}
+
 /**
  * Generate Google Drive links for For Interview
  */
 function interviewGenerateLinks() {
   return forInterviewGenerateLinks();
+}
+
+/**
+ * Generate selected For Interview PDFs
+ */
+function generateIndividualInterviewPDFs() {
+  return forInterviewGenerateIndividualPDFs();
 }
 
 /**
@@ -149,6 +164,10 @@ function interviewSendEmails() {
   return forInterviewSendEmails();
 }
 
+function sendSelectedInterviewEmails() {
+  return forInterviewSendSelectedEmails();
+}
+
 /**
  * Send emails to exam applicants
  */
@@ -156,11 +175,20 @@ function sendEmailsToApplicants() {
   return forExamSendEmails();
 }
 
-/**
- * Send emails to unqualified applicants
- */
+function sendIndividualEmailsToApplicants() {
+  return forExamSendIndividualEmails();
+}
+
 function sendEmailsToUnqualified() {
   return unqualifiedSendEmails();
+}
+
+function sendSelectedEmailsToUnqualified() {
+  return unqualifiedSendSelectedEmails();
+}
+
+function generateIndividualUnqualifiedPDFs() {
+  return unqualifiedGenerateIndividualPDFs();
 }
 
 /**

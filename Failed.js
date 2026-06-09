@@ -220,7 +220,7 @@ function failedVerifyAlignment() {
 }
 
 function failedSendEmails() {
-  const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbyFPxd3UelHmFuh4fqQC7YPLpVk44rorubWx_My_0S2OV7Il4GlJC1wd7rq8aVKJKpKNg/exec';
+  const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxJpyg6KPFUMxeHSOdOVnVe4WyN6JssT9DhoufEn2pE7vIp02joOQ6jZVD-FwZCLKW7FQ/exec";
 
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   const sheet = ss.getSheetByName(FAILED.SHEET_NAME);
@@ -240,6 +240,8 @@ function failedSendEmails() {
   for (let i = 0; i < data.length; i++) {
     const row = data[i];
     const applicantName = row[0]; // Column A
+    const applicantLName = row[11]; // Column L
+    const salutation = row[10]; // Column K
     const email = row[FAILED.COL_EMAIL - 1]; // Column F
     const driveLink = row[FAILED.COL_LINK - 1]; // Column N
     
@@ -257,11 +259,12 @@ function failedSendEmails() {
       continue;
     }
 
-    const subject = 'JOB APPLICATION UPDATE';
-    const body = 'Dear Applicant,\n\n' +
+    const subject = 'Job Application Update ' + '[' + position + ']';
+    const body = 'Dear ' + salutation + ' ' + applicantLName + ',\n\n' +
       'Good day!\n\n' +
       'Please see attached file regarding your application.\n\n' +
       'Link: ' + driveLink + '\n\n' +
+      'Kindly acknowledge receipt of this email.\n\n' +
       'Best regards,\n' +
       'DOJ RPO V - Human Resource Unit';
 
@@ -294,8 +297,73 @@ function failedSendEmails() {
   return { status: 'Emails sent', count: emailCount };
 }
 
+function failedGenerateIndividualPDFs() {
+  try {
+    const folderIds = getFailedPositionFolder();
+    const targetFolderId = folderIds.failedSubFolderId;
+
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const sheet = ss.getSheetByName(FAILED.SHEET_NAME);
+    if (!sheet) throw new Error('Sheet "' + FAILED.SHEET_NAME + '" not found.');
+
+    const data = sheet.getDataRange().getDisplayValues();
+    const header = [...data[0]];
+    header.push('RECIPIENT_BLOCK', 'DEAR_BLOCK');
+
+    const selectedRows = [];
+    for (let i = 1; i < data.length; i++) {
+      const row = data[i];
+      const regenerateVal = row[FAILED.COL_REGENERATE - 1];
+      const shouldGenerate = regenerateVal === true || String(regenerateVal).toLowerCase() === 'true';
+      if (!shouldGenerate) continue;
+      if (!row[0] || row[0].toString().trim() === '') continue;
+
+      const upperSalutation = row[FAILED.COL_UPPER_SALUTATION - 1] || '';
+      const upperFullName = row[FAILED.COL_UPPER_FULLNAME - 1] || '';
+      const properSalutation = row[FAILED.COL_PROPER_SALUTATION - 1] || '';
+      const properLastName = row[FAILED.COL_PROPER_LASTNAME - 1] || '';
+      const recipientBlock = (upperSalutation + ' ' + upperFullName).trim();
+      const dearBlock = (properSalutation + ' ' + properLastName).trim();
+
+      const rowCopy = [...row];
+      rowCopy.push(recipientBlock, dearBlock);
+      selectedRows.push({ row: rowCopy, rowIndex: FAILED.START_ROW + i - 1 });
+    }
+
+    if (selectedRows.length === 0) {
+      throw new Error('No items checked in REGENERATE column (P). Please check at least one checkbox to proceed.');
+    }
+
+    const templateFile = DriveApp.getFileById(FAILED.TEMPLATE_ID);
+    const destinationFolder = DriveApp.getFolderById(targetFolderId);
+    const batchKey = 'failed_individual_pdf_generation_' + SpreadsheetApp.getActiveSpreadsheet().getId();
+
+    const rows = selectedRows.map(item => item.row);
+    const batchResult = processPDFBatch(batchKey, rows, header, templateFile, destinationFolder, 20);
+
+    if (!batchResult.completed) {
+      return {
+        success: true,
+        count: batchResult.totalProcessed,
+        applicants: batchResult.allApplicants,
+        completed: false,
+        message: batchResult.message
+      };
+    }
+
+    // Clear the regenerate checkbox for processed rows
+    selectedRows.forEach((item) => {
+      sheet.getRange(item.rowIndex, FAILED.COL_REGENERATE).setValue(false);
+    });
+
+    return { success: true, count: batchResult.totalProcessed, applicants: batchResult.allApplicants };
+  } catch (e) {
+    throw new Error('Error generating selected failed PDFs: ' + e.message);
+  }
+}
+
 function failedSendSelectedEmails() {
-  const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbyFPxd3UelHmFuh4fqQC7YPLpVk44rorubWx_My_0S2OV7Il4GlJC1wd7rq8aVKJKpKNg/exec';
+  const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxJpyg6KPFUMxeHSOdOVnVe4WyN6JssT9DhoufEn2pE7vIp02joOQ6jZVD-FwZCLKW7FQ/exec";
 
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   const sheet = ss.getSheetByName(FAILED.SHEET_NAME);
@@ -309,6 +377,15 @@ function failedSendSelectedEmails() {
   }
 
   const data = sheet.getRange(FAILED.START_ROW, 1, lastRow - FAILED.START_ROW + 1, FAILED.COL_REGENERATE).getValues();
+
+  const hasSelected = data.some(row => {
+    const val = row[FAILED.COL_REGENERATE - 1];
+    return val === true || String(val).toLowerCase() === 'true';
+  });
+  if (!hasSelected) {
+    throw new Error('No items checked in REGENERATE column. Please check at least one checkbox to proceed.');
+  }
+
   let emailCount = 0;
   const now = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd HH:mm:ss');
 
@@ -319,6 +396,8 @@ function failedSendSelectedEmails() {
     if (!shouldSend) continue;
 
     const applicantName = row[0];
+    const applicantLName = row[11]; // Column L
+    const salutation = row[10]; // Column K
     const email = row[FAILED.COL_EMAIL - 1];
     const driveLink = row[FAILED.COL_LINK - 1];
     const position = row[6];
@@ -337,11 +416,12 @@ function failedSendSelectedEmails() {
       continue;
     }
 
-    const subject = 'JOB APPLICATION UPDATE';
-    const body = 'Dear Applicant,\n\n' +
+    const subject = 'Job Application Update ' + '[' + position + ']';
+    const body = 'Dear ' + salutation + ' ' + applicantLName + ',\n\n' +
       'Good day!\n\n' +
       'Please see attached file regarding your application.\n\n' +
       'Link: ' + driveLink + '\n\n' +
+      'Kindly acknowledge receipt of this email.\n\n' +
       'Best regards,\n' +
       'DOJ RPO V - Human Resource Unit';
 

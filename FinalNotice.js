@@ -1,56 +1,74 @@
 // ==========================================
-// FOR EXAM - Letter Generation & Email Workflow
+// FINAL NOTICE - Letter Generation & Email Workflow
 // ==========================================
 
-// Constants for For Exam workflow
-const FOR_EXAM = {
-  SHEET_NAME: 'LETTER - EXAM SCHED',
-  TEMPLATE_ID: '1V0icY2qWob_D2LQpe24H5Q85p5QXnfHgwlLt8sWeSNs',
-  COL_LAST_NAME: 1,
-  COL_FIRST_NAME: 2,
-  COL_EMAIL: 7,
-  COL_TEMPLATE_COLS_START: 15, // Column O
-  COL_TEMPLATE_COLS_END: 18,   // Column R
-  COL_EXAM_LINK: 19,           // Column S
-  COL_EXAM_PROGRESS: 20,       // Column T
-  COL_REGENERATE: 21,         // Column U - REGENERATE and RESEND checkbox
+const FINAL_NOTICE = {
+  SHEET_NAME: 'LETTER - FINAL NOTICE',
+  TEMPLATE_ID: '1MMPN0LssUniSQy86Q53df4SM7KT0bEtFoBOL_tm2pSY',
+  COL_LAST_NAME: 1,       // Column A
+  COL_FIRST_NAME: 2,      // Column B
+  COL_ADDRESS: 5,         // Column E
+  COL_EMAIL: 7,           // Column G
+  COL_POSITION_EXTRACTED: 8, // Column H
+  COL_ASSIGNED_OFFICE: 9, // Column I
+  COL_SALUTATION: 10,     // Column J
+  COL_UPPERCASE_NAME: 11, // Column K
+  COL_PROPER_SALUTATION: 12, // Column L
+  COL_PROPER_LN: 13,      // Column M
+  COL_EMAIL_DATE: 15,     // Column O
+  COL_LINK: 16,           // Column P
+  COL_STATUS: 17,         // Column Q
+  COL_REGENERATE: 18,     // Column R
   START_ROW: 2
 };
 
 /**
- * Check if columns O-R have data in the EXAM tab
+ * Check if required input columns have data in the FINAL NOTICE tab
  */
-function forExamCheckColumnsOtoR() {
+function finalNoticeCheckColumns() {
   try {
-    const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(FOR_EXAM.SHEET_NAME);
+    const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(FINAL_NOTICE.SHEET_NAME);
     if (!sheet) {
       return { hasData: false, message: 'Sheet not found' };
     }
 
     const lastRow = sheet.getLastRow();
-    if (lastRow < FOR_EXAM.START_ROW) {
+    if (lastRow < FINAL_NOTICE.START_ROW) {
       return { hasData: false };
     }
 
     const dataRange = sheet.getRange(
-      FOR_EXAM.START_ROW, 
+      FINAL_NOTICE.START_ROW, 
       1, 
-      lastRow - FOR_EXAM.START_ROW + 1, 
-      FOR_EXAM.COL_TEMPLATE_COLS_END
+      lastRow - FINAL_NOTICE.START_ROW + 1, 
+      FINAL_NOTICE.COL_EMAIL_DATE // Column O is 15
     ).getValues();
+
+    const colIndexesToCheck = [5, 8, 9, 10, 11, 12, 13, 15]; // Column numbers: E, H, I, J, K, L, M, O
+    const colNames = {
+      5: 'E (Address)',
+      8: 'H (Position Extracted)',
+      9: 'I (Assigned Office)',
+      10: 'J (Salutation)',
+      11: 'K (Uppercase Name)',
+      12: 'L (Proper Sal.)',
+      13: 'M (Proper Ln)',
+      15: 'O (Email Date)'
+    };
 
     for (let i = 0; i < dataRange.length; i++) {
       const rowData = dataRange[i];
       const valA = rowData[0]; // Column A
 
       if (valA && valA.toString().trim() !== '') {
-        for (let colIdx = FOR_EXAM.COL_TEMPLATE_COLS_START - 1; colIdx <= FOR_EXAM.COL_TEMPLATE_COLS_END - 1; colIdx++) {
-          const cellValue = rowData[colIdx];
+        for (let j = 0; j < colIndexesToCheck.length; j++) {
+          const colNum = colIndexesToCheck[j];
+          const cellValue = rowData[colNum - 1]; // 0-indexed
           if (!cellValue || cellValue.toString().trim() === '') {
-            const rowNum = FOR_EXAM.START_ROW + i;
+            const rowNum = FINAL_NOTICE.START_ROW + i;
             return { 
               hasData: false, 
-              message: 'Missing data in columns O-R for applicant at row ' + rowNum 
+              message: 'Missing data in column ' + colNames[colNum] + ' for applicant at row ' + rowNum 
             };
           }
         }
@@ -64,9 +82,9 @@ function forExamCheckColumnsOtoR() {
 }
 
 /**
- * Create main folder and For Exam subfolder
+ * Create main folder and Final Notice subfolder
  */
-function forExamCreateFolders() {
+function finalNoticeCreateFolders() {
   try {
     const parentFolderId = "16Os72EpQfNxY6mFLd78qWnqlKMB5ZS03";
     const ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -90,7 +108,7 @@ function forExamCreateFolders() {
     const parentFolder = DriveApp.getFolderById(parentFolderId);
     const props = PropertiesService.getDocumentProperties();
 
-    let mainFolderId = props.getProperty('forExamMainFolderId');
+    let mainFolderId = props.getProperty('finalNoticeMainFolderId');
     let mainFolder = null;
 
     if (mainFolderId) {
@@ -112,38 +130,38 @@ function forExamCreateFolders() {
         mainFolder = parentFolder.createFolder(folderName);
       }
       mainFolderId = mainFolder.getId();
-      props.setProperty('forExamMainFolderId', mainFolderId);
+      props.setProperty('finalNoticeMainFolderId', mainFolderId);
     }
 
-    let forExamSubFolderId = props.getProperty('forExamSubFolderId');
-    let forExamSubFolder = null;
+    let finalNoticeSubFolderId = props.getProperty('finalNoticeSubFolderId');
+    let finalNoticeSubFolder = null;
 
-    if (forExamSubFolderId) {
+    if (finalNoticeSubFolderId) {
       try {
-        const tempSubFolder = DriveApp.getFolderById(forExamSubFolderId);
+        const tempSubFolder = DriveApp.getFolderById(finalNoticeSubFolderId);
         if (tempSubFolder.getParents().hasNext() && tempSubFolder.getParents().next().getId() === mainFolderId) {
-          forExamSubFolder = tempSubFolder;
+          finalNoticeSubFolder = tempSubFolder;
         }
       } catch (e) {
-        forExamSubFolder = null;
+        finalNoticeSubFolder = null;
       }
     }
 
-    if (!forExamSubFolder) {
-      const existingSubFolders = mainFolder.getFoldersByName('For Exam');
+    if (!finalNoticeSubFolder) {
+      const existingSubFolders = mainFolder.getFoldersByName('Final Notice');
       if (existingSubFolders.hasNext()) {
-        forExamSubFolder = existingSubFolders.next();
+        finalNoticeSubFolder = existingSubFolders.next();
       } else {
-        forExamSubFolder = mainFolder.createFolder('For Exam');
+        finalNoticeSubFolder = mainFolder.createFolder('Final Notice');
       }
-      forExamSubFolderId = forExamSubFolder.getId();
-      props.setProperty('forExamSubFolderId', forExamSubFolderId);
+      finalNoticeSubFolderId = finalNoticeSubFolder.getId();
+      props.setProperty('finalNoticeSubFolderId', finalNoticeSubFolderId);
     }
 
     return {
       mainFolderId: mainFolderId,
-      forExamSubFolderId: forExamSubFolderId,
-      folderUrl: forExamSubFolder.getUrl()
+      finalNoticeSubFolderId: finalNoticeSubFolderId,
+      folderUrl: finalNoticeSubFolder.getUrl()
     };
   } catch (e) {
     throw new Error('Error creating folders: ' + e.message);
@@ -153,59 +171,42 @@ function forExamCreateFolders() {
 /**
  * Generate PDFs from sheet and return list of processed applicants
  */
-function forExamGeneratePDFs(targetFolderId) {
+function finalNoticeGeneratePDFs(targetFolderId) {
   try {
     const ss = SpreadsheetApp.getActiveSpreadsheet();
-    const sheet = ss.getSheetByName(FOR_EXAM.SHEET_NAME);
-    
-    if (!sheet) throw new Error("Sheet '" + FOR_EXAM.SHEET_NAME + "' not found!");
-    
+    const sheet = ss.getSheetByName(FINAL_NOTICE.SHEET_NAME);
+    if (!sheet) throw new Error('Sheet "' + FINAL_NOTICE.SHEET_NAME + '" not found!');
+
     const data = sheet.getDataRange().getDisplayValues();
     const header = data[0];
-    const rows = [];
-
-    for (let i = 1; i < data.length; i++) {
-      const row = data[i];
-      const rowIndex = FOR_EXAM.START_ROW + i - 1;
-      if (row[FOR_EXAM.COL_TEMPLATE_COLS_START - 1] && row[FOR_EXAM.COL_TEMPLATE_COLS_START - 1].toString().trim() !== "") {
-        rows.push({ row: row, rowIndex: rowIndex });
-      }
-    }
-
-    if (rows.length === 0) {
+    
+    // Sort rows alphabetically matching layout
+    const rawRows = data.slice(1).filter(row => row[0] && row[0].toString().trim() !== '');
+    
+    const rows = rawRows.map((row, index) => {
       return {
-        success: true,
-        count: 0,
-        applicants: [],
-        completed: true,
-        message: 'No eligible rows found for PDF generation.'
+        row: row,
+        rowIndex: FINAL_NOTICE.START_ROW + index
       };
-    }
+    });
 
     rows.sort((a, b) => {
-      const lastNameA = String(a.row[0] || "").trim().toLowerCase();
-      const lastNameB = String(b.row[0] || "").trim().toLowerCase();
+      const lastNameA = String(a.row[0] || '').trim().toLowerCase();
+      const lastNameB = String(b.row[0] || '').trim().toLowerCase();
       if (lastNameA !== lastNameB) return lastNameA.localeCompare(lastNameB);
-      const firstNameA = String(a.row[1] || "").trim().toLowerCase();
-      const firstNameB = String(b.row[1] || "").trim().toLowerCase();
-      return firstNameA.localeCompare(firstNameB);
+      return String(a.row[1] || '').trim().toLowerCase().localeCompare(String(b.row[1] || '').trim().toLowerCase());
     });
-    
-    const templateFile = DriveApp.getFileById(FOR_EXAM.TEMPLATE_ID);
+
+    const templateFile = DriveApp.getFileById(FINAL_NOTICE.TEMPLATE_ID);
     const destinationFolder = DriveApp.getFolderById(targetFolderId);
     
-    // Use batch processing with key for For Exam
-    const batchKey = 'forExam_pdf_generation_' + SpreadsheetApp.getActiveSpreadsheet().getId();
-    const batchResult = processForExamPDFBatch(batchKey, rows, header, templateFile, destinationFolder, 20, sheet);
+    const batchKey = 'finalNotice_pdf_generation_' + ss.getId();
+    const batchResult = processFinalNoticePDFBatch(batchKey, rows, header, templateFile, destinationFolder, 20, sheet);
 
     let returnMessage = batchResult.message;
-    
-    if (batchResult.status === 'cancelled') {
-      returnMessage = 'Process cancelled. ' + batchResult.totalProcessed + ' PDFs generated.';
-    } else if (!batchResult.completed) {
+    if (!batchResult.completed) {
       returnMessage += '\n\nTo continue processing remaining applicants (total: ' + batchResult.totalRows + '), run this step again.';
     } else {
-      // Batch is complete, clear the state
       clearBatchState(batchKey);
       returnMessage = 'PDF generation completed! ' + batchResult.totalProcessed + ' PDFs generated.';
     }
@@ -214,8 +215,7 @@ function forExamGeneratePDFs(targetFolderId) {
       success: true,
       count: batchResult.totalProcessed,
       applicants: batchResult.allApplicants,
-      completed: batchResult.completed || batchResult.status === 'cancelled',
-      cancelled: batchResult.status === 'cancelled',
+      completed: batchResult.completed,
       message: returnMessage
     };
   } catch (e) {
@@ -223,11 +223,11 @@ function forExamGeneratePDFs(targetFolderId) {
   }
 }
 
-function processForExamPDFBatch(batchKey, rows, header, templateFile, destinationFolder, batchSize, sheet) {
+function processFinalNoticePDFBatch(batchKey, rows, header, templateFile, destinationFolder, batchSize, sheet) {
   let state = getBatchState(batchKey);
 
   if (!state) {
-    PropertiesService.getDocumentProperties().deleteProperty('cancel_forExam_run');
+    PropertiesService.getDocumentProperties().deleteProperty('cancel_finalNotice_run');
     state = initializeBatchProcessing(batchKey, rows.length);
   }
 
@@ -247,7 +247,7 @@ function processForExamPDFBatch(batchKey, rows, header, templateFile, destinatio
         break;
       }
 
-      if (PropertiesService.getDocumentProperties().getProperty('cancel_forExam_run') === 'true') {
+      if (PropertiesService.getDocumentProperties().getProperty('cancel_finalNotice_run') === 'true') {
         console.log('Cancellation requested for PDF generation');
         state.status = 'cancelled';
         break;
@@ -263,7 +263,7 @@ function processForExamPDFBatch(batchKey, rows, header, templateFile, destinatio
       try {
         const copy = templateFile.makeCopy(fileName, destinationFolder);
 
-        if (PropertiesService.getDocumentProperties().getProperty('cancel_forExam_run') === 'true') {
+        if (PropertiesService.getDocumentProperties().getProperty('cancel_finalNotice_run') === 'true') {
           copy.setTrashed(true);
           state.status = 'cancelled';
           break;
@@ -278,7 +278,7 @@ function processForExamPDFBatch(batchKey, rows, header, templateFile, destinatio
 
         doc.saveAndClose();
 
-        if (PropertiesService.getDocumentProperties().getProperty('cancel_forExam_run') === 'true') {
+        if (PropertiesService.getDocumentProperties().getProperty('cancel_finalNotice_run') === 'true') {
           copy.setTrashed(true);
           state.status = 'cancelled';
           break;
@@ -290,7 +290,7 @@ function processForExamPDFBatch(batchKey, rows, header, templateFile, destinatio
         copy.setTrashed(true);
 
         const pdfUrl = pdfFile.getUrl();
-        sheet.getRange(rowIndex, FOR_EXAM.COL_EXAM_LINK).setValue(pdfUrl);
+        sheet.getRange(rowIndex, FINAL_NOTICE.COL_LINK).setValue(pdfUrl);
 
         state.currentIndex = i + 1;
         state.completedCount++;
@@ -331,36 +331,35 @@ function processForExamPDFBatch(batchKey, rows, header, templateFile, destinatio
 }
 
 /**
- * Generate PDFs only for rows with the REGENERATE checkbox checked (Column U).
- * Writes the Drive PDF link to Column S immediately. Does NOT clear the checkbox.
+ * Generate PDFs only for rows with the REGENERATE checkbox checked (Column R).
  */
-function forExamGenerateIndividualPDFs() {
+function finalNoticeGenerateIndividualPDFs() {
   try {
-    PropertiesService.getDocumentProperties().deleteProperty('cancel_forExam_run');
+    PropertiesService.getDocumentProperties().deleteProperty('cancel_finalNotice_run');
     const props = PropertiesService.getDocumentProperties();
-    let folderId = props.getProperty('forExamSubFolderId');
+    let folderId = props.getProperty('finalNoticeSubFolderId');
     let destinationFolder = null;
 
     if (folderId) {
       try {
         destinationFolder = DriveApp.getFolderById(folderId);
       } catch (folderError) {
-        console.log('Stored For Exam subfolder ID invalid. Recreating folder: ' + folderError.message);
-        const created = forExamCreateFolders();
-        folderId = created.forExamSubFolderId;
+        console.log('Stored Final Notice subfolder ID invalid. Recreating folder: ' + folderError.message);
+        const created = finalNoticeCreateFolders();
+        folderId = created.finalNoticeSubFolderId;
         destinationFolder = DriveApp.getFolderById(folderId);
       }
     }
 
     if (!destinationFolder) {
-      const created = forExamCreateFolders();
-      folderId = created.forExamSubFolderId;
+      const created = finalNoticeCreateFolders();
+      folderId = created.finalNoticeSubFolderId;
       destinationFolder = DriveApp.getFolderById(folderId);
     }
 
     const ss = SpreadsheetApp.getActiveSpreadsheet();
-    const sheet = ss.getSheetByName(FOR_EXAM.SHEET_NAME);
-    if (!sheet) throw new Error('Sheet "' + FOR_EXAM.SHEET_NAME + '" not found.');
+    const sheet = ss.getSheetByName(FINAL_NOTICE.SHEET_NAME);
+    if (!sheet) throw new Error('Sheet "' + FINAL_NOTICE.SHEET_NAME + '" not found.');
 
     const data = sheet.getDataRange().getDisplayValues();
     const header = data[0] || [];
@@ -368,33 +367,24 @@ function forExamGenerateIndividualPDFs() {
 
     for (let i = 1; i < data.length; i++) {
       const row = data[i];
-      const rowIndex = FOR_EXAM.START_ROW + i - 1;
-      const regenerateVal = row[FOR_EXAM.COL_REGENERATE - 1];
+      const rowIndex = FINAL_NOTICE.START_ROW + i - 1;
+      const regenerateVal = row[FINAL_NOTICE.COL_REGENERATE - 1];
       const shouldProcess = regenerateVal === true || String(regenerateVal).toLowerCase() === 'true';
       if (!shouldProcess) continue;
-      if (!row[FOR_EXAM.COL_TEMPLATE_COLS_START - 1] || row[FOR_EXAM.COL_TEMPLATE_COLS_START - 1].toString().trim() === '') continue;
+      if (!row[0] || row[0].toString().trim() === '') continue;
       rowsToProcess.push({ row: row, rowIndex: rowIndex });
     }
 
     if (rowsToProcess.length === 0) {
-      throw new Error('No items checked in REGENERATE column (U). Please check at least one checkbox to proceed.');
+      throw new Error('No items checked in REGENERATE column (R). Please check at least one checkbox to proceed.');
     }
 
-    let templateFile;
-    try {
-      templateFile = DriveApp.getFileById(FOR_EXAM.TEMPLATE_ID);
-    } catch (idError) {
-      throw new Error('Error loading template file: ' + idError.message + '. Please verify FOR_EXAM.TEMPLATE_ID is a valid, accessible Google Docs template.');
-    }
-    if (templateFile.getMimeType() !== MimeType.GOOGLE_DOCS) {
-      throw new Error('Template file is not a Google Doc. Please use a Google Docs template for FOR EXAM letters.');
-    }
-
+    let templateFile = DriveApp.getFileById(FINAL_NOTICE.TEMPLATE_ID);
     const processed = [];
     let cancelled = false;
 
     for (let k = 0; k < rowsToProcess.length; k++) {
-      if (PropertiesService.getDocumentProperties().getProperty('cancel_forExam_run') === 'true') {
+      if (PropertiesService.getDocumentProperties().getProperty('cancel_finalNotice_run') === 'true') {
         console.log('Cancellation requested for individual PDF generation');
         cancelled = true;
         break;
@@ -403,14 +393,14 @@ function forExamGenerateIndividualPDFs() {
       const rowObj = rowsToProcess[k];
       const row = rowObj.row;
       const rowIndex = rowObj.rowIndex;
-      const lastName = String(row[FOR_EXAM.COL_LAST_NAME - 1] || "").trim();
-      const firstName = String(row[FOR_EXAM.COL_FIRST_NAME - 1] || "").trim();
+      const lastName = String(row[0] || "").trim();
+      const firstName = String(row[1] || "").trim();
       const fileName = (lastName || 'Applicant') + (firstName ? (', ' + firstName) : '');
 
       try {
         const copy = templateFile.makeCopy(fileName, destinationFolder);
 
-        if (PropertiesService.getDocumentProperties().getProperty('cancel_forExam_run') === 'true') {
+        if (PropertiesService.getDocumentProperties().getProperty('cancel_finalNotice_run') === 'true') {
           copy.setTrashed(true);
           cancelled = true;
           break;
@@ -425,7 +415,7 @@ function forExamGenerateIndividualPDFs() {
 
         doc.saveAndClose();
 
-        if (PropertiesService.getDocumentProperties().getProperty('cancel_forExam_run') === 'true') {
+        if (PropertiesService.getDocumentProperties().getProperty('cancel_finalNotice_run') === 'true') {
           copy.setTrashed(true);
           cancelled = true;
           break;
@@ -437,7 +427,7 @@ function forExamGenerateIndividualPDFs() {
         copy.setTrashed(true);
 
         const pdfUrl = pdfFile.getUrl();
-        sheet.getRange(rowIndex, FOR_EXAM.COL_EXAM_LINK).setValue(pdfUrl);
+        sheet.getRange(rowIndex, FINAL_NOTICE.COL_LINK).setValue(pdfUrl);
 
         processed.push(lastName + (firstName ? (', ' + firstName) : ''));
       } catch (itemError) {
@@ -454,22 +444,22 @@ function forExamGenerateIndividualPDFs() {
 /**
  * Generate Google Drive links and insert into spreadsheet
  */
-function forExamGenerateLinks() {
+function finalNoticeGenerateLinks() {
   try {
     const settings = PropertiesService.getDocumentProperties();
-    const folderId = settings.getProperty('forExamSubFolderId');
+    const folderId = settings.getProperty('finalNoticeSubFolderId');
     
     if (!folderId) {
-      throw new Error('For Exam subfolder not found. Please run Step 2 first.');
+      throw new Error('Final Notice subfolder not found. Please run Step 2 first.');
     }
     
     const folder = DriveApp.getFolderById(folderId);
     const files = folder.getFilesByType(MimeType.PDF);
     const ss = SpreadsheetApp.getActiveSpreadsheet();
-    const sheet = ss.getSheetByName(FOR_EXAM.SHEET_NAME);
+    const sheet = ss.getSheetByName(FINAL_NOTICE.SHEET_NAME);
     
     if (!sheet) {
-      throw new Error('Sheet "' + FOR_EXAM.SHEET_NAME + '" not found.');
+      throw new Error('Sheet "' + FINAL_NOTICE.SHEET_NAME + '" not found.');
     }
     
     const fileData = [];
@@ -488,25 +478,25 @@ function forExamGenerateLinks() {
     const links = fileData.map(item => [item.url]);
     
     if (links.length > 0) {
-      sheet.getRange(FOR_EXAM.START_ROW, FOR_EXAM.COL_EXAM_LINK, links.length, 1).setValues(links);
+      sheet.getRange(FINAL_NOTICE.START_ROW, FINAL_NOTICE.COL_LINK, links.length, 1).setValues(links);
     }
     
-    return 'Successfully generated and inserted ' + links.length + ' Google Drive links into Column S.';
+    return 'Successfully generated and inserted ' + links.length + ' Google Drive links into Column P.';
   } catch (e) {
     throw new Error('Error generating Drive links: ' + e.message);
   }
 }
 
 /**
- * Get the For Exam folder URL
+ * Get the Final Notice folder URL
  */
-function forExamGetFolderUrl() {
+function finalNoticeGetFolderUrl() {
   try {
     const settings = PropertiesService.getDocumentProperties();
-    const folderId = settings.getProperty('forExamSubFolderId');
+    const folderId = settings.getProperty('finalNoticeSubFolderId');
     
     if (!folderId) {
-      throw new Error('For Exam subfolder not found. Please run the process first.');
+      throw new Error('Final Notice subfolder not found. Please run the process first.');
     }
     
     const folder = DriveApp.getFolderById(folderId);
@@ -517,27 +507,27 @@ function forExamGetFolderUrl() {
 }
 
 /**
- * Backup the Letter - Exam Sched sheet to the For Exam folder
+ * Backup the Letter - Final Notice sheet to the Final Notice folder
  */
-function forExamBackupSheet() {
+function finalNoticeBackupSheet() {
   try {
     const ss = SpreadsheetApp.getActiveSpreadsheet();
-    const sourceSheet = ss.getSheetByName(FOR_EXAM.SHEET_NAME);
+    const sourceSheet = ss.getSheetByName(FINAL_NOTICE.SHEET_NAME);
     
     if (!sourceSheet) {
-      throw new Error('Sheet "' + FOR_EXAM.SHEET_NAME + '" not found.');
+      throw new Error('Sheet "' + FINAL_NOTICE.SHEET_NAME + '" not found.');
     }
     
     const settings = PropertiesService.getDocumentProperties();
-    const forExamSubFolderId = settings.getProperty('forExamSubFolderId');
+    const finalNoticeSubFolderId = settings.getProperty('finalNoticeSubFolderId');
     
-    if (!forExamSubFolderId) {
-      throw new Error('For Exam subfolder not found. Please run Step 2 first.');
+    if (!finalNoticeSubFolderId) {
+      throw new Error('Final Notice subfolder not found. Please run Step 2 first.');
     }
     
-    const forExamFolder = DriveApp.getFolderById(forExamSubFolderId);
+    const finalNoticeFolder = DriveApp.getFolderById(finalNoticeSubFolderId);
     const timestamp = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd_HH-mm-ss');
-    const backupFileName = 'LETTER - EXAM SCHED_' + timestamp + '.csv';
+    const backupFileName = 'LETTER - FINAL NOTICE_' + timestamp + '.csv';
     
     const data = sourceSheet.getDataRange().getValues();
     
@@ -554,40 +544,39 @@ function forExamBackupSheet() {
     }
     
     const backupBlob = Utilities.newBlob(csvContent, MimeType.CSV, backupFileName);
-    forExamFolder.createFile(backupBlob);
+    finalNoticeFolder.createFile(backupBlob);
     
     return {
-      message: 'Backup successful! LETTER - EXAM SCHED has been saved to the For Exam folder.',
-      folderUrl: forExamFolder.getUrl()
+      message: 'Backup successful! LETTER - FINAL NOTICE has been saved to the Final Notice folder.',
+      folderUrl: finalNoticeFolder.getUrl()
     };
   } catch (e) {
     throw new Error('Error backing up sheet: ' + e.message);
   }
 }
 
-function forExamSendEmails() {
-  // PASTE YOUR DEPLOYED WEB APP URL HERE
+function finalNoticeSendEmails() {
   const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxJpyg6KPFUMxeHSOdOVnVe4WyN6JssT9DhoufEn2pE7vIp02joOQ6jZVD-FwZCLKW7FQ/exec"; 
 
   try {
-    PropertiesService.getDocumentProperties().deleteProperty('cancel_forExam_send');
+    PropertiesService.getDocumentProperties().deleteProperty('cancel_finalNotice_send');
     const ss = SpreadsheetApp.getActiveSpreadsheet();
-    const sheet = ss.getSheetByName(FOR_EXAM.SHEET_NAME);
+    const sheet = ss.getSheetByName(FINAL_NOTICE.SHEET_NAME);
     
-    if (!sheet) throw new Error('Sheet "' + FOR_EXAM.SHEET_NAME + '" not found.');
+    if (!sheet) throw new Error('Sheet "' + FINAL_NOTICE.SHEET_NAME + '" not found.');
 
     const lastRow = sheet.getLastRow();
-    if (lastRow < FOR_EXAM.START_ROW) {
+    if (lastRow < FINAL_NOTICE.START_ROW) {
       return { status: 'No applicants found', count: 0 };
     }
 
-    const data = sheet.getRange(FOR_EXAM.START_ROW, 1, lastRow - FOR_EXAM.START_ROW + 1, FOR_EXAM.COL_EXAM_PROGRESS).getValues();
+    const data = sheet.getRange(FINAL_NOTICE.START_ROW, 1, lastRow - FINAL_NOTICE.START_ROW + 1, FINAL_NOTICE.COL_STATUS).getValues();
     let emailCount = 0;
     const now = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd HH:mm:ss');
     let cancelled = false;
 
     for (let i = 0; i < data.length; i++) {
-      if (PropertiesService.getDocumentProperties().getProperty('cancel_forExam_send') === 'true') {
+      if (PropertiesService.getDocumentProperties().getProperty('cancel_finalNotice_send') === 'true') {
         console.log('Cancellation requested for email sending');
         cancelled = true;
         break;
@@ -595,13 +584,13 @@ function forExamSendEmails() {
 
       const row = data[i];
       const applicantName = row[0];
-      const applicantLName = row[12]; // Column M
-      const salutation = row[11]; // Column L
-      const email = row[FOR_EXAM.COL_EMAIL - 1];
-      const driveLink = row[FOR_EXAM.COL_EXAM_LINK - 1];
-      const position = row[7]; // Column H
-      const office = row[8]; // Column I
-      const statusCell = sheet.getRange(FOR_EXAM.START_ROW + i, FOR_EXAM.COL_EXAM_PROGRESS);
+      const applicantLName = row[FINAL_NOTICE.COL_PROPER_LN - 1];
+      const salutation = row[FINAL_NOTICE.COL_PROPER_SALUTATION - 1];
+      const email = row[FINAL_NOTICE.COL_EMAIL - 1];
+      const driveLink = row[FINAL_NOTICE.COL_LINK - 1];
+      const position = row[FINAL_NOTICE.COL_POSITION_EXTRACTED - 1];
+      const office = row[FINAL_NOTICE.COL_ASSIGNED_OFFICE - 1];
+      const statusCell = sheet.getRange(FINAL_NOTICE.START_ROW + i, FINAL_NOTICE.COL_STATUS);
 
       if (!applicantName || applicantName.toString().trim() === '') continue;
 
@@ -610,20 +599,16 @@ function forExamSendEmails() {
         continue;
       }
 
-      const subject = 'Job Application Update - Notice of Written Exam ' + '[' + position + ']';
+      const subject = 'Job Application Update - Final Notice ' + '[' + position + ']';
       const body = 'Dear ' + salutation + ' ' + applicantLName + ',\n\n' +
         'Good day!\n\n' +
-        'Thank you for your interest in the vacant position at our office. We have ' +
-        'received your application and appreciate the time you took to apply.\n\n' +
-        'Please see the file in the link below for your written examination details:\n\n' +
+        'Thank you for your interest in the vacant position at our office and for participating in the interview.\n\n' +
+        'Please see the file in the link below for more details regarding your application status:\n\n' +
         'Link: ' + driveLink + '\n\n' +
-        'Reminder: Please arrive at the site 5-10 minutes early. Late examinees ' +
-        'without a valid reason will not be permitted to take the exam.\n\n' +
-        'Kindly acknowledge receipt of this email. If you have any questions, please do not hesitate to contact us.\n\n' +
+        'Kindly acknowledge receipt of this email.\n\n' +
         'Best regards,\n' +
         'DOJ RPO V - Human Resource Unit';
 
-      // --- INTEGRATED PROXY CALL ---
       const payload = {
         recipient: email.toString().trim(),
         cc: 'orp05.hiring@gmail.com',
@@ -643,21 +628,19 @@ function forExamSendEmails() {
       
       if (response.getContentText() === "Success") {
         statusCell.setValue('Sent (' + now + ')');
-        // Log the sent letter
-        logSentLetter('LETTER - EXAM SCHED', position || '', office || '', applicantName || '');
+        logSentLetter('LETTER - FINAL NOTICE', position || '', office || '', applicantName || '');
         emailCount++;
       } else {
         statusCell.setValue('Error: Proxy failed (' + now + ')');
       }
 
-      if (PropertiesService.getDocumentProperties().getProperty('cancel_forExam_send') === 'true') {
+      if (PropertiesService.getDocumentProperties().getProperty('cancel_finalNotice_send') === 'true') {
         console.log('Cancellation requested for email sending before sleep');
         cancelled = true;
         break;
       }
 
-      // 1.5-second delay between each email to avoid rate limits
-      Utilities.sleep(1500);
+      Utilities.sleep(1500); // 1.5 second delay
     }
 
     return { status: cancelled ? 'Cancelled' : 'Emails sent', count: emailCount, cancelled: cancelled };
@@ -666,27 +649,25 @@ function forExamSendEmails() {
   }
 }
 
-function forExamSendIndividualEmails() {
-  // PASTE YOUR DEPLOYED WEB APP URL HERE
+function finalNoticeSendIndividualEmails() {
   const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxJpyg6KPFUMxeHSOdOVnVe4WyN6JssT9DhoufEn2pE7vIp02joOQ6jZVD-FwZCLKW7FQ/exec"; 
 
   try {
-    PropertiesService.getDocumentProperties().deleteProperty('cancel_forExam_send');
+    PropertiesService.getDocumentProperties().deleteProperty('cancel_finalNotice_send');
     const ss = SpreadsheetApp.getActiveSpreadsheet();
-    const sheet = ss.getSheetByName(FOR_EXAM.SHEET_NAME);
+    const sheet = ss.getSheetByName(FINAL_NOTICE.SHEET_NAME);
     
-    if (!sheet) throw new Error('Sheet "' + FOR_EXAM.SHEET_NAME + '" not found.');
+    if (!sheet) throw new Error('Sheet "' + FINAL_NOTICE.SHEET_NAME + '" not found.');
 
     const lastRow = sheet.getLastRow();
-    if (lastRow < FOR_EXAM.START_ROW) {
+    if (lastRow < FINAL_NOTICE.START_ROW) {
       return { status: 'No applicants found', count: 0 };
     }
 
-    // Read up through the regenerate column (U)
-    const data = sheet.getRange(FOR_EXAM.START_ROW, 1, lastRow - FOR_EXAM.START_ROW + 1, FOR_EXAM.COL_REGENERATE).getValues();
+    const data = sheet.getRange(FINAL_NOTICE.START_ROW, 1, lastRow - FINAL_NOTICE.START_ROW + 1, FINAL_NOTICE.COL_REGENERATE).getValues();
 
     const hasSelected = data.some(row => {
-      const val = row[FOR_EXAM.COL_REGENERATE - 1];
+      const val = row[FINAL_NOTICE.COL_REGENERATE - 1];
       return val === true || String(val).toLowerCase() === 'true';
     });
     if (!hasSelected) {
@@ -699,48 +680,44 @@ function forExamSendIndividualEmails() {
 
     for (let i = 0; i < data.length; i++) {
       const row = data[i];
-      const regenerateVal = row[FOR_EXAM.COL_REGENERATE - 1];
+      const regenerateVal = row[FINAL_NOTICE.COL_REGENERATE - 1];
       const shouldProcess = regenerateVal === true || String(regenerateVal).toLowerCase() === 'true';
       if (!shouldProcess) continue;
 
-      if (PropertiesService.getDocumentProperties().getProperty('cancel_forExam_send') === 'true') {
+      if (PropertiesService.getDocumentProperties().getProperty('cancel_finalNotice_send') === 'true') {
         console.log('Cancellation requested for individual email sending');
         cancelled = true;
         break;
       }
 
-      const applicantName = row[FOR_EXAM.COL_LAST_NAME - 1];
-      const applicantLName = row[12]; // Column M
-      const salutation = row[11]; // Column L
-      const email = row[FOR_EXAM.COL_EMAIL - 1];
-      const driveLink = row[FOR_EXAM.COL_EXAM_LINK - 1];
-      const position = row[7]; // Column H
-      const office = row[8]; // Column I
-      const statusCell = sheet.getRange(FOR_EXAM.START_ROW + i, FOR_EXAM.COL_EXAM_PROGRESS);
+      const applicantName = row[0];
+      const applicantLName = row[FINAL_NOTICE.COL_PROPER_LN - 1];
+      const salutation = row[FINAL_NOTICE.COL_PROPER_SALUTATION - 1];
+      const email = row[FINAL_NOTICE.COL_EMAIL - 1];
+      const driveLink = row[FINAL_NOTICE.COL_LINK - 1];
+      const position = row[FINAL_NOTICE.COL_POSITION_EXTRACTED - 1];
+      const office = row[FINAL_NOTICE.COL_ASSIGNED_OFFICE - 1];
+      const statusCell = sheet.getRange(FINAL_NOTICE.START_ROW + i, FINAL_NOTICE.COL_STATUS);
 
       if (!applicantName || applicantName.toString().trim() === '') {
         statusCell.setValue('Not sent - missing name (' + now + ')');
-        // clear checkbox so it won't keep attempting
-        sheet.getRange(FOR_EXAM.START_ROW + i, FOR_EXAM.COL_REGENERATE).setValue(false);
+        sheet.getRange(FINAL_NOTICE.START_ROW + i, FINAL_NOTICE.COL_REGENERATE).setValue(false);
         continue;
       }
 
       if (!email || email.toString().trim() === '' || !driveLink || driveLink.toString().trim() === '') {
         statusCell.setValue('Not sent - missing email or link (' + now + ')');
-        sheet.getRange(FOR_EXAM.START_ROW + i, FOR_EXAM.COL_REGENERATE).setValue(false);
+        sheet.getRange(FINAL_NOTICE.START_ROW + i, FINAL_NOTICE.COL_REGENERATE).setValue(false);
         continue;
       }
 
-      const subject = 'Job Application Update - Notice of Written Exam ' + '[' + position + ']';
+      const subject = 'Job Application Update - Final Notice ' + '[' + position + ']';
       const body = 'Dear ' + salutation + ' ' + applicantLName + ',\n\n' +
         'Good day!\n\n' +
-        'Thank you for your interest in the vacant position at our office. We have ' +
-        'received your application and appreciate the time you took to apply.\n\n' +
-        'Please see the file in the link below for your written examination details:\n\n' +
+        'Thank you for your interest in the vacant position at our office and for participating in the interview.\n\n' +
+        'Please see the file in the link below for more details regarding your application status:\n\n' +
         'Link: ' + driveLink + '\n\n' +
-        'Reminder: Please arrive at the site 5-10 minutes early. Late examinees ' +
-        'without a valid reason will not be permitted to take the exam.\n\n' +
-        'Kindly acknowledge receipt of this email. If you have any questions, please do not hesitate to contact us.\n\n' +
+        'Kindly acknowledge receipt of this email.\n\n' +
         'Best regards,\n' +
         'DOJ RPO V - Human Resource Unit';
 
@@ -762,23 +739,20 @@ function forExamSendIndividualEmails() {
       const response = UrlFetchApp.fetch(WEB_APP_URL, options);
       if (response.getContentText() === "Success") {
         statusCell.setValue('Sent (re-sent) (' + now + ')');
-        // Log the sent letter
-        logSentLetter('LETTER - EXAM SCHED', position || '', office || '', applicantName || '');
+        logSentLetter('LETTER - FINAL NOTICE', position || '', office || '', applicantName || '');
         emailCount++;
-        // clear checkbox to mark done
-        sheet.getRange(FOR_EXAM.START_ROW + i, FOR_EXAM.COL_REGENERATE).setValue(false);
+        sheet.getRange(FINAL_NOTICE.START_ROW + i, FINAL_NOTICE.COL_REGENERATE).setValue(false);
       } else {
         statusCell.setValue('Error: Proxy failed (' + now + ')');
       }
 
-      if (PropertiesService.getDocumentProperties().getProperty('cancel_forExam_send') === 'true') {
+      if (PropertiesService.getDocumentProperties().getProperty('cancel_finalNotice_send') === 'true') {
         console.log('Cancellation requested for individual email sending before sleep');
         cancelled = true;
         break;
       }
 
-      // 1.5-second delay between each email to avoid rate limits
-      Utilities.sleep(1500);
+      Utilities.sleep(1500); // 1.5 second delay
     }
 
     return { status: cancelled ? 'Cancelled' : 'Individual emails processed', count: emailCount, cancelled: cancelled };
@@ -788,12 +762,12 @@ function forExamSendIndividualEmails() {
 }
 
 /**
- * Master function for For Exam workflow
+ * Master function for Final Notice workflow
  */
-function forExamRunCompleteProcess() {
+function finalNoticeRunCompleteProcess() {
   try {
-    const folderIds = forExamCreateFolders();
-    const pdfResult = forExamGeneratePDFs(folderIds.forExamSubFolderId);
+    const folderIds = finalNoticeCreateFolders();
+    const pdfResult = finalNoticeGeneratePDFs(folderIds.finalNoticeSubFolderId);
     
     let message = pdfResult.message || ('Generated ' + pdfResult.count + ' PDFs');
     if (!pdfResult.completed) {
@@ -813,16 +787,16 @@ function forExamRunCompleteProcess() {
   }
 }
 
-function cancelForExamRun() {
-  PropertiesService.getDocumentProperties().setProperty('cancel_forExam_run', 'true');
+function cancelFinalNoticeRun() {
+  PropertiesService.getDocumentProperties().setProperty('cancel_finalNotice_run', 'true');
 }
 
-function cancelForExamSend() {
-  PropertiesService.getDocumentProperties().setProperty('cancel_forExam_send', 'true');
+function cancelFinalNoticeSend() {
+  PropertiesService.getDocumentProperties().setProperty('cancel_finalNotice_send', 'true');
 }
 
-function clearCancelForExamFlags() {
+function clearCancelFinalNoticeFlags() {
   const props = PropertiesService.getDocumentProperties();
-  props.deleteProperty('cancel_forExam_run');
-  props.deleteProperty('cancel_forExam_send');
+  props.deleteProperty('cancel_finalNotice_run');
+  props.deleteProperty('cancel_finalNotice_send');
 }

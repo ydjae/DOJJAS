@@ -324,7 +324,7 @@ function forInterviewBackupSheet() {
  */
 function forInterviewSendEmails() {
   // PASTE YOUR DEPLOYED WEB APP URL HERE
-  const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyFPxd3UelHmFuh4fqQC7YPLpVk44rorubWx_My_0S2OV7Il4GlJC1wd7rq8aVKJKpKNg/exec";
+  const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxJpyg6KPFUMxeHSOdOVnVe4WyN6JssT9DhoufEn2pE7vIp02joOQ6jZVD-FwZCLKW7FQ/exec";
 
   try {
     const ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -344,6 +344,8 @@ function forInterviewSendEmails() {
     for (let i = 0; i < data.length; i++) {
       const row = data[i];
       const applicantName = row[0];
+      const applicantLName = row[12]; // Column M
+      const salutation = row[11]; // Column L
       const email = row[FOR_INTERVIEW.COL_EMAIL - 1];
       const driveLink = row[FOR_INTERVIEW.COL_INTERVIEW_LINK - 1];
       const position = row[7]; // Column H
@@ -357,15 +359,14 @@ function forInterviewSendEmails() {
         continue;
       }
 
-      const subject = 'JOB APPLICATION UPDATE - NOTICE OF INTERVIEW';
-      const body = 'Dear Applicant,\n\n' +
+      const subject = 'Job Application Update - Notice of Interview ' + '[' + position + ']';
+      const body = 'Dear ' + salutation + ' ' + applicantLName + ',\n\n' +
         'Good day!\n\n' +
         'Congratulations! You have passed the written examination and have been selected to proceed to the interview stage.\n\n' +
-        'Please see the file in the link below for your interview details:\n\n' +
         'Link: ' + driveLink + '\n\n' +
         'Please arrive at the interview site 5-10 minutes early. We look forward to meeting you!\n\n' +
-        'Best regards,\n' +
-        'DOJ RPO V - Human Resource Unit';
+        'Kindly acknowledge receipt of this email. If you have any questions, please do not hesitate to contact us.\n\n' +
+        'Best regards,\nDOJ RPO V - Human Resource Unit';
 
       // --- INTEGRATED PROXY CALL ---
       const payload = {
@@ -442,7 +443,7 @@ function forInterviewGenerateIndividualPDFs() {
     }
 
     if (rowsToProcess.length === 0) {
-      return { success: true, count: 0, applicants: [] };
+      throw new Error('No items checked in REGENERATE column (U). Please check at least one checkbox to proceed.');
     }
 
     const templateFile = DriveApp.getFileById(FOR_INTERVIEW.TEMPLATE_ID);
@@ -485,7 +486,7 @@ function forInterviewGenerateIndividualPDFs() {
 }
 
 function forInterviewSendSelectedEmails() {
-  const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyFPxd3UelHmFuh4fqQC7YPLpVk44rorubWx_My_0S2OV7Il4GlJC1wd7rq8aVKJKpKNg/exec";
+  const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxJpyg6KPFUMxeHSOdOVnVe4WyN6JssT9DhoufEn2pE7vIp02joOQ6jZVD-FwZCLKW7FQ/exec";
 
   try {
     const ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -498,6 +499,15 @@ function forInterviewSendSelectedEmails() {
     }
 
     const data = sheet.getRange(FOR_INTERVIEW.START_ROW, 1, lastRow - FOR_INTERVIEW.START_ROW + 1, FOR_INTERVIEW.COL_REGENERATE).getValues();
+
+    const hasSelected = data.some(row => {
+      const val = row[FOR_INTERVIEW.COL_REGENERATE - 1];
+      return val === true || String(val).toLowerCase() === 'true';
+    });
+    if (!hasSelected) {
+      throw new Error('No items checked in REGENERATE column. Please check at least one checkbox to proceed.');
+    }
+
     let emailCount = 0;
     const now = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd HH:mm:ss');
 
@@ -508,6 +518,8 @@ function forInterviewSendSelectedEmails() {
       if (!shouldSend) continue;
 
       const applicantName = row[0];
+      const applicantLName = row[12]; // Column M
+      const salutation = row[11]; // Column L
       const email = row[FOR_INTERVIEW.COL_EMAIL - 1];
       const driveLink = row[FOR_INTERVIEW.COL_INTERVIEW_LINK - 1];
       const position = row[7];
@@ -526,12 +538,13 @@ function forInterviewSendSelectedEmails() {
         continue;
       }
 
-      const subject = 'JOB APPLICATION UPDATE - NOTICE OF INTERVIEW';
-      const body = 'Dear Applicant,\n\n' +
+      const subject = 'Job Application Update - Notice of Interview ' + '[' + position + ']';
+      const body = 'Dear ' + salutation + ' ' + applicantLName + ',\n\n' +
         'Good day!\n\n' +
         'Congratulations! You have passed the written examination and have been selected to proceed to the interview stage.\n\n' +
         'Link: ' + driveLink + '\n\n' +
         'Please arrive at the interview site 5-10 minutes early. We look forward to meeting you!\n\n' +
+        'Kindly acknowledge receipt of this email. If you have any questions, please do not hesitate to contact us.\n\n' +
         'Best regards,\nDOJ RPO V - Human Resource Unit';
 
       const payload = {
