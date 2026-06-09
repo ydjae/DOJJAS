@@ -601,7 +601,10 @@ function finalNoticeSendEmails() {
       const office = row[FINAL_NOTICE.COL_ASSIGNED_OFFICE - 1];
       const statusCell = sheet.getRange(FINAL_NOTICE.START_ROW + i, FINAL_NOTICE.COL_STATUS);
 
-      if (!applicantName || applicantName.toString().trim() === '') continue;
+      if (!applicantName || applicantName.toString().trim() === '') break;
+
+      const currentStatus = row[FINAL_NOTICE.COL_STATUS - 1];
+      if (currentStatus && String(currentStatus).startsWith('Sent')) continue;
 
       if (!email || email.toString().trim() === '' || !driveLink || driveLink.toString().trim() === '') {
         statusCell.setValue('Not sent - missing email or link (' + now + ')');

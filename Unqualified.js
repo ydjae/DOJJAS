@@ -43,7 +43,6 @@ function getUnqualifiedPositionFolder() {
   if (mainFolderId) {
     try {
       const tempFolder = DriveApp.getFolderById(mainFolderId);
-      // FIX: Only reuse if it matches our current target position folder name
       if (tempFolder.getName() === folderName) {
         mainFolder = tempFolder;
       }
@@ -52,7 +51,6 @@ function getUnqualifiedPositionFolder() {
     }
   }
 
-  // If no cached folder exists OR it didn't match the new position name
   if (!mainFolder) {
     const existingFolders = parentFolder.getFoldersByName(folderName);
     if (existingFolders.hasNext()) {
@@ -64,14 +62,12 @@ function getUnqualifiedPositionFolder() {
     props.setProperty('unqualifiedMainFolderId', mainFolderId);
   }
 
-  // Handle the 'Unqualified' specific subfolder
   let unqualifiedFolderId = props.getProperty('unqualifiedSubFolderId');
   let unqualifiedFolder = null;
   
   if (unqualifiedFolderId) {
     try {
       const tempSub = DriveApp.getFolderById(unqualifiedFolderId);
-      // Ensure the subfolder's parent is actually our current main position folder
       if (tempSub.getParents().hasNext() && tempSub.getParents().next().getId() === mainFolderId) {
         unqualifiedFolder = tempSub;
       }
@@ -101,19 +97,24 @@ function getUnqualifiedPositionFolder() {
 /**
  * Check if column R has data in the specified sheet (for unqualified validation)
  */
-function checkColumnRInSheet(sheetName) {
+function unqualifiedCheckColumnR() {
   try {
-    const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(sheetName);
+    const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(UNQUALIFIED.SHEET_NAME);
     if (!sheet) {
       return { hasData: false, message: 'Sheet not found' };
     }
 
     const lastRow = sheet.getLastRow();
-    if (lastRow < 2) {
+    if (lastRow < UNQUALIFIED.START_ROW) {
       return { hasData: false };
     }
 
-    const dataRange = sheet.getRange(2, 1, lastRow - 1, 18).getValues(); // Check up to column R
+    const dataRange = sheet.getRange(
+      UNQUALIFIED.START_ROW, 
+      1, 
+      lastRow - UNQUALIFIED.START_ROW + 1, 
+      18 // Check up to Column R
+    ).getValues();
 
     for (let i = 0; i < dataRange.length; i++) {
       const rowData = dataRange[i];
@@ -122,8 +123,11 @@ function checkColumnRInSheet(sheetName) {
       if (valA && valA.toString().trim() !== '') {
         const colRValue = rowData[17]; // Column R (0-indexed)
         if (!colRValue || colRValue.toString().trim() === '') {
-          const rowNum = 2 + i;
-        throw new Error('Missing data in column R for applicant at row ' + rowNum);
+          const rowNum = UNQUALIFIED.START_ROW + i;
+          return { 
+            hasData: false, 
+            message: 'Missing data in column R for applicant at row ' + rowNum 
+          };
         }
       }
     }
@@ -134,7 +138,9 @@ function checkColumnRInSheet(sheetName) {
   }
 }
 
-
+/**
+ * Generate PDFs from sheet and return list of processed applicants
+ */
 function unqualifiedGeneratePDFs(targetFolderId) {
   try {
     const ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -143,13 +149,33 @@ function unqualifiedGeneratePDFs(targetFolderId) {
 
     const data = sheet.getDataRange().getDisplayValues();
     const header = data[0];
-    const rows = data.slice(1).filter(row => row[0] && row[0].toString().trim() !== '');
+    const rows = [];
+
+    for (let i = 1; i < data.length; i++) {
+      const row = data[i];
+      const rowIndex = UNQUALIFIED.START_ROW + i - 1;
+      if (row[0] && row[0].toString().trim() !== "") {
+        rows.push({ row: row, rowIndex: rowIndex });
+      }
+    }
+
+    if (rows.length === 0) {
+      return {
+        success: true,
+        count: 0,
+        applicants: [],
+        completed: true,
+        message: 'No eligible rows found for PDF generation.'
+      };
+    }
 
     rows.sort((a, b) => {
-      const lastNameA = String(a[0] || '').trim().toLowerCase();
-      const lastNameB = String(b[0] || '').trim().toLowerCase();
+      const lastNameA = String(a.row[0] || "").trim().toLowerCase();
+      const lastNameB = String(b.row[0] || "").trim().toLowerCase();
       if (lastNameA !== lastNameB) return lastNameA.localeCompare(lastNameB);
-      return String(a[1] || '').trim().toLowerCase().localeCompare(String(b[1] || '').trim().toLowerCase());
+      const firstNameA = String(a.row[1] || "").trim().toLowerCase();
+      const firstNameB = String(b.row[1] || "").trim().toLowerCase();
+      return firstNameA.localeCompare(firstNameB);
     });
 
     const templateFile = DriveApp.getFileById(UNQUALIFIED.TEMPLATE_ID);
@@ -157,15 +183,15 @@ function unqualifiedGeneratePDFs(targetFolderId) {
     
     // Use batch processing with key for Unqualified
     const batchKey = 'unqualified_pdf_generation_' + SpreadsheetApp.getActiveSpreadsheet().getId();
-    const batchResult = processPDFBatch(batchKey, rows, header, templateFile, destinationFolder, 20); // Process 20 at a time
+    const batchResult = processUnqualifiedPDFBatch(batchKey, rows, header, templateFile, destinationFolder, 20, sheet);
 
     let returnMessage = batchResult.message;
     
-    // If batch is still processing, suggest running again
-    if (!batchResult.completed) {
+    if (batchResult.status === 'cancelled') {
+      returnMessage = 'Process cancelled. ' + batchResult.totalProcessed + ' PDFs generated.';
+    } else if (!batchResult.completed) {
       returnMessage += '\n\nTo continue processing remaining applicants (total: ' + batchResult.totalRows + '), run this step again.';
     } else {
-      // Batch is complete, clear the state
       clearBatchState(batchKey);
       returnMessage = 'PDF generation completed! ' + batchResult.totalProcessed + ' PDFs generated.';
     }
@@ -174,7 +200,8 @@ function unqualifiedGeneratePDFs(targetFolderId) {
       success: true,
       count: batchResult.totalProcessed,
       applicants: batchResult.allApplicants,
-      completed: batchResult.completed,
+      completed: batchResult.completed || batchResult.status === 'cancelled',
+      cancelled: batchResult.status === 'cancelled',
       message: returnMessage
     };
   } catch (e) {
@@ -182,8 +209,119 @@ function unqualifiedGeneratePDFs(targetFolderId) {
   }
 }
 
+function processUnqualifiedPDFBatch(batchKey, rows, header, templateFile, destinationFolder, batchSize, sheet) {
+  let state = getBatchState(batchKey);
+
+  if (!state) {
+    PropertiesService.getDocumentProperties().deleteProperty('cancel_unqualified_run');
+    CacheService.getDocumentCache().remove('cancel_unqualified_run');
+    state = initializeBatchProcessing(batchKey, rows.length);
+  }
+
+  const startIndex = state.currentIndex;
+  const endIndex = Math.min(startIndex + batchSize, rows.length);
+  const startTime = new Date().getTime();
+  const timeLimit = 5 * 60 * 1000;
+
+  let processedInThisBatch = 0;
+  const newApplicants = [];
+
+  try {
+    for (let i = startIndex; i < endIndex; i++) {
+      const elapsedTime = new Date().getTime() - startTime;
+      if (elapsedTime > timeLimit) {
+        console.log('Time limit approaching, saving progress...');
+        break;
+      }
+
+      if (shouldCancelUnqualifiedRun()) {
+        console.log('Cancellation requested for unqualified PDF generation');
+        state.status = 'cancelled';
+        break;
+      }
+
+      const rowObj = rows[i];
+      const row = rowObj.row;
+      const rowIndex = rowObj.rowIndex;
+      const lastName = String(row[0] || "").trim();
+      const firstName = String(row[1] || "").trim();
+      const fileName = lastName + ", " + firstName;
+
+      try {
+        const copy = templateFile.makeCopy(fileName, destinationFolder);
+
+        if (shouldCancelUnqualifiedRun()) {
+          copy.setTrashed(true);
+          state.status = 'cancelled';
+          break;
+        }
+
+        const doc = DocumentApp.openById(copy.getId());
+        const body = doc.getBody();
+
+        header.forEach((label, j) => {
+          body.replaceText('{{' + label + '}}', row[j]);
+        });
+
+        doc.saveAndClose();
+
+        if (shouldCancelUnqualifiedRun()) {
+          copy.setTrashed(true);
+          state.status = 'cancelled';
+          break;
+        }
+
+        const pdfBlob = copy.getAs(MimeType.PDF);
+        const pdfFile = destinationFolder.createFile(pdfBlob).setName(fileName + ".pdf");
+        pdfFile.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+        copy.setTrashed(true);
+
+        const pdfUrl = pdfFile.getUrl();
+        sheet.getRange(rowIndex, UNQUALIFIED.COL_LINK).setValue(pdfUrl);
+
+        state.currentIndex = i + 1;
+        state.completedCount++;
+        state.processedApplicants.push(lastName + ', ' + firstName);
+        newApplicants.push(lastName + ', ' + firstName);
+        processedInThisBatch++;
+      } catch (itemError) {
+        console.log('Error processing ' + fileName + ': ' + itemError.message);
+        state.currentIndex = i + 1;
+      }
+    }
+  } catch (e) {
+    console.log('Batch processing error: ' + e.message);
+  }
+
+  const isCompleted = state.currentIndex >= rows.length || state.status === 'cancelled';
+  if (state.status === 'cancelled') {
+    clearBatchState(batchKey);
+  } else if (isCompleted) {
+    state.status = 'completed';
+    clearBatchState(batchKey);
+  } else {
+    updateBatchState(batchKey, state);
+  }
+
+  return {
+    completed: isCompleted,
+    processed: processedInThisBatch,
+    totalProcessed: state.completedCount,
+    totalRows: rows.length,
+    applicants: newApplicants,
+    allApplicants: state.processedApplicants,
+    message: state.status === 'cancelled'
+      ? 'Process cancelled. Total: ' + state.completedCount + ' / ' + rows.length
+      : processedInThisBatch + ' applicants processed. Total: ' + state.completedCount + ' / ' + rows.length,
+    status: state.status
+  };
+}
+
 function unqualifiedGenerateIndividualPDFs() {
   try {
+    PropertiesService.getDocumentProperties().deleteProperty('cancel_unqualified_run');
+    CacheService.getDocumentCache().remove('cancel_unqualified_run');
+    
     const folderIds = getUnqualifiedPositionFolder();
     const targetFolderId = folderIds.unqualifiedSubFolderId;
     const ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -214,14 +352,29 @@ function unqualifiedGenerateIndividualPDFs() {
     const templateFile = DriveApp.getFileById(UNQUALIFIED.TEMPLATE_ID);
     const destinationFolder = DriveApp.getFolderById(targetFolderId);
     const processed = [];
+    let cancelled = false;
 
-    selectedRows.forEach(({ row, rowIndex }) => {
+    for (let k = 0; k < selectedRows.length; k++) {
+      if (shouldCancelUnqualifiedRun()) {
+        console.log('Cancellation requested for individual unqualified PDF generation');
+        cancelled = true;
+        break;
+      }
+
+      const { row, rowIndex } = selectedRows[k];
       const lastName = String(row[UNQUALIFIED.COL_LAST_NAME - 1] || '').trim();
       const firstName = String(row[UNQUALIFIED.COL_FIRST_NAME - 1] || '').trim();
       const fileName = (lastName || 'Applicant') + (firstName ? (', ' + firstName) : '');
 
       try {
         const copy = templateFile.makeCopy(fileName, destinationFolder);
+
+        if (shouldCancelUnqualifiedRun()) {
+          copy.setTrashed(true);
+          cancelled = true;
+          break;
+        }
+
         const doc = DocumentApp.openById(copy.getId());
         const body = doc.getBody();
 
@@ -230,10 +383,18 @@ function unqualifiedGenerateIndividualPDFs() {
         });
 
         doc.saveAndClose();
+
+        if (shouldCancelUnqualifiedRun()) {
+          copy.setTrashed(true);
+          cancelled = true;
+          break;
+        }
+
         const pdfBlob = copy.getAs(MimeType.PDF);
         const pdfFile = destinationFolder.createFile(pdfBlob).setName(fileName + '.pdf');
         pdfFile.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
         copy.setTrashed(true);
+
         const pdfUrl = pdfFile.getUrl();
         sheet.getRange(rowIndex, UNQUALIFIED.COL_LINK).setValue(pdfUrl);
         sheet.getRange(rowIndex, UNQUALIFIED.COL_REGENERATE).setValue(false);
@@ -241,9 +402,9 @@ function unqualifiedGenerateIndividualPDFs() {
       } catch (itemError) {
         console.log('Error generating unqualified PDF for row ' + rowIndex + ': ' + itemError.message);
       }
-    });
+    }
 
-    return { success: true, count: processed.length, applicants: processed };
+    return { success: true, count: processed.length, applicants: processed, cancelled: cancelled };
   } catch (e) {
     throw new Error('Error generating selected unqualified PDFs: ' + e.message);
   }
@@ -340,10 +501,12 @@ function unqualifiedBackupSheet() {
 }
 
 function unqualifiedSendEmails() {
-  // PASTE YOUR DEPLOYED WEB APP URL HERE
   const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxJpyg6KPFUMxeHSOdOVnVe4WyN6JssT9DhoufEn2pE7vIp02joOQ6jZVD-FwZCLKW7FQ/exec";
 
   try {
+    PropertiesService.getDocumentProperties().deleteProperty('cancel_unqualified_send');
+    CacheService.getDocumentCache().remove('cancel_unqualified_send');
+    
     const ss = SpreadsheetApp.getActiveSpreadsheet();
     const sheet = ss.getSheetByName(UNQUALIFIED.SHEET_NAME);
 
@@ -357,8 +520,15 @@ function unqualifiedSendEmails() {
     const data = sheet.getRange(UNQUALIFIED.START_ROW, 1, lastRow - UNQUALIFIED.START_ROW + 1, UNQUALIFIED.COL_STATUS).getValues();
     let emailCount = 0;
     const now = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd HH:mm:ss');
+    let cancelled = false;
 
     for (let i = 0; i < data.length; i++) {
+      if (shouldCancelUnqualifiedSend()) {
+        console.log('Cancellation requested for unqualified email sending');
+        cancelled = true;
+        break;
+      }
+
       const row = data[i];
       const applicantName = row[0];
       const applicantLName = row[13]; // Column N
@@ -369,7 +539,10 @@ function unqualifiedSendEmails() {
       const office = row[8]; // Column I
       const statusCell = sheet.getRange(UNQUALIFIED.START_ROW + i, UNQUALIFIED.COL_STATUS);
 
-      if (!applicantName || applicantName.toString().trim() === '') continue;
+      if (!applicantName || applicantName.toString().trim() === '') break;
+
+      const currentStatus = row[UNQUALIFIED.COL_STATUS - 1];
+      if (currentStatus && String(currentStatus).startsWith('Sent')) continue;
 
       if (!email || email.toString().trim() === '' || !driveLink || driveLink.toString().trim() === '') {
         statusCell.setValue('Not sent - missing email or link (' + now + ')');
@@ -385,7 +558,6 @@ function unqualifiedSendEmails() {
         'Best regards,\n' +
         'DOJ RPO V - Human Resource Unit';
 
-      // --- INTEGRATED PROXY CALL ---
       const payload = {
         recipient: email.toString().trim(),
         cc: 'orp05.hiring@gmail.com',
@@ -405,21 +577,22 @@ function unqualifiedSendEmails() {
 
       if (response.getContentText() === "Success") {
         statusCell.setValue('Sent (' + now + ')');
-        // Log the sent letter
         logSentLetter('LETTER - DQ', position || '', office || '', applicantName || '');
         emailCount++;
       } else {
         statusCell.setValue('Error: Proxy failed (' + now + ')');
       }
 
-/**
-      GmailApp.sendEmail(email.toString().trim(), subject, body, { replyTo: 'orp05.hiring@gmail.com' });
-      statusCell.setValue('Sent (' + now + ')');
-      emailCount++;
-      */
+      if (shouldCancelUnqualifiedSend()) {
+        console.log('Cancellation requested for unqualified email sending before sleep');
+        cancelled = true;
+        break;
+      }
+
+      Utilities.sleep(1500);
     }
 
-    return { status: 'Emails sent', count: emailCount };
+    return { status: cancelled ? 'Cancelled' : 'Emails sent', count: emailCount, cancelled: cancelled };
   } catch (e) {
     throw new Error('Error sending email notifications: ' + e.message);
   }
@@ -429,6 +602,9 @@ function unqualifiedSendSelectedEmails() {
   const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxJpyg6KPFUMxeHSOdOVnVe4WyN6JssT9DhoufEn2pE7vIp02joOQ6jZVD-FwZCLKW7FQ/exec";
 
   try {
+    PropertiesService.getDocumentProperties().deleteProperty('cancel_unqualified_send');
+    CacheService.getDocumentCache().remove('cancel_unqualified_send');
+    
     const ss = SpreadsheetApp.getActiveSpreadsheet();
     const sheet = ss.getSheetByName(UNQUALIFIED.SHEET_NAME);
     if (!sheet) throw new Error('Sheet "' + UNQUALIFIED.SHEET_NAME + '" not found.');
@@ -450,12 +626,19 @@ function unqualifiedSendSelectedEmails() {
 
     let emailCount = 0;
     const now = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd HH:mm:ss');
+    let cancelled = false;
 
     for (let i = 0; i < data.length; i++) {
       const row = data[i];
       const regenerateVal = row[UNQUALIFIED.COL_REGENERATE - 1];
       const shouldSend = regenerateVal === true || String(regenerateVal).toLowerCase() === 'true';
       if (!shouldSend) continue;
+
+      if (shouldCancelUnqualifiedSend()) {
+        console.log('Cancellation requested for selected unqualified email sending');
+        cancelled = true;
+        break;
+      }
 
       const applicantName = row[0];
       const applicantLName = row[13]; // Column N
@@ -511,9 +694,17 @@ function unqualifiedSendSelectedEmails() {
       } else {
         statusCell.setValue('Error: Proxy failed (' + now + ')');
       }
+
+      if (shouldCancelUnqualifiedSend()) {
+        console.log('Cancellation requested for selected unqualified email sending before sleep');
+        cancelled = true;
+        break;
+      }
+
+      Utilities.sleep(1500);
     }
 
-    return { status: 'Selected emails processed', count: emailCount };
+    return { status: cancelled ? 'Cancelled' : 'Selected emails processed', count: emailCount, cancelled: cancelled };
   } catch (e) {
     throw new Error('Error sending selected emails: ' + e.message);
   }
@@ -540,4 +731,39 @@ function unqualifiedRunCompleteProcess() {
   } catch (e) {
     throw new Error('Error in unqualified complete process: ' + e.message);
   }
+}
+
+// ==========================================
+// CANCELLATION HELPERS FOR UNQUALIFIED
+// ==========================================
+
+function shouldCancelUnqualifiedRun() {
+  const cache = CacheService.getDocumentCache();
+  if (cache.get('cancel_unqualified_run') === 'true') return true;
+  return PropertiesService.getDocumentProperties().getProperty('cancel_unqualified_run') === 'true';
+}
+
+function shouldCancelUnqualifiedSend() {
+  const cache = CacheService.getDocumentCache();
+  if (cache.get('cancel_unqualified_send') === 'true') return true;
+  return PropertiesService.getDocumentProperties().getProperty('cancel_unqualified_send') === 'true';
+}
+
+function cancelUnqualifiedRun() {
+  CacheService.getDocumentCache().put('cancel_unqualified_run', 'true', 21600);
+  PropertiesService.getDocumentProperties().setProperty('cancel_unqualified_run', 'true');
+}
+
+function cancelUnqualifiedSend() {
+  CacheService.getDocumentCache().put('cancel_unqualified_send', 'true', 21600);
+  PropertiesService.getDocumentProperties().setProperty('cancel_unqualified_send', 'true');
+}
+
+function clearCancelUnqualifiedFlags() {
+  const props = PropertiesService.getDocumentProperties();
+  props.deleteProperty('cancel_unqualified_run');
+  props.deleteProperty('cancel_unqualified_send');
+  const cache = CacheService.getDocumentCache();
+  cache.remove('cancel_unqualified_run');
+  cache.remove('cancel_unqualified_send');
 }

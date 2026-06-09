@@ -363,3 +363,17 @@ function showGeneratorSidebar() {
 function checkFailedColumnL() {
   return checkFailedColumnM();
 }
+
+/**
+ * Validate Column R for Unqualified sheet
+ */
+function checkColumnRInSheet(sheetName) {
+  return unqualifiedCheckColumnR();
+}
+
+/**
+ * Validate Columns O-R for For Interview sheet
+ */
+function checkColumnsOtoRInSheet(sheetName) {
+  return forInterviewCheckColumnsOtoR();
+}

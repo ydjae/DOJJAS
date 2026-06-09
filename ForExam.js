@@ -603,7 +603,10 @@ function forExamSendEmails() {
       const office = row[8]; // Column I
       const statusCell = sheet.getRange(FOR_EXAM.START_ROW + i, FOR_EXAM.COL_EXAM_PROGRESS);
 
-      if (!applicantName || applicantName.toString().trim() === '') continue;
+      if (!applicantName || applicantName.toString().trim() === '') break;
+
+      const currentStatus = row[FOR_EXAM.COL_EXAM_PROGRESS - 1];
+      if (currentStatus && String(currentStatus).startsWith('Sent')) continue;
 
       if (!email || email.toString().trim() === '' || !driveLink || driveLink.toString().trim() === '') {
         statusCell.setValue('Not sent - missing email or link (' + now + ')');
