@@ -69,6 +69,9 @@ function getFolderUrl(letterType) {
   if (letterType === 'interview') {
     return forInterviewGetFolderUrl();
   }
+  if (letterType === 'finalNotice') {
+    return finalNoticeGetFolderUrl();
+  }
   throw new Error('Letter type not supported: ' + letterType);
 }
 

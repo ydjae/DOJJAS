@@ -709,6 +709,170 @@
     </div>
   </div>
 
+  <!-- FINAL NOTICE SECTION -->
+  <div id="final-notice-page"
+    class="hidden bg-white border border-gray-100 rounded-3xl p-6 shadow-sm w-full max-w-md mx-auto">
+    <!-- FINAL NOTICE: Page Header -->
+    <div class="flex items-center gap-3 mb-6 pb-4 border-b border-gray-100">
+      <button id="backBtnFinalNotice"
+        class="group p-2 rounded-lg bg-gray-100 hover:bg-gray-800 transition-colors duration-200 relative">
+        <i data-lucide="chevron-left" class="w-4 h-4 text-gray-600 group-hover:text-white transition-colors"></i>
+        <span
+          class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block px-2 py-1 text-[10px] font-medium text-white bg-gray-800 rounded whitespace-nowrap z-50">
+          Go Back
+          <span
+            class="absolute top-full left-1/2 -translate-x-1/2 -mt-1 border-4 border-transparent border-t-gray-800"></span>
+        </span>
+      </button>
+      <div>
+        <h2 class="text-lg font-bold text-blue-800 tracking-tight font-sans">FINAL NOTICE</h2>
+        <p class="text-[10px] text-gray-400 font-medium uppercase tracking-wider font-sans">Generate &amp; Send Letters</p>
+      </div>
+    </div>
+
+    <div class="space-y-3 mb-6">
+      <div class="space-y-3 mb-6">
+
+        <!-- Step 1: Validate Columns -->
+        <div class="step-container flex items-start gap-3 relative">
+          <div
+            class="w-7 h-7 rounded-full bg-gray-100 border-2 border-gray-300 text-gray-500 flex items-center justify-center text-[11px] font-bold shrink-0 mt-1 z-10">
+            1</div>
+          <div class="flex-1">
+            <button id="validateFNColumnsBtn"
+              class="group relative flex items-center gap-2 w-full py-3 px-4 bg-white border border-gray-200 text-gray-700 rounded-xl text-xs font-semibold hover:bg-gray-50 active:scale-95 transition btn-step-active">
+              <i data-lucide="check-circle" class="w-4 h-4 text-blue-500"></i>
+              <span class="flex-1 text-left font-sans">Check column O</span>
+            </button>
+            <p id="fnStep1Status" class="text-[10px] mt-1.5 font-semibold text-center"></p>
+          </div>
+        </div>
+
+        <!-- Step 2: Generate Letters -->
+        <div class="step-container flex items-start gap-3 relative grayscale opacity-50 pointer-events-none">
+          <div id="circleStepFN2"
+            class="w-7 h-7 rounded-full bg-gray-100 border-2 border-gray-300 text-gray-500 flex items-center justify-center text-[11px] font-bold shrink-0 mt-1 z-10">
+            2</div>
+
+          <div class="flex-1">
+            <div
+              class="step-action-element group relative flex flex-col w-full bg-white border border-gray-200 text-gray-700 rounded-xl transition-all duration-300 cursor-not-allowed overflow-hidden">
+              <!-- Header (Always visible) -->
+              <div id="fnStep2Header"
+                class="flex items-center justify-between py-3 px-4 w-full cursor-pointer hover:bg-gray-50 transition-colors">
+                <span class="flex items-center gap-2 text-xs font-semibold font-sans">
+                  <i data-lucide="file-text" class="w-4 h-4 text-indigo-500"></i>
+                  Generate Letters
+                </span>
+                <i data-lucide="chevron-down" id="fnRunOptionsChevron"
+                  class="w-4 h-4 text-gray-400 transition-transform duration-300"></i>
+              </div>
+
+              <!-- Click content (Dropdown) -->
+              <div id="fnRunOptionsPanel"
+                class="max-h-0 opacity-0 transition-all duration-500 ease-in-out px-2.5 space-y-2 overflow-hidden">
+                <button id="generateFNAllBtn"
+                  class="group/btn relative w-full py-2.5 px-3 bg-gray-50 border border-gray-200 text-gray-700 rounded-xl text-sm font-semibold hover:bg-white flex items-center gap-2 active:scale-95 transition cursor-pointer font-sans">
+                  <i data-lucide="users" class="w-4 h-4 text-blue-500"></i> Generate All
+                </button>
+                <button id="generateFNIndividualBtn"
+                  class="group/btn relative w-full py-2.5 px-3 bg-gray-50 border border-gray-200 text-gray-700 rounded-xl text-sm font-semibold hover:bg-white flex items-center gap-2 active:scale-95 transition cursor-pointer font-sans">
+                  <i data-lucide="user" class="w-4 h-4 text-blue-500"></i> Generate Individual
+                </button>
+                <button id="cancelFNRunBtn" disabled
+                  class="group/btn relative w-full py-2.5 px-3 bg-red-50 border border-red-200 text-red-700 rounded-xl text-sm font-semibold hover:bg-red-100 flex items-center gap-2 active:scale-95 transition cursor-not-allowed opacity-50 font-sans">
+                  <i data-lucide="ban" class="w-4 h-4 text-red-500"></i> Cancel Process
+                </button>
+              </div>
+            </div>
+            <div id="fnStep2Status" class="empty:hidden"></div>
+          </div>
+        </div>
+
+        <!-- Step 6: Send Options -->
+        <div class="step-container flex items-start gap-3 relative grayscale opacity-50 pointer-events-none">
+          <div
+            class="w-7 h-7 rounded-full bg-gray-100 border-2 border-gray-300 text-gray-500 flex items-center justify-center text-[11px] font-bold shrink-0 mt-1 z-10">
+            3</div>
+
+          <div class="flex-1">
+            <div
+              class="step-action-element group relative flex flex-col w-full bg-white border border-gray-200 text-gray-700 rounded-xl transition-all duration-300 cursor-not-allowed overflow-hidden">
+              <!-- Header (Always visible) -->
+              <div id="fnStep6Header"
+                class="flex items-center justify-between py-3 px-4 w-full cursor-pointer hover:bg-gray-50 transition-colors">
+                <span class="flex items-center gap-2 text-sm font-semibold font-sans">
+                  <i data-lucide="mail" class="w-4 h-4 text-sky-500"></i>
+                  Send Options
+                </span>
+                <i data-lucide="chevron-down" id="fnSendOptionsChevron"
+                  class="w-4 h-4 text-gray-400 transition-transform duration-300"></i>
+              </div>
+
+              <!-- Click content (Dropdown) -->
+              <div id="fnSendOptionsPanel"
+                class="max-h-0 opacity-0 transition-all duration-500 ease-in-out px-2.5 space-y-2 overflow-hidden">
+                <button id="sendFNAllBtn"
+                  class="group/btn relative w-full py-2.5 px-3 bg-gray-50 border border-gray-200 text-gray-700 rounded-xl text-sm font-semibold hover:bg-white flex items-center gap-2 active:scale-95 transition cursor-pointer font-sans">
+                  <i data-lucide="mails" class="w-4 h-4 text-sky-500"></i> Send All
+                </button>
+                <button id="sendFNIndividualBtn"
+                  class="group/btn relative w-full py-2.5 px-3 bg-gray-50 border border-gray-200 text-gray-700 rounded-xl text-sm font-semibold hover:bg-white flex items-center gap-2 active:scale-95 transition cursor-pointer font-sans">
+                  <i data-lucide="mail" class="w-4 h-4 text-sky-500"></i> Send Individual
+                </button>
+                <button id="cancelFNSendBtn" disabled
+                  class="group/btn relative w-full py-2.5 px-3 bg-red-50 border border-red-200 text-red-700 rounded-xl text-sm font-semibold hover:bg-red-100 flex items-center gap-2 active:scale-95 transition cursor-not-allowed opacity-50 font-sans">
+                  <i data-lucide="ban" class="w-4 h-4 text-red-500"></i> Cancel Process
+                </button>
+              </div>
+            </div>
+            <div id="fnStep6Status" class="empty:hidden font-sans"></div>
+          </div>
+        </div>
+
+        <!-- Step 7: Backup Sheet -->
+        <div class="step-container flex items-start gap-3 relative grayscale opacity-50">
+          <div
+            class="w-7 h-7 rounded-full bg-gray-100 border-2 border-gray-300 text-gray-500 flex items-center justify-center text-[11px] font-bold shrink-0 mt-1 z-10">
+            4</div>
+          <div class="flex-1">
+            <button id="backupFNBtn" disabled
+              class="group relative flex items-center gap-2 w-full py-3 px-4 bg-white border border-gray-200 text-gray-700 rounded-xl text-sm font-semibold cursor-not-allowed transition font-sans">
+              <i data-lucide="archive" class="w-4 h-4 text-slate-500"></i>
+              <span class="flex-1 text-left">Backup Sheet</span>
+            </button>
+            <p id="fnStep7Status" class="text-[10px] mt-1.5 font-semibold text-center font-sans"></p>
+          </div>
+        </div>
+
+        <!-- Footer Actions -->
+        <div class="flex gap-2 mt-5 pt-4 border-t border-gray-100 justify-center">
+          <button id="finalNoticeHomeBtn"
+            class="group relative p-2 bg-gray-100 hover:bg-gray-800 rounded-xl transition-colors duration-200">
+            <i data-lucide="home" class="w-4 h-4 text-gray-500 group-hover:text-white"></i>
+            <span
+              class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block px-2 py-1 text-[10px] font-medium text-white bg-gray-800 rounded shadow-sm whitespace-nowrap z-50">
+              Main Menu
+              <span
+                class="absolute top-full left-1/2 -translate-x-1/2 -mt-1 border-4 border-transparent border-t-gray-800"></span>
+            </span>
+          </button>
+          <button id="finalNoticeResetBtn"
+            class="group relative p-2 bg-gray-100 hover:bg-amber-500 rounded-xl transition-colors duration-200">
+            <i data-lucide="rotate-ccw" class="w-4 h-4 text-gray-500 group-hover:text-white"></i>
+            <span
+              class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block px-2 py-1 text-[10px] font-medium text-white bg-amber-500 rounded shadow-sm whitespace-nowrap z-50">
+              Reset Steps
+              <span
+                class="absolute top-full left-1/2 -translate-x-1/2 -mt-1 border-4 border-transparent border-t-amber-500"></span>
+            </span>
+          </button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
   <!-- UNQUALIFIED PAGE -->
   <div id="unqualified-page"
     class="hidden bg-white border border-gray-100 rounded-3xl p-6 shadow-sm w-full max-w-md mx-auto">
@@ -1395,9 +1559,9 @@
         if (!prev) continue;
         // Remove glow from every button and action element in the container
         prev.querySelectorAll('button, .step-action-element').forEach(el => el.classList.remove('btn-step-active'));
-        // Collapse any open panels (e.g. runOptionsPanel, sendOptionsPanel)
+        // Collapse any open panels
         prev.querySelectorAll('[id$="Panel"]').forEach(panel => {
-          if (panel.id === 'runOptionsPanel' || panel.id === 'sendOptionsPanel') {
+          if (panel.id === 'runOptionsPanel' || panel.id === 'sendOptionsPanel' || panel.id === 'fnRunOptionsPanel' || panel.id === 'fnSendOptionsPanel') {
             panel.classList.add('max-h-0', 'opacity-0');
             panel.classList.remove('max-h-[300px]', 'opacity-100', 'pb-2.5');
           } else {
@@ -1430,7 +1594,7 @@
         }
         // Enable all buttons inside panels within this container (e.g. Generate All/Individual, Send All/Individual)
         container.querySelectorAll('[id$="Panel"] button').forEach(btn => {
-          if (btn.id !== 'cancelRunBtn' && btn.id !== 'cancelSendBtn') {
+          if (btn.id !== 'cancelRunBtn' && btn.id !== 'cancelSendBtn' && btn.id !== 'cancelFNRunBtn' && btn.id !== 'cancelFNSendBtn') {
             btn.disabled = false;
           }
         });
@@ -1465,7 +1629,8 @@
       unqualified: document.getElementById('unqualifiedBtn'),
       forInterview: document.getElementById('forInterviewBtn'),
       failed: document.getElementById('failedBtn'),
-      backup: document.getElementById('backupBtn')
+      backup: document.getElementById('backupBtn'),
+      finalNotice: document.getElementById('finalNoticeBtn')
     };
 
     // Step Completion Tracking
@@ -1480,7 +1645,7 @@
     function showLanding() {
       landingPage.classList.remove('hidden');
       landingPage.classList.add('flex');
-      ['forExamPage', 'unqualified-page', 'for-interview-page', 'failed-page', 'backup-page', 'summary-page'].forEach(id => {
+      ['forExamPage', 'unqualified-page', 'for-interview-page', 'failed-page', 'final-notice-page', 'backup-page', 'summary-page'].forEach(id => {
         const page = document.getElementById(id);
         if (page) {
           page.classList.add('hidden');
@@ -1494,12 +1659,13 @@
       if (typeof resetUnqualifiedSteps === 'function') resetUnqualifiedSteps();
       if (typeof resetInterviewSteps === 'function') resetInterviewSteps();
       if (typeof resetFailedSteps === 'function') resetFailedSteps();
+      if (typeof resetFinalNoticeSteps === 'function') resetFinalNoticeSteps();
       showLanding();
     }
 
     function showPage(type) {
       currentLetterType = type;
-      ['landingPage', 'forExamPage', 'unqualified-page', 'for-interview-page', 'failed-page', 'backup-page', 'summary-page'].forEach(id => {
+      ['landingPage', 'forExamPage', 'unqualified-page', 'for-interview-page', 'failed-page', 'final-notice-page', 'backup-page', 'summary-page'].forEach(id => {
         const page = document.getElementById(id);
         if (page) {
           page.classList.add('hidden');
@@ -1512,6 +1678,7 @@
         unqualified: 'unqualified-page',
         forInterview: 'for-interview-page',
         failed: 'failed-page',
+        finalNotice: 'final-notice-page',
         backup: 'backup-page',
         summary: 'summary-page'
       }[type];
@@ -2015,6 +2182,609 @@
           lucide.createIcons();
         })
         .backupExamSheet();
+    });
+
+    function resetFinalNoticeSteps() {
+      // Reset step status flags
+      stepStatus.step1 = false;
+      stepStatus.step2 = false;
+      stepStatus.step3 = false;
+      stepStatus.step4 = false;
+      stepStatus.step5 = false;
+      stepStatus.step6 = false;
+
+      const containers = document.querySelectorAll('#final-notice-page .step-container');
+      containers.forEach((container, index) => {
+        container.classList.add('grayscale', 'opacity-50');
+
+        // Clear pointer-events-none from the card wrapper (set by generation complete)
+        const cardEl = container.querySelector('.step-action-element');
+        if (cardEl) {
+          cardEl.classList.remove('btn-step-active', 'pointer-events-none', 'opacity-50');
+          // Disable buttons inside the card
+          cardEl.querySelectorAll('button').forEach(btn => { btn.disabled = true; });
+        }
+
+        // Collapse runOptionsPanel / sendOptionsPanel
+        container.querySelectorAll('[id$="Panel"]').forEach(panel => {
+          if (panel.id === 'fnRunOptionsPanel' || panel.id === 'fnSendOptionsPanel') {
+            panel.classList.add('max-h-0', 'opacity-0');
+            panel.classList.remove('max-h-[300px]', 'opacity-100', 'pb-2.5', 'hidden');
+          }
+        });
+
+        container.querySelectorAll('[id$="Chevron"]').forEach(chevron => {
+          chevron.classList.remove('rotate-180');
+        });
+
+        const statusEl = container.querySelector('[id$="Status"]');
+        if (statusEl) {
+          statusEl.innerText = '';
+          statusEl.className = 'text-[10px] mt-1.5 font-semibold text-center';
+        }
+      });
+
+      // Lock containers by default
+      if (containers[1]) containers[1].classList.add('pointer-events-none');
+      if (containers[2]) containers[2].classList.add('pointer-events-none');
+      
+      // Step 4 (Backup): keep visible but locked
+      if (containers[3]) {
+        containers[3].classList.remove('hidden', 'pointer-events-none');
+        const backupBtn = containers[3].querySelector('button');
+        if (backupBtn) {
+          backupBtn.disabled = true;
+          backupBtn.className = 'group relative flex items-center gap-2 w-full py-3 px-4 bg-white border border-gray-200 text-gray-700 rounded-xl text-sm font-semibold cursor-not-allowed transition';
+          backupBtn.innerHTML = '<i data-lucide="archive" class="w-4 h-4 text-slate-500"></i>\n              <span class="flex-1 text-left font-sans">Backup Sheet</span>';
+        }
+      }
+
+      // Enable first step (Step 1: Validate Columns)
+      if (containers[0]) {
+        containers[0].classList.remove('grayscale', 'opacity-50', 'pointer-events-none');
+        const firstBtn = containers[0].querySelector('button');
+        if (firstBtn) {
+          firstBtn.disabled = false;
+          firstBtn.classList.remove('opacity-50', 'cursor-not-allowed', 'cursor-default');
+          firstBtn.classList.add('btn-step-active', 'cursor-pointer');
+          firstBtn.innerHTML = '<i data-lucide="check-circle" class="w-4 h-4 text-blue-500 font-sans"></i>\n              <span class="flex-1 text-left font-sans">Check column O</span>';
+        }
+      }
+
+      // Reset panel inner buttons
+      const genAllBtn = document.getElementById('generateFNAllBtn');
+      if (genAllBtn) {
+        genAllBtn.disabled = true;
+        genAllBtn.className = 'group/btn relative w-full py-2.5 px-3 bg-gray-50 border border-gray-200 text-gray-700 rounded-xl text-sm font-semibold hover:bg-white flex items-center gap-2 active:scale-95 transition cursor-pointer font-sans';
+        genAllBtn.innerHTML = '<i data-lucide="users" class="w-4 h-4 text-blue-500"></i> Generate All';
+      }
+
+      const genIndBtn = document.getElementById('generateFNIndividualBtn');
+      if (genIndBtn) {
+        genIndBtn.disabled = true;
+        genIndBtn.className = 'group/btn relative w-full py-2.5 px-3 bg-gray-50 border border-gray-200 text-gray-700 rounded-xl text-sm font-semibold hover:bg-white flex items-center gap-2 active:scale-95 transition cursor-pointer font-sans';
+        genIndBtn.innerHTML = '<i data-lucide="user" class="w-4 h-4 text-blue-500"></i> Generate Individual';
+      }
+
+      const sendAllBtn = document.getElementById('sendFNAllBtn');
+      if (sendAllBtn) {
+        sendAllBtn.disabled = true;
+        sendAllBtn.className = 'group/btn relative w-full py-2.5 px-3 bg-gray-50 border border-gray-200 text-gray-700 rounded-xl text-sm font-semibold hover:bg-white flex items-center gap-2 active:scale-95 transition cursor-pointer font-sans';
+        sendAllBtn.innerHTML = '<i data-lucide="mails" class="w-4 h-4 text-sky-500"></i> Send All';
+      }
+
+      const sendIndBtn = document.getElementById('sendFNIndividualBtn');
+      if (sendIndBtn) {
+        sendIndBtn.disabled = true;
+        sendIndBtn.className = 'group/btn relative w-full py-2.5 px-3 bg-gray-50 border border-gray-200 text-gray-700 rounded-xl text-sm font-semibold hover:bg-white flex items-center gap-2 active:scale-95 transition cursor-pointer font-sans';
+        sendIndBtn.innerHTML = '<i data-lucide="mail" class="w-4 h-4 text-sky-500"></i> Send Individual';
+      }
+
+      const cancelRunBtn = document.getElementById('cancelFNRunBtn');
+      if (cancelRunBtn) {
+        cancelRunBtn.disabled = true;
+        cancelRunBtn.className = 'group/btn relative w-full py-2.5 px-3 bg-red-50 border border-red-200 text-red-700 rounded-xl text-sm font-semibold hover:bg-red-100 flex items-center gap-2 active:scale-95 transition cursor-not-allowed opacity-50 font-sans';
+        cancelRunBtn.innerHTML = '<i data-lucide="ban" class="w-4 h-4 text-red-500"></i> Cancel Process';
+      }
+
+      const cancelSendBtn = document.getElementById('cancelFNSendBtn');
+      if (cancelSendBtn) {
+        cancelSendBtn.disabled = true;
+        cancelSendBtn.className = 'group/btn relative w-full py-2.5 px-3 bg-red-50 border border-red-200 text-red-700 rounded-xl text-sm font-semibold hover:bg-red-100 flex items-center gap-2 active:scale-95 transition cursor-not-allowed opacity-50 font-sans';
+        cancelSendBtn.innerHTML = '<i data-lucide="ban" class="w-4 h-4 text-red-500"></i> Cancel Process';
+      }
+
+      lucide.createIcons();
+    }
+
+    // ==== FINAL NOTICE PAGE EVENT LISTENERS ====
+
+    document.getElementById('validateFNColumnsBtn')?.addEventListener('click', function () {
+      const btn = this;
+      const statusLabel = document.getElementById('fnStep1Status');
+
+      btn.disabled = true;
+      btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Validating...';
+      lucide.createIcons();
+
+      google.script.run
+        .withSuccessHandler((res) => {
+          if (res.hasData) {
+            stepStatus.step1 = true;
+            statusLabel.innerText = "✓ Column O verified!";
+            statusLabel.className = "ml-[0.75rem] text-[10px] px-2 mt-2 font-semibold text-left text-green-600 font-sans";
+            btn.innerHTML = '<i data-lucide="check-circle" class="w-4 h-4 text-blue-500 font-sans"></i> <span class="flex-1 text-left font-sans">Check column O</span>';
+            btn.disabled = true;
+            btn.classList.add('opacity-50', 'cursor-default');
+            btn.classList.remove('btn-step-active', 'hover:bg-gray-50', 'active:scale-95', 'cursor-pointer');
+            const stepCircle = btn.closest('.step-container')?.querySelector('div:first-child');
+            if (stepCircle) stepCircle.classList.add('opacity-50');
+
+            unlockNextStep(1, 'final-notice-page'); // Unlock Step 2
+          } else {
+            statusLabel.innerText = "❌ Missing data: " + (res.message || "check columns");
+            statusLabel.className = "ml-[0.75rem] text-[10px] px-2 mt-2 font-semibold text-left text-red-600 font-sans";
+            btn.disabled = false;
+            btn.innerHTML = '<i data-lucide="check-circle" class="w-4 h-4 font-sans"></i> Check column O';
+          }
+          lucide.createIcons();
+        })
+        .withFailureHandler((err) => {
+          statusLabel.innerText = "❌ Error: " + err.message;
+          statusLabel.className = "ml-[0.75rem] text-[10px] px-2 mt-2 font-semibold text-left text-red-600 font-sans";
+          btn.disabled = false;
+          btn.innerHTML = '<i data-lucide="check-circle" class="w-4 h-4 font-sans"></i> Check column O';
+          lucide.createIcons();
+        })
+        .finalNoticeCheckColumns();
+    });
+
+    document.getElementById('fnStep2Header')?.addEventListener('click', function () {
+      const panel = document.getElementById('fnRunOptionsPanel');
+      const chevron = document.getElementById('fnRunOptionsChevron');
+      if (panel && chevron) {
+        panel.classList.remove('hidden');
+        panel.classList.toggle('max-h-0');
+        panel.classList.toggle('max-h-[300px]');
+        panel.classList.toggle('opacity-0');
+        panel.classList.toggle('opacity-100');
+        panel.classList.toggle('pb-2.5');
+        chevron.classList.toggle('rotate-180');
+      }
+    });
+
+    document.getElementById('generateFNAllBtn')?.addEventListener('click', function () {
+      const btn = this;
+      const otherBtn = document.getElementById('generateFNIndividualBtn');
+      const statusLabel = document.getElementById('fnStep2Status');
+
+      btn.disabled = true;
+      if (otherBtn) otherBtn.disabled = true;
+      btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Processing...';
+      setCancelButtonState('cancelFNRunBtn', true);
+      lucide.createIcons();
+      window.setProcessing(true);
+      window.isFNRunCancelled = false;
+
+      google.script.run
+        .withSuccessHandler((res) => {
+          if (window.isFNRunCancelled) return;
+          setCancelButtonState('cancelFNRunBtn', false);
+          const isCancelled = res.cancelled || (res.pdfGeneration && res.pdfGeneration.cancelled);
+          const generatedApplicants = (res && res.applicants) || (res && res.pdfGeneration && res.pdfGeneration.applicants) || [];
+          const pdfCount = generatedApplicants.length;
+          const lastApplicant = generatedApplicants.length > 0 ? generatedApplicants[generatedApplicants.length - 1] : '';
+
+          if (isCancelled) {
+            statusLabel.innerHTML = `<span class="block text-red-600 font-semibold">❌ Process Cancelled</span>` +
+              `<span class="block text-gray-700 font-sans">PDF Created: ${pdfCount}</span>` +
+              (lastApplicant ? `<span class="block mt-0.5 uppercase tracking-wider">LAST: ${lastApplicant}</span>` : '');
+            statusLabel.className = "flex flex-col items-start w-fit mx-auto text-[10px] mt-3 font-bold text-gray-700 leading-tight font-sans";
+
+            btn.disabled = false;
+            btn.className = 'group/btn relative w-full py-2.5 px-3 bg-gray-50 border border-gray-200 text-gray-700 rounded-xl text-sm font-semibold hover:bg-white flex items-center gap-2 active:scale-95 transition cursor-pointer font-sans';
+            btn.innerHTML = '<i data-lucide="users" class="w-4 h-4 text-blue-500"></i> Generate All';
+
+            if (otherBtn) {
+              otherBtn.disabled = false;
+              otherBtn.className = 'group/btn relative w-full py-2.5 px-3 bg-gray-50 border border-gray-200 text-gray-700 rounded-xl text-sm font-semibold hover:bg-white flex items-center gap-2 active:scale-95 transition cursor-pointer font-sans';
+              otherBtn.innerHTML = '<i data-lucide="user" class="w-4 h-4 text-blue-500 font-sans"></i> Generate Individual';
+            }
+            window.setProcessing(false);
+            lucide.createIcons();
+            return;
+          }
+
+          stepStatus.step2 = true;
+          const isCompleted = (res && res.completed !== false) && (res && res.pdfGeneration && res.pdfGeneration.completed !== false);
+
+          statusLabel.innerHTML = `<span class="block">PDF Created: ${pdfCount}</span>` +
+            (lastApplicant ? `<span class="block mt-0.5 uppercase tracking-wider">LAST: ${lastApplicant}</span>` : '');
+          statusLabel.className = "flex flex-col items-start w-fit mx-auto text-[10px] mt-3 font-bold text-gray-700 leading-tight font-sans";
+
+          google.script.run
+            .withSuccessHandler((folderUrl) => {
+              if (window.isFNRunCancelled) return;
+              if (folderUrl && statusLabel) {
+                statusLabel.innerHTML += `<a href="${folderUrl}" target="_blank" class="text-blue-600 hover:text-blue-800 flex items-left gap-1 mt-1.5 uppercase tracking-wider font-sans">Go to folder <i data-lucide="chevron-right" class="w-3 h-3 font-sans"></i></a>`;
+                lucide.createIcons();
+              }
+            })
+            .getFolderUrl('finalNotice');
+
+          if (isCompleted) {
+            btn.innerHTML = '<i data-lucide="users" class="w-4 h-4 text-blue-500 font-sans"></i> Generate All';
+            btn.disabled = true;
+            btn.classList.add('opacity-50', 'cursor-default');
+            btn.classList.remove('hover:bg-gray-50', 'active:scale-95');
+
+            const cardEl = btn.closest('.step-action-element');
+            if (cardEl) {
+              cardEl.classList.add('pointer-events-none', 'opacity-50');
+            }
+            const stepCircle = btn.closest('.step-container')?.querySelector('div:first-child');
+            if (stepCircle) stepCircle.classList.add('opacity-50');
+
+            unlockNextStep(2, 'final-notice-page'); // Unlock Step 3 (Send Options)
+          } else {
+            btn.innerHTML = '<i data-lucide="repeat" class="w-4 h-4 font-sans"></i> Continue Processing';
+            btn.className = "group flex items-left justify-start gap-2 w-full py-2 px-2 bg-prismatic text-white border-0 hover:opacity-90 transition-opacity rounded-xl text-sm font-bold shadow-sm transition cursor-pointer font-sans";
+            btn.disabled = false;
+          }
+
+          window.setProcessing(false);
+          lucide.createIcons();
+        })
+        .withFailureHandler((err) => {
+          if (window.isFNRunCancelled) return;
+          setCancelButtonState('cancelFNRunBtn', false);
+          statusLabel.innerText = '❌ ' + err.message;
+          statusLabel.className = 'ml-[0.75rem] text-[10px] px-2 mt-2 font-semibold text-left text-red-600 font-sans';
+          btn.disabled = false;
+          if (otherBtn) otherBtn.disabled = false;
+          btn.innerHTML = '<i data-lucide="users" class="w-4 h-4 text-blue-500"></i> Generate All';
+          window.setProcessing(false);
+          lucide.createIcons();
+        })
+        .finalNoticeRunCompleteProcess();
+    });
+
+    document.getElementById('generateFNIndividualBtn')?.addEventListener('click', function () {
+      const btn = this;
+      const otherBtn = document.getElementById('generateFNAllBtn');
+      const statusLabel = document.getElementById('fnStep2Status');
+
+      btn.disabled = true;
+      if (otherBtn) otherBtn.disabled = true;
+      btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Generating...';
+      setCancelButtonState('cancelFNRunBtn', true);
+      lucide.createIcons();
+      window.setProcessing(true);
+      window.isFNRunCancelled = false;
+
+      google.script.run
+        .withSuccessHandler((res) => {
+          if (window.isFNRunCancelled) return;
+          setCancelButtonState('cancelFNRunBtn', false);
+          const isCancelled = res.cancelled;
+          const pdfCount = res.count;
+          const list = res.applicants || [];
+          const lastApplicant = list.length > 0 ? list[list.length - 1] : '';
+
+          if (isCancelled) {
+            statusLabel.innerHTML = `<span class="block text-red-600 font-semibold">❌ Process Cancelled</span>` +
+              `<span class="block text-gray-700 font-bold leading-tight font-sans">PDF Created: ${pdfCount}</span>` +
+              (lastApplicant ? `<span class="block mt-0.5 uppercase tracking-wider font-bold leading-tight text-gray-700">LAST: ${lastApplicant}</span>` : '');
+            statusLabel.className = "flex flex-col items-start w-fit mx-auto text-[10px] mt-3 font-bold text-gray-700 leading-tight font-sans";
+
+            btn.disabled = false;
+            if (otherBtn) otherBtn.disabled = false;
+            btn.innerHTML = '<i data-lucide="user" class="w-4 h-4 text-blue-500 font-sans"></i> Generate Individual';
+          } else {
+            statusLabel.innerHTML = `<span class="block text-green-600 font-semibold">✓ PDFs Generated: ${pdfCount}</span>` +
+              (lastApplicant ? `<span class="block mt-0.5 uppercase tracking-wider font-bold leading-tight text-gray-700">LAST: ${lastApplicant}</span>` : '');
+            statusLabel.className = "flex flex-col items-start w-fit mx-auto text-[10px] mt-3 font-bold text-gray-700 leading-tight font-sans";
+
+            stepStatus.step2 = true;
+            btn.innerHTML = '<i data-lucide="user" class="w-4 h-4 text-blue-500 font-sans"></i> Generate Individual';
+            btn.disabled = true;
+            btn.classList.add('opacity-50', 'cursor-default');
+            btn.classList.remove('hover:bg-gray-50', 'active:scale-95');
+
+            const cardEl = btn.closest('.step-action-element');
+            if (cardEl) {
+              cardEl.classList.add('pointer-events-none', 'opacity-50');
+            }
+            const stepCircle = btn.closest('.step-container')?.querySelector('div:first-child');
+            if (stepCircle) stepCircle.classList.add('opacity-50');
+
+            unlockNextStep(2, 'final-notice-page'); // Unlock Step 3 (Send Options)
+          }
+
+          google.script.run
+            .withSuccessHandler((folderUrl) => {
+              if (window.isFNRunCancelled) return;
+              if (folderUrl && statusLabel) {
+                statusLabel.innerHTML += `<a href="${folderUrl}" target="_blank" class="text-blue-600 hover:text-blue-800 flex items-left gap-1 mt-1.5 uppercase tracking-wider font-sans">Go to folder <i data-lucide="chevron-right" class="w-3 h-3 font-sans"></i></a>`;
+                lucide.createIcons();
+              }
+            })
+            .getFolderUrl('finalNotice');
+
+          window.setProcessing(false);
+          lucide.createIcons();
+        })
+        .withFailureHandler((err) => {
+          if (window.isFNRunCancelled) return;
+          setCancelButtonState('cancelFNRunBtn', false);
+          statusLabel.innerText = '❌ ' + err.message;
+          statusLabel.className = 'ml-[0.75rem] text-[10px] px-2 mt-2 font-semibold text-left text-red-600 font-sans';
+          btn.disabled = false;
+          if (otherBtn) otherBtn.disabled = false;
+          btn.innerHTML = '<i data-lucide="user" class="w-4 h-4 text-blue-500 font-sans"></i> Generate Individual';
+          window.setProcessing(false);
+          lucide.createIcons();
+        })
+        .finalNoticeGenerateIndividualPDFs();
+    });
+
+    document.getElementById('cancelFNRunBtn')?.addEventListener('click', function () {
+      window.isFNRunCancelled = true;
+      setCancelButtonState('cancelFNRunBtn', false);
+
+      // Immediately restore UI to Cancelled state
+      const statusLabel = document.getElementById('fnStep2Status');
+      if (statusLabel) {
+        statusLabel.innerHTML = `<span class="block text-red-600 font-semibold">❌ Process Cancelled</span>`;
+        statusLabel.className = "flex flex-col items-start w-fit mx-auto text-[10px] mt-3 font-bold text-gray-700 leading-tight font-sans";
+      }
+
+      const btnAll = document.getElementById('generateFNAllBtn');
+      if (btnAll) {
+        btnAll.disabled = false;
+        btnAll.className = 'group/btn relative w-full py-2.5 px-3 bg-gray-50 border border-gray-200 text-gray-700 rounded-xl text-sm font-semibold hover:bg-white flex items-center gap-2 active:scale-95 transition cursor-pointer font-sans';
+        btnAll.innerHTML = '<i data-lucide="users" class="w-4 h-4 text-blue-500"></i> Generate All';
+      }
+
+      const btnInd = document.getElementById('generateFNIndividualBtn');
+      if (btnInd) {
+        btnInd.disabled = false;
+        btnInd.className = 'group/btn relative w-full py-2.5 px-3 bg-gray-50 border border-gray-200 text-gray-700 rounded-xl text-sm font-semibold hover:bg-white flex items-center gap-2 active:scale-95 transition cursor-pointer font-sans';
+        btnInd.innerHTML = '<i data-lucide="user" class="w-4 h-4 text-blue-500 font-sans"></i> Generate Individual';
+      }
+
+      window.setProcessing(false);
+      lucide.createIcons();
+
+      google.script.run
+        .withSuccessHandler(() => {
+          console.log('Cancellation signal sent successfully for generation');
+        })
+        .withFailureHandler((err) => {
+          console.error('Failed to send cancel signal:', err);
+        })
+        .cancelFinalNoticeRun();
+    });
+
+    document.getElementById('fnStep6Header')?.addEventListener('click', function () {
+      const panel = document.getElementById('fnSendOptionsPanel');
+      const chevron = document.getElementById('fnSendOptionsChevron');
+      if (panel && chevron) {
+        panel.classList.remove('hidden');
+        panel.classList.toggle('max-h-0');
+        panel.classList.toggle('max-h-[300px]');
+        panel.classList.toggle('opacity-0');
+        panel.classList.toggle('opacity-100');
+        panel.classList.toggle('pb-2.5');
+        chevron.classList.toggle('rotate-180');
+      }
+    });
+
+    document.getElementById('sendFNAllBtn')?.addEventListener('click', function () {
+      const btn = this;
+      const otherBtn = document.getElementById('sendFNIndividualBtn');
+      const statusLabel = document.getElementById('fnStep6Status');
+
+      btn.disabled = true;
+      if (otherBtn) otherBtn.disabled = true;
+      btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Sending...';
+      setCancelButtonState('cancelFNSendBtn', true);
+      lucide.createIcons();
+      window.setProcessing(true);
+      window.isFNSendCancelled = false;
+
+      google.script.run
+        .withSuccessHandler((res) => {
+          if (window.isFNSendCancelled) return;
+          setCancelButtonState('cancelFNSendBtn', false);
+          const isCancelled = res.cancelled;
+          const count = res.count;
+
+          if (isCancelled) {
+            statusLabel.innerHTML = `❌ Sending Cancelled. Total Sent: ${count}`;
+            statusLabel.className = 'ml-[0.75rem] text-[10px] px-2 mt-2 font-bold text-center text-red-600 font-sans';
+            btn.disabled = false;
+            if (otherBtn) otherBtn.disabled = false;
+            btn.innerHTML = '<i data-lucide="mails" class="w-4 h-4 text-sky-500"></i> Send All';
+          } else {
+            statusLabel.innerText = `✓ Successfully sent ${count} emails!`;
+            statusLabel.className = 'ml-[0.75rem] text-[10px] px-2 mt-2 font-bold text-center text-green-600 font-sans';
+            
+            stepStatus.step6 = true;
+            btn.innerHTML = '<i data-lucide="mails" class="w-4 h-4 text-sky-500 font-sans"></i> Send All';
+            btn.disabled = true;
+            btn.classList.add('opacity-50', 'cursor-default');
+            btn.classList.remove('hover:bg-gray-50', 'active:scale-95');
+
+            const cardEl = btn.closest('.step-action-element');
+            if (cardEl) {
+              cardEl.classList.add('pointer-events-none', 'opacity-50');
+            }
+            const stepCircle = btn.closest('.step-container')?.querySelector('div:first-child');
+            if (stepCircle) stepCircle.classList.add('opacity-50');
+
+            unlockNextStep(3, 'final-notice-page'); // Unlock Step 4 (Backup Sheet)
+          }
+
+          window.setProcessing(false);
+          lucide.createIcons();
+        })
+        .withFailureHandler((err) => {
+          if (window.isFNSendCancelled) return;
+          setCancelButtonState('cancelFNSendBtn', false);
+          statusLabel.innerText = '❌ ' + err.message;
+          statusLabel.className = 'ml-[0.75rem] text-[10px] px-2 mt-2 font-semibold text-left text-red-600 font-sans';
+          btn.disabled = false;
+          if (otherBtn) otherBtn.disabled = false;
+          btn.innerHTML = '<i data-lucide="mails" class="w-4 h-4 text-sky-500"></i> Send All';
+          window.setProcessing(false);
+          lucide.createIcons();
+        })
+        .finalNoticeSendEmails();
+    });
+
+    document.getElementById('sendFNIndividualBtn')?.addEventListener('click', function () {
+      const btn = this;
+      const otherBtn = document.getElementById('sendFNAllBtn');
+      const statusLabel = document.getElementById('fnStep6Status');
+
+      btn.disabled = true;
+      if (otherBtn) otherBtn.disabled = true;
+      btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Sending...';
+      setCancelButtonState('cancelFNSendBtn', true);
+      lucide.createIcons();
+      window.setProcessing(true);
+      window.isFNSendCancelled = false;
+
+      google.script.run
+        .withSuccessHandler((res) => {
+          if (window.isFNSendCancelled) return;
+          setCancelButtonState('cancelFNSendBtn', false);
+          const isCancelled = res.cancelled;
+          const count = res.count;
+
+          if (isCancelled) {
+            statusLabel.innerHTML = `❌ Sending Cancelled. Total Sent: ${count}`;
+            statusLabel.className = 'ml-[0.75rem] text-[10px] px-2 mt-2 font-bold text-center text-red-600 font-sans';
+            btn.disabled = false;
+            if (otherBtn) otherBtn.disabled = false;
+            btn.innerHTML = '<i data-lucide="mail" class="w-4 h-4 text-sky-500 font-sans"></i> Send Individual';
+          } else {
+            statusLabel.innerText = `✓ Successfully sent ${count} selected emails!`;
+            statusLabel.className = 'ml-[0.75rem] text-[10px] px-2 mt-2 font-bold text-center text-green-600 font-sans';
+            
+            stepStatus.step6 = true;
+            btn.innerHTML = '<i data-lucide="mail" class="w-4 h-4 text-sky-500 font-sans"></i> Send Individual';
+            btn.disabled = true;
+            btn.classList.add('opacity-50', 'cursor-default');
+            btn.classList.remove('hover:bg-gray-50', 'active:scale-95');
+
+            const cardEl = btn.closest('.step-action-element');
+            if (cardEl) {
+              cardEl.classList.add('pointer-events-none', 'opacity-50');
+            }
+            const stepCircle = btn.closest('.step-container')?.querySelector('div:first-child');
+            if (stepCircle) stepCircle.classList.add('opacity-50');
+
+            unlockNextStep(3, 'final-notice-page'); // Unlock Step 4 (Backup Sheet)
+          }
+
+          window.setProcessing(false);
+          lucide.createIcons();
+        })
+        .withFailureHandler((err) => {
+          if (window.isFNSendCancelled) return;
+          setCancelButtonState('cancelFNSendBtn', false);
+          statusLabel.innerText = '❌ ' + err.message;
+          statusLabel.className = 'ml-[0.75rem] text-[10px] px-2 mt-2 font-semibold text-left text-red-600 font-sans';
+          btn.disabled = false;
+          if (otherBtn) otherBtn.disabled = false;
+          btn.innerHTML = '<i data-lucide="mail" class="w-4 h-4 text-sky-500"></i> Send Individual';
+          window.setProcessing(false);
+          lucide.createIcons();
+        })
+        .finalNoticeSendIndividualEmails();
+    });
+
+    document.getElementById('cancelFNSendBtn')?.addEventListener('click', function () {
+      window.isFNSendCancelled = true;
+      setCancelButtonState('cancelFNSendBtn', false);
+
+      // Immediately restore UI to Cancelled state
+      const statusLabel = document.getElementById('fnStep6Status');
+      if (statusLabel) {
+        statusLabel.innerHTML = `❌ Sending Cancelled`;
+        statusLabel.className = 'ml-[0.75rem] text-[10px] px-2 mt-2 font-bold text-center text-red-600 font-sans';
+      }
+
+      const btnAll = document.getElementById('sendFNAllBtn');
+      if (btnAll) {
+        btnAll.disabled = false;
+        btnAll.className = 'group/btn relative w-full py-2.5 px-3 bg-gray-50 border border-gray-200 text-gray-700 rounded-xl text-sm font-semibold hover:bg-white flex items-center gap-2 active:scale-95 transition cursor-pointer font-sans';
+        btnAll.innerHTML = '<i data-lucide="mails" class="w-4 h-4 text-sky-500"></i> Send All';
+      }
+
+      const btnInd = document.getElementById('sendFNIndividualBtn');
+      if (btnInd) {
+        btnInd.disabled = false;
+        btnInd.className = 'group/btn relative w-full py-2.5 px-3 bg-gray-50 border border-gray-200 text-gray-700 rounded-xl text-sm font-semibold hover:bg-white flex items-center gap-2 active:scale-95 transition cursor-pointer font-sans';
+        btnInd.innerHTML = '<i data-lucide="mail" class="w-4 h-4 text-sky-500 font-sans"></i> Send Individual';
+      }
+
+      window.setProcessing(false);
+      lucide.createIcons();
+
+      google.script.run
+        .withSuccessHandler(() => {
+          console.log('Cancellation signal sent successfully for sending');
+        })
+        .withFailureHandler((err) => {
+          console.error('Failed to send cancel signal:', err);
+        })
+        .cancelFinalNoticeSend();
+    });
+
+    document.getElementById('backupFNBtn')?.addEventListener('click', function () {
+      const btn = this;
+      const statusLabel = document.getElementById('fnStep7Status');
+
+      btn.disabled = true;
+      btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Saving...';
+      lucide.createIcons();
+      window.setProcessing(true);
+
+      google.script.run
+        .withSuccessHandler((res) => {
+          statusLabel.innerHTML = `✓ ${res.message}`;
+          statusLabel.className = 'ml-[0.75rem] text-[10px] px-2 mt-2 font-semibold text-left text-green-600 font-sans';
+          btn.disabled = false;
+          btn.innerHTML = '<i data-lucide="check-circle" class="w-4 h-4 font-sans"></i> Complete';
+          btn.disabled = true;
+          btn.classList.add('opacity-50', 'cursor-default');
+          btn.classList.remove('hover:bg-gray-50', 'active:scale-95', 'cursor-pointer');
+          
+          if (res.folderUrl) {
+            statusLabel.innerHTML += `<br/><a href="${res.folderUrl}" target="_blank" class="text-blue-600 hover:text-blue-800 flex items-center justify-center gap-1 mt-1 font-semibold uppercase tracking-wider font-sans">Open Backup folder <i data-lucide="chevron-right" class="w-3 h-3 font-sans"></i></a>`;
+          }
+          window.setProcessing(false);
+          lucide.createIcons();
+        })
+        .withFailureHandler((err) => {
+          statusLabel.innerText = '❌ ' + err.message;
+          statusLabel.className = 'ml-[0.75rem] text-[10px] px-2 mt-2 font-semibold text-left text-red-600 font-sans';
+          btn.disabled = false;
+          btn.innerHTML = '<i data-lucide="archive" class="w-4 h-4"></i> Backup Sheet';
+          window.setProcessing(false);
+          lucide.createIcons();
+        })
+        .finalNoticeBackupSheet();
+    });
+
+    navButtons.finalNotice.onclick = () => showPage('finalNotice');
+    document.getElementById('backBtnFinalNotice')?.addEventListener('click', goHomeWithReset);
+    document.getElementById('finalNoticeHomeBtn')?.addEventListener('click', goHomeWithReset);
+    document.getElementById('finalNoticeResetBtn')?.addEventListener('click', function () {
+      resetFinalNoticeSteps();
     });
 
     // ==== FOR UNQUALIFIED PAGE EVENT LISTENERS ====
