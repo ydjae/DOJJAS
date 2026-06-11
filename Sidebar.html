@@ -276,27 +276,56 @@
        Active Step Button: Animated glow + border
        Works on any colored button background
        ============================================ */
-    @keyframes step-border-glow {
+    @keyframes step-glow-outer {
       0% {
-        box-shadow: 0 0 12px 3px rgba(66, 133, 244, 0.7), inset 0 0 0 2px #4285F4;
+        box-shadow: 0 0 12px 3px rgba(66, 133, 244, 0.7);
       }
 
       33% {
-        box-shadow: 0 0 12px 3px rgba(155, 114, 203, 0.7), inset 0 0 0 2px #9B72CB;
+        box-shadow: 0 0 12px 3px rgba(155, 114, 203, 0.7);
       }
 
       66% {
-        box-shadow: 0 0 12px 3px rgba(217, 101, 112, 0.7), inset 0 0 0 2px #D96570;
+        box-shadow: 0 0 12px 3px rgba(217, 101, 112, 0.7);
       }
 
       100% {
-        box-shadow: 0 0 12px 3px rgba(66, 133, 244, 0.7), inset 0 0 0 2px #4285F4;
+        box-shadow: 0 0 12px 3px rgba(66, 133, 244, 0.7);
+      }
+    }
+
+    @keyframes step-border-inset {
+      0% {
+        box-shadow: inset 0 0 0 2px #4285F4;
+      }
+
+      33% {
+        box-shadow: inset 0 0 0 2px #9B72CB;
+      }
+
+      66% {
+        box-shadow: inset 0 0 0 2px #D96570;
+      }
+
+      100% {
+        box-shadow: inset 0 0 0 2px #4285F4;
       }
     }
 
     .btn-step-active {
-      animation: step-border-glow 2s ease-in-out infinite !important;
+      position: relative;
       outline: none;
+      animation: step-glow-outer 2s ease-in-out infinite !important;
+    }
+
+    .btn-step-active::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      pointer-events: none;
+      z-index: 10;
+      animation: step-border-inset 2s ease-in-out infinite !important;
     }
   </style>
 </head>
@@ -330,7 +359,7 @@
 
         <!-- For Exam -->
         <button id="forExamBtn" style="animation-delay: 100ms;"
-          class="landing-btn-animate group flex flex-col w-full px-5 py-4 bg-white border border-gray-200 hover:border-transparent hover:shadow-sm text-gray-800 rounded-2xl transition-all duration-300 ease-in-out outline-none btn-glow-hover">
+          class="landing-btn-animate group flex flex-col w-full px-5 py-4 bg-white border border-gray-200 hover:shadow-sm text-gray-800 rounded-2xl transition-all duration-300 ease-in-out outline-none btn-glow-hover">
           <span class="btn-glow-hover-inner" aria-hidden="true"></span>
           <div class="flex items-center w-full">
             <div
@@ -355,7 +384,7 @@
 
         <!-- Unqualified -->
         <button id="unqualifiedBtn" style="animation-delay: 200ms;"
-          class="landing-btn-animate group flex flex-col w-full px-5 py-4 bg-white border border-gray-200 hover:border-transparent hover:shadow-sm text-gray-800 rounded-2xl transition-all duration-300 ease-in-out outline-none btn-glow-hover">
+          class="landing-btn-animate group flex flex-col w-full px-5 py-4 bg-white border border-gray-200 hover:shadow-sm text-gray-800 rounded-2xl transition-all duration-300 ease-in-out outline-none btn-glow-hover">
           <span class="btn-glow-hover-inner" aria-hidden="true"></span>
           <div class="flex items-center w-full">
             <div
@@ -379,7 +408,7 @@
 
         <!-- For Interview -->
         <button id="forInterviewBtn" style="animation-delay: 300ms;"
-          class="landing-btn-animate group flex flex-col w-full px-5 py-4 bg-white border border-gray-200 hover:border-transparent hover:shadow-sm text-gray-800 rounded-2xl transition-all duration-300 ease-in-out outline-none btn-glow-hover">
+          class="landing-btn-animate group flex flex-col w-full px-5 py-4 bg-white border border-gray-200 hover:shadow-sm text-gray-800 rounded-2xl transition-all duration-300 ease-in-out outline-none btn-glow-hover">
           <span class="btn-glow-hover-inner" aria-hidden="true"></span>
           <div class="flex items-center w-full">
             <div
@@ -403,7 +432,7 @@
 
         <!-- Failed -->
         <button id="failedBtn" style="animation-delay: 400ms;"
-          class="landing-btn-animate group flex flex-col w-full px-5 py-4 bg-white border border-gray-200 hover:border-transparent hover:shadow-sm text-gray-800 rounded-2xl transition-all duration-300 ease-in-out outline-none btn-glow-hover">
+          class="landing-btn-animate group flex flex-col w-full px-5 py-4 bg-white border border-gray-200 hover:shadow-sm text-gray-800 rounded-2xl transition-all duration-300 ease-in-out outline-none btn-glow-hover">
           <span class="btn-glow-hover-inner" aria-hidden="true"></span>
           <div class="flex items-center w-full">
             <div
@@ -427,7 +456,7 @@
         </button>
         <!--Final Notice -->
         <button id="finalNoticeBtn" style="animation-delay: 500ms;"
-          class="landing-btn-animate group flex flex-col w-full px-5 py-4 bg-white border border-gray-200 hover:border-transparent hover:shadow-sm text-gray-800 rounded-2xl transition-all duration-300 ease-in-out outline-none btn-glow-hover">
+          class="landing-btn-animate group flex flex-col w-full px-5 py-4 bg-white border border-gray-200 hover:shadow-sm text-gray-800 rounded-2xl transition-all duration-300 ease-in-out outline-none btn-glow-hover">
           <span class="btn-glow-hover-inner" aria-hidden="true"></span>
           <div class="flex items-center w-full">
             <div
@@ -452,7 +481,7 @@
 
         <!-- Backup -->
         <button id="backupBtn" style="animation-delay: 600ms;"
-          class="landing-btn-animate group flex flex-col w-full px-5 py-4 bg-white border border-gray-200 hover:border-transparent hover:shadow-sm text-gray-800 rounded-2xl transition-all duration-300 ease-in-out outline-none btn-glow-hover">
+          class="landing-btn-animate group flex flex-col w-full px-5 py-4 bg-white border border-gray-200 hover:shadow-sm text-gray-800 rounded-2xl transition-all duration-300 ease-in-out outline-none btn-glow-hover">
           <span class="btn-glow-hover-inner" aria-hidden="true"></span>
           <div class="flex items-center w-full">
             <div
@@ -477,7 +506,7 @@
 
         <!-- Summary Tools -->
         <button id="summaryToolsBtn"
-          class="group flex flex-col w-full px-5 py-4 bg-white border border-gray-200 hover:border-transparent hover:shadow-sm text-gray-800 rounded-2xl transition-all duration-300 ease-in-out outline-none btn-glow-hover">
+          class="group flex flex-col w-full px-5 py-4 bg-white border border-gray-200 hover:shadow-sm text-gray-800 rounded-2xl transition-all duration-300 ease-in-out outline-none btn-glow-hover">
           <span class="btn-glow-hover-inner" aria-hidden="true"></span>
           <div class="flex items-center w-full">
             <div
