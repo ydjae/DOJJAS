@@ -290,6 +290,7 @@ function processInterviewPDFBatch(batchKey, rows, header, templateFile, destinat
 
         const pdfUrl = pdfFile.getUrl();
         sheet.getRange(rowIndex, FOR_INTERVIEW.COL_INTERVIEW_LINK).setValue(pdfUrl);
+        SpreadsheetApp.flush();
 
         state.currentIndex = i + 1;
         state.completedCount++;
@@ -426,6 +427,7 @@ function forInterviewGenerateIndividualPDFs() {
         const pdfUrl = pdfFile.getUrl();
         sheet.getRange(rowIndex, FOR_INTERVIEW.COL_INTERVIEW_LINK).setValue(pdfUrl);
         sheet.getRange(rowIndex, FOR_INTERVIEW.COL_REGENERATE).setValue(false);
+        SpreadsheetApp.flush();
         processed.push(fileName);
       } catch (itemError) {
         console.log('Error generating interview PDF for row ' + rowIndex + ': ' + itemError.message);

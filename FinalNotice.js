@@ -292,6 +292,7 @@ function processFinalNoticePDFBatch(batchKey, rows, header, templateFile, destin
 
         const pdfUrl = pdfFile.getUrl();
         sheet.getRange(rowIndex, FINAL_NOTICE.COL_LINK).setValue(pdfUrl);
+        SpreadsheetApp.flush();
 
         state.currentIndex = i + 1;
         state.completedCount++;
@@ -436,6 +437,7 @@ function finalNoticeGenerateIndividualPDFs() {
 
         const pdfUrl = pdfFile.getUrl();
         sheet.getRange(rowIndex, FINAL_NOTICE.COL_LINK).setValue(pdfUrl);
+        SpreadsheetApp.flush();
 
         processed.push(lastName + (firstName ? (', ' + firstName) : ''));
       } catch (itemError) {

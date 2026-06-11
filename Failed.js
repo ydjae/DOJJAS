@@ -373,6 +373,7 @@ function failedGenerateIndividualPDFs() {
         const pdfUrl = pdfFile.getUrl();
         sheet.getRange(rowIndex, FAILED.COL_LINK).setValue(pdfUrl);
         sheet.getRange(rowIndex, FAILED.COL_REGENERATE).setValue(false);
+        SpreadsheetApp.flush();
         processed.push(fileName);
       } catch (itemError) {
         console.log('Error generating failed PDF for row ' + rowIndex + ': ' + itemError.message);
@@ -643,6 +644,7 @@ function processFailedPDFBatch(batchKey, rows, header, templateFile, destination
 
         const pdfUrl = pdfFile.getUrl();
         sheet.getRange(rowIndex, FAILED.COL_LINK).setValue(pdfUrl);
+        SpreadsheetApp.flush();
 
         state.currentIndex = i + 1;
         state.completedCount++;

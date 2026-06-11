@@ -291,6 +291,7 @@ function processForExamPDFBatch(batchKey, rows, header, templateFile, destinatio
 
         const pdfUrl = pdfFile.getUrl();
         sheet.getRange(rowIndex, FOR_EXAM.COL_EXAM_LINK).setValue(pdfUrl);
+        SpreadsheetApp.flush();
 
         state.currentIndex = i + 1;
         state.completedCount++;
@@ -438,6 +439,7 @@ function forExamGenerateIndividualPDFs() {
 
         const pdfUrl = pdfFile.getUrl();
         sheet.getRange(rowIndex, FOR_EXAM.COL_EXAM_LINK).setValue(pdfUrl);
+        SpreadsheetApp.flush();
 
         processed.push(lastName + (firstName ? (', ' + firstName) : ''));
       } catch (itemError) {

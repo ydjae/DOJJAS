@@ -278,6 +278,7 @@ function processUnqualifiedPDFBatch(batchKey, rows, header, templateFile, destin
 
         const pdfUrl = pdfFile.getUrl();
         sheet.getRange(rowIndex, UNQUALIFIED.COL_LINK).setValue(pdfUrl);
+        SpreadsheetApp.flush();
 
         state.currentIndex = i + 1;
         state.completedCount++;
@@ -398,6 +399,7 @@ function unqualifiedGenerateIndividualPDFs() {
         const pdfUrl = pdfFile.getUrl();
         sheet.getRange(rowIndex, UNQUALIFIED.COL_LINK).setValue(pdfUrl);
         sheet.getRange(rowIndex, UNQUALIFIED.COL_REGENERATE).setValue(false);
+        SpreadsheetApp.flush();
         processed.push(fileName);
       } catch (itemError) {
         console.log('Error generating unqualified PDF for row ' + rowIndex + ': ' + itemError.message);
