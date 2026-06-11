@@ -38,21 +38,14 @@ function finalNoticeCheckColumns() {
     }
 
     const dataRange = sheet.getRange(
-      FINAL_NOTICE.START_ROW, 
-      1, 
-      lastRow - FINAL_NOTICE.START_ROW + 1, 
+      FINAL_NOTICE.START_ROW,
+      1,
+      lastRow - FINAL_NOTICE.START_ROW + 1,
       FINAL_NOTICE.COL_EMAIL_DATE // Column O is 15
     ).getValues();
 
-    const colIndexesToCheck = [5, 8, 9, 10, 11, 12, 13, 15]; // Column numbers: E, H, I, J, K, L, M, O
+    const colIndexesToCheck = [15]; // Column numbers: O
     const colNames = {
-      5: 'E (Address)',
-      8: 'H (Position Extracted)',
-      9: 'I (Assigned Office)',
-      10: 'J (Salutation)',
-      11: 'K (Uppercase Name)',
-      12: 'L (Proper Sal.)',
-      13: 'M (Proper Ln)',
       15: 'O (Email Date)'
     };
 
@@ -66,9 +59,9 @@ function finalNoticeCheckColumns() {
           const cellValue = rowData[colNum - 1]; // 0-indexed
           if (!cellValue || cellValue.toString().trim() === '') {
             const rowNum = FINAL_NOTICE.START_ROW + i;
-            return { 
-              hasData: false, 
-              message: 'Missing data in column ' + colNames[colNum] + ' for applicant at row ' + rowNum 
+            return {
+              hasData: false,
+              message: 'Missing data in column ' + colNames[colNum] + ' for applicant at row ' + rowNum
             };
           }
         }
@@ -179,10 +172,10 @@ function finalNoticeGeneratePDFs(targetFolderId) {
 
     const data = sheet.getDataRange().getDisplayValues();
     const header = data[0];
-    
+
     // Sort rows alphabetically matching layout
     const rawRows = data.slice(1).filter(row => row[0] && row[0].toString().trim() !== '');
-    
+
     const rows = rawRows.map((row, index) => {
       return {
         row: row,
@@ -199,7 +192,7 @@ function finalNoticeGeneratePDFs(targetFolderId) {
 
     const templateFile = DriveApp.getFileById(FINAL_NOTICE.TEMPLATE_ID);
     const destinationFolder = DriveApp.getFolderById(targetFolderId);
-    
+
     const batchKey = 'finalNotice_pdf_generation_' + ss.getId();
     const batchResult = processFinalNoticePDFBatch(batchKey, rows, header, templateFile, destinationFolder, 20, sheet);
 
@@ -216,6 +209,7 @@ function finalNoticeGeneratePDFs(targetFolderId) {
       count: batchResult.totalProcessed,
       applicants: batchResult.allApplicants,
       completed: batchResult.completed,
+      cancelled: batchResult.status === 'cancelled',
       message: returnMessage
     };
   } catch (e) {
@@ -228,6 +222,7 @@ function processFinalNoticePDFBatch(batchKey, rows, header, templateFile, destin
 
   if (!state) {
     PropertiesService.getDocumentProperties().deleteProperty('cancel_finalNotice_run');
+    CacheService.getDocumentCache().remove('cancel_finalNotice_run');
     state = initializeBatchProcessing(batchKey, rows.length);
   }
 
@@ -247,7 +242,7 @@ function processFinalNoticePDFBatch(batchKey, rows, header, templateFile, destin
         break;
       }
 
-      if (PropertiesService.getDocumentProperties().getProperty('cancel_finalNotice_run') === 'true') {
+      if (shouldCancelFinalNoticeRun()) {
         console.log('Cancellation requested for PDF generation');
         state.status = 'cancelled';
         break;
@@ -263,7 +258,7 @@ function processFinalNoticePDFBatch(batchKey, rows, header, templateFile, destin
       try {
         const copy = templateFile.makeCopy(fileName, destinationFolder);
 
-        if (PropertiesService.getDocumentProperties().getProperty('cancel_finalNotice_run') === 'true') {
+        if (shouldCancelFinalNoticeRun()) {
           copy.setTrashed(true);
           state.status = 'cancelled';
           break;
@@ -276,9 +271,15 @@ function processFinalNoticePDFBatch(batchKey, rows, header, templateFile, destin
           body.replaceText('{{' + label + '}}', row[j]);
         });
 
+        // Explicit placeholder overrides matching requested columns (E, H, I, G)
+        body.replaceText('{{ADDRESS}}', row[FINAL_NOTICE.COL_ADDRESS - 1] || '');
+        body.replaceText('{{POSITION EXTRACTED}}', row[FINAL_NOTICE.COL_POSITION_EXTRACTED - 1] || '');
+        body.replaceText('{{ASSIGNED OFFICE}}', row[FINAL_NOTICE.COL_ASSIGNED_OFFICE - 1] || '');
+        body.replaceText('{{EMAIL}}', row[FINAL_NOTICE.COL_EMAIL - 1] || '');
+
         doc.saveAndClose();
 
-        if (PropertiesService.getDocumentProperties().getProperty('cancel_finalNotice_run') === 'true') {
+        if (shouldCancelFinalNoticeRun()) {
           copy.setTrashed(true);
           state.status = 'cancelled';
           break;
@@ -336,6 +337,7 @@ function processFinalNoticePDFBatch(batchKey, rows, header, templateFile, destin
 function finalNoticeGenerateIndividualPDFs() {
   try {
     PropertiesService.getDocumentProperties().deleteProperty('cancel_finalNotice_run');
+    CacheService.getDocumentCache().remove('cancel_finalNotice_run');
     const props = PropertiesService.getDocumentProperties();
     let folderId = props.getProperty('finalNoticeSubFolderId');
     let destinationFolder = null;
@@ -384,7 +386,7 @@ function finalNoticeGenerateIndividualPDFs() {
     let cancelled = false;
 
     for (let k = 0; k < rowsToProcess.length; k++) {
-      if (PropertiesService.getDocumentProperties().getProperty('cancel_finalNotice_run') === 'true') {
+      if (shouldCancelFinalNoticeRun()) {
         console.log('Cancellation requested for individual PDF generation');
         cancelled = true;
         break;
@@ -400,7 +402,7 @@ function finalNoticeGenerateIndividualPDFs() {
       try {
         const copy = templateFile.makeCopy(fileName, destinationFolder);
 
-        if (PropertiesService.getDocumentProperties().getProperty('cancel_finalNotice_run') === 'true') {
+        if (shouldCancelFinalNoticeRun()) {
           copy.setTrashed(true);
           cancelled = true;
           break;
@@ -413,9 +415,15 @@ function finalNoticeGenerateIndividualPDFs() {
           body.replaceText('{{' + label + '}}', row[j]);
         });
 
+        // Explicit placeholder overrides matching requested columns (E, H, I, G)
+        body.replaceText('{{ADDRESS}}', row[FINAL_NOTICE.COL_ADDRESS - 1] || '');
+        body.replaceText('{{POSITION EXTRACTED}}', row[FINAL_NOTICE.COL_POSITION_EXTRACTED - 1] || '');
+        body.replaceText('{{ASSIGNED OFFICE}}', row[FINAL_NOTICE.COL_ASSIGNED_OFFICE - 1] || '');
+        body.replaceText('{{EMAIL}}', row[FINAL_NOTICE.COL_EMAIL - 1] || '');
+
         doc.saveAndClose();
 
-        if (PropertiesService.getDocumentProperties().getProperty('cancel_finalNotice_run') === 'true') {
+        if (shouldCancelFinalNoticeRun()) {
           copy.setTrashed(true);
           cancelled = true;
           break;
@@ -448,20 +456,20 @@ function finalNoticeGenerateLinks() {
   try {
     const settings = PropertiesService.getDocumentProperties();
     const folderId = settings.getProperty('finalNoticeSubFolderId');
-    
+
     if (!folderId) {
       throw new Error('Final Notice subfolder not found. Please run Step 2 first.');
     }
-    
+
     const folder = DriveApp.getFolderById(folderId);
     const files = folder.getFilesByType(MimeType.PDF);
     const ss = SpreadsheetApp.getActiveSpreadsheet();
     const sheet = ss.getSheetByName(FINAL_NOTICE.SHEET_NAME);
-    
+
     if (!sheet) {
       throw new Error('Sheet "' + FINAL_NOTICE.SHEET_NAME + '" not found.');
     }
-    
+
     const fileData = [];
     while (files.hasNext()) {
       const file = files.next();
@@ -470,17 +478,17 @@ function finalNoticeGenerateLinks() {
         url: file.getUrl()
       });
     }
-    
+
     fileData.sort((a, b) => {
       return a.name.toLowerCase().localeCompare(b.name.toLowerCase());
     });
-    
+
     const links = fileData.map(item => [item.url]);
-    
+
     if (links.length > 0) {
       sheet.getRange(FINAL_NOTICE.START_ROW, FINAL_NOTICE.COL_LINK, links.length, 1).setValues(links);
     }
-    
+
     return 'Successfully generated and inserted ' + links.length + ' Google Drive links into Column P.';
   } catch (e) {
     throw new Error('Error generating Drive links: ' + e.message);
@@ -494,11 +502,11 @@ function finalNoticeGetFolderUrl() {
   try {
     const settings = PropertiesService.getDocumentProperties();
     const folderId = settings.getProperty('finalNoticeSubFolderId');
-    
+
     if (!folderId) {
       throw new Error('Final Notice subfolder not found. Please run the process first.');
     }
-    
+
     const folder = DriveApp.getFolderById(folderId);
     return folder.getUrl();
   } catch (e) {
@@ -513,24 +521,24 @@ function finalNoticeBackupSheet() {
   try {
     const ss = SpreadsheetApp.getActiveSpreadsheet();
     const sourceSheet = ss.getSheetByName(FINAL_NOTICE.SHEET_NAME);
-    
+
     if (!sourceSheet) {
       throw new Error('Sheet "' + FINAL_NOTICE.SHEET_NAME + '" not found.');
     }
-    
+
     const settings = PropertiesService.getDocumentProperties();
     const finalNoticeSubFolderId = settings.getProperty('finalNoticeSubFolderId');
-    
+
     if (!finalNoticeSubFolderId) {
       throw new Error('Final Notice subfolder not found. Please run Step 2 first.');
     }
-    
+
     const finalNoticeFolder = DriveApp.getFolderById(finalNoticeSubFolderId);
     const timestamp = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd_HH-mm-ss');
     const backupFileName = 'LETTER - FINAL NOTICE_' + timestamp + '.csv';
-    
+
     const data = sourceSheet.getDataRange().getValues();
-    
+
     let csvContent = '';
     for (let i = 0; i < data.length; i++) {
       const row = data[i];
@@ -542,10 +550,10 @@ function finalNoticeBackupSheet() {
       }).join(',');
       csvContent += csvRow + '\n';
     }
-    
+
     const backupBlob = Utilities.newBlob(csvContent, MimeType.CSV, backupFileName);
     finalNoticeFolder.createFile(backupBlob);
-    
+
     return {
       message: 'Backup successful! LETTER - FINAL NOTICE has been saved to the Final Notice folder.',
       folderUrl: finalNoticeFolder.getUrl()
@@ -556,13 +564,14 @@ function finalNoticeBackupSheet() {
 }
 
 function finalNoticeSendEmails() {
-  const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxJpyg6KPFUMxeHSOdOVnVe4WyN6JssT9DhoufEn2pE7vIp02joOQ6jZVD-FwZCLKW7FQ/exec"; 
+  const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxJpyg6KPFUMxeHSOdOVnVe4WyN6JssT9DhoufEn2pE7vIp02joOQ6jZVD-FwZCLKW7FQ/exec";
 
   try {
     PropertiesService.getDocumentProperties().deleteProperty('cancel_finalNotice_send');
+    CacheService.getDocumentCache().remove('cancel_finalNotice_send');
     const ss = SpreadsheetApp.getActiveSpreadsheet();
     const sheet = ss.getSheetByName(FINAL_NOTICE.SHEET_NAME);
-    
+
     if (!sheet) throw new Error('Sheet "' + FINAL_NOTICE.SHEET_NAME + '" not found.');
 
     const lastRow = sheet.getLastRow();
@@ -576,7 +585,7 @@ function finalNoticeSendEmails() {
     let cancelled = false;
 
     for (let i = 0; i < data.length; i++) {
-      if (PropertiesService.getDocumentProperties().getProperty('cancel_finalNotice_send') === 'true') {
+      if (shouldCancelFinalNoticeSend()) {
         console.log('Cancellation requested for email sending');
         cancelled = true;
         break;
@@ -592,14 +601,17 @@ function finalNoticeSendEmails() {
       const office = row[FINAL_NOTICE.COL_ASSIGNED_OFFICE - 1];
       const statusCell = sheet.getRange(FINAL_NOTICE.START_ROW + i, FINAL_NOTICE.COL_STATUS);
 
-      if (!applicantName || applicantName.toString().trim() === '') continue;
+      if (!applicantName || applicantName.toString().trim() === '') break;
+
+      const currentStatus = row[FINAL_NOTICE.COL_STATUS - 1];
+      if (currentStatus && String(currentStatus).startsWith('Sent')) continue;
 
       if (!email || email.toString().trim() === '' || !driveLink || driveLink.toString().trim() === '') {
         statusCell.setValue('Not sent - missing email or link (' + now + ')');
         continue;
       }
 
-      const subject = 'Job Application Update - Final Notice ' + '[' + position + ']';
+      const subject = 'Job Application Update ' + '[' + position + ']';
       const body = 'Dear ' + salutation + ' ' + applicantLName + ',\n\n' +
         'Good day!\n\n' +
         'Thank you for your interest in the vacant position at our office and for participating in the interview.\n\n' +
@@ -625,7 +637,7 @@ function finalNoticeSendEmails() {
       };
 
       const response = UrlFetchApp.fetch(WEB_APP_URL, options);
-      
+
       if (response.getContentText() === "Success") {
         statusCell.setValue('Sent (' + now + ')');
         logSentLetter('LETTER - FINAL NOTICE', position || '', office || '', applicantName || '');
@@ -634,7 +646,7 @@ function finalNoticeSendEmails() {
         statusCell.setValue('Error: Proxy failed (' + now + ')');
       }
 
-      if (PropertiesService.getDocumentProperties().getProperty('cancel_finalNotice_send') === 'true') {
+      if (shouldCancelFinalNoticeSend()) {
         console.log('Cancellation requested for email sending before sleep');
         cancelled = true;
         break;
@@ -650,13 +662,14 @@ function finalNoticeSendEmails() {
 }
 
 function finalNoticeSendIndividualEmails() {
-  const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxJpyg6KPFUMxeHSOdOVnVe4WyN6JssT9DhoufEn2pE7vIp02joOQ6jZVD-FwZCLKW7FQ/exec"; 
+  const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxJpyg6KPFUMxeHSOdOVnVe4WyN6JssT9DhoufEn2pE7vIp02joOQ6jZVD-FwZCLKW7FQ/exec";
 
   try {
     PropertiesService.getDocumentProperties().deleteProperty('cancel_finalNotice_send');
+    CacheService.getDocumentCache().remove('cancel_finalNotice_send');
     const ss = SpreadsheetApp.getActiveSpreadsheet();
     const sheet = ss.getSheetByName(FINAL_NOTICE.SHEET_NAME);
-    
+
     if (!sheet) throw new Error('Sheet "' + FINAL_NOTICE.SHEET_NAME + '" not found.');
 
     const lastRow = sheet.getLastRow();
@@ -684,7 +697,7 @@ function finalNoticeSendIndividualEmails() {
       const shouldProcess = regenerateVal === true || String(regenerateVal).toLowerCase() === 'true';
       if (!shouldProcess) continue;
 
-      if (PropertiesService.getDocumentProperties().getProperty('cancel_finalNotice_send') === 'true') {
+      if (shouldCancelFinalNoticeSend()) {
         console.log('Cancellation requested for individual email sending');
         cancelled = true;
         break;
@@ -711,7 +724,7 @@ function finalNoticeSendIndividualEmails() {
         continue;
       }
 
-      const subject = 'Job Application Update - Final Notice ' + '[' + position + ']';
+      const subject = 'Job Application Update ' + '[' + position + ']';
       const body = 'Dear ' + salutation + ' ' + applicantLName + ',\n\n' +
         'Good day!\n\n' +
         'Thank you for your interest in the vacant position at our office and for participating in the interview.\n\n' +
@@ -746,7 +759,7 @@ function finalNoticeSendIndividualEmails() {
         statusCell.setValue('Error: Proxy failed (' + now + ')');
       }
 
-      if (PropertiesService.getDocumentProperties().getProperty('cancel_finalNotice_send') === 'true') {
+      if (shouldCancelFinalNoticeSend()) {
         console.log('Cancellation requested for individual email sending before sleep');
         cancelled = true;
         break;
@@ -768,12 +781,12 @@ function finalNoticeRunCompleteProcess() {
   try {
     const folderIds = finalNoticeCreateFolders();
     const pdfResult = finalNoticeGeneratePDFs(folderIds.finalNoticeSubFolderId);
-    
+
     let message = pdfResult.message || ('Generated ' + pdfResult.count + ' PDFs');
     if (!pdfResult.completed) {
       message = pdfResult.message + '\n\nStep 2 is still running. Click "Step 2 - Generate PDFs" again to continue processing remaining applicants.';
     }
-    
+
     return {
       success: true,
       folders: folderIds,
@@ -787,11 +800,25 @@ function finalNoticeRunCompleteProcess() {
   }
 }
 
+function shouldCancelFinalNoticeRun() {
+  const cache = CacheService.getDocumentCache();
+  if (cache.get('cancel_finalNotice_run') === 'true') return true;
+  return PropertiesService.getDocumentProperties().getProperty('cancel_finalNotice_run') === 'true';
+}
+
+function shouldCancelFinalNoticeSend() {
+  const cache = CacheService.getDocumentCache();
+  if (cache.get('cancel_finalNotice_send') === 'true') return true;
+  return PropertiesService.getDocumentProperties().getProperty('cancel_finalNotice_send') === 'true';
+}
+
 function cancelFinalNoticeRun() {
+  CacheService.getDocumentCache().put('cancel_finalNotice_run', 'true', 21600);
   PropertiesService.getDocumentProperties().setProperty('cancel_finalNotice_run', 'true');
 }
 
 function cancelFinalNoticeSend() {
+  CacheService.getDocumentCache().put('cancel_finalNotice_send', 'true', 21600);
   PropertiesService.getDocumentProperties().setProperty('cancel_finalNotice_send', 'true');
 }
 
@@ -799,4 +826,8 @@ function clearCancelFinalNoticeFlags() {
   const props = PropertiesService.getDocumentProperties();
   props.deleteProperty('cancel_finalNotice_run');
   props.deleteProperty('cancel_finalNotice_send');
+
+  const cache = CacheService.getDocumentCache();
+  cache.remove('cancel_finalNotice_run');
+  cache.remove('cancel_finalNotice_send');
 }

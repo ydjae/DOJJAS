@@ -69,6 +69,9 @@ function getFolderUrl(letterType) {
   if (letterType === 'interview') {
     return forInterviewGetFolderUrl();
   }
+  if (letterType === 'finalNotice') {
+    return finalNoticeGetFolderUrl();
+  }
   throw new Error('Letter type not supported: ' + letterType);
 }
 
@@ -359,4 +362,18 @@ function showGeneratorSidebar() {
 
 function checkFailedColumnL() {
   return checkFailedColumnM();
+}
+
+/**
+ * Validate Column R for Unqualified sheet
+ */
+function checkColumnRInSheet(sheetName) {
+  return unqualifiedCheckColumnR();
+}
+
+/**
+ * Validate Columns O-R for For Interview sheet
+ */
+function checkColumnsOtoRInSheet(sheetName) {
+  return forInterviewCheckColumnsOtoR();
 }

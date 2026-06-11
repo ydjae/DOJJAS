@@ -2,7 +2,6 @@
 // FOR INTERVIEW - Letter Generation & Email Workflow
 // ==========================================
 
-// Constants for For Interview workflow
 const FOR_INTERVIEW = {
   SHEET_NAME: 'LETTER - FOR INTERVIEW',
   TEMPLATE_ID: '1u9gWRR9UV5_ENJ8pEjueBWVIh3dHr-eNINItRZMDAGs',
@@ -20,9 +19,9 @@ const FOR_INTERVIEW = {
 /**
  * Check if columns O-R have data in the FOR INTERVIEW tab
  */
-function checkColumnsOtoRInSheet(sheetName) {
+function forInterviewCheckColumnsOtoR() {
   try {
-    const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(sheetName);
+    const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(FOR_INTERVIEW.SHEET_NAME);
     if (!sheet) {
       return { hasData: false, message: 'Sheet not found' };
     }
@@ -63,7 +62,6 @@ function checkColumnsOtoRInSheet(sheetName) {
   }
 }
 
-
 /**
  * Create main folder and For Interview subfolder
  */
@@ -91,14 +89,12 @@ function forInterviewCreateFolders() {
     const parentFolder = DriveApp.getFolderById(parentFolderId);
     const props = PropertiesService.getDocumentProperties();
 
-    // INTEGRATED FIX: Check specific property and validate against current folder name
     let mainFolderId = props.getProperty('forInterviewMainFolderId');
     let mainFolder = null;
 
     if (mainFolderId) {
       try {
         const tempFolder = DriveApp.getFolderById(mainFolderId);
-        // Verify if the stored ID actually matches our new target position folder name
         if (tempFolder.getName() === folderName) {
           mainFolder = tempFolder;
         }
@@ -118,7 +114,6 @@ function forInterviewCreateFolders() {
       props.setProperty('forInterviewMainFolderId', mainFolderId);
     }
 
-    // INTEGRATED FIX: Ensure the subfolder's parent matches the current main folder
     let forInterviewSubFolderId = props.getProperty('forInterviewSubFolderId');
     let forInterviewSubFolder = null;
 
@@ -166,13 +161,33 @@ function forInterviewGeneratePDFs(targetFolderId) {
 
     const data = sheet.getDataRange().getDisplayValues();
     const header = data[0];
-    const rows = data.slice(1).filter(row => row[FOR_INTERVIEW.COL_TEMPLATE_COLS_START - 1] && row[FOR_INTERVIEW.COL_TEMPLATE_COLS_START - 1].toString().trim() !== "");
+    const rows = [];
+
+    for (let i = 1; i < data.length; i++) {
+      const row = data[i];
+      const rowIndex = FOR_INTERVIEW.START_ROW + i - 1;
+      if (row[FOR_INTERVIEW.COL_TEMPLATE_COLS_START - 1] && row[FOR_INTERVIEW.COL_TEMPLATE_COLS_START - 1].toString().trim() !== "") {
+        rows.push({ row: row, rowIndex: rowIndex });
+      }
+    }
+
+    if (rows.length === 0) {
+      return {
+        success: true,
+        count: 0,
+        applicants: [],
+        completed: true,
+        message: 'No eligible rows found for PDF generation.'
+      };
+    }
 
     rows.sort((a, b) => {
-      const lastNameA = String(a[0] || "").trim().toLowerCase();
-      const lastNameB = String(b[0] || "").trim().toLowerCase();
+      const lastNameA = String(a.row[0] || "").trim().toLowerCase();
+      const lastNameB = String(b.row[0] || "").trim().toLowerCase();
       if (lastNameA !== lastNameB) return lastNameA.localeCompare(lastNameB);
-      return String(a[1] || "").trim().toLowerCase().localeCompare(String(b[1] || "").trim().toLowerCase());
+      const firstNameA = String(a.row[1] || "").trim().toLowerCase();
+      const firstNameB = String(b.row[1] || "").trim().toLowerCase();
+      return firstNameA.localeCompare(firstNameB);
     });
 
     const templateFile = DriveApp.getFileById(FOR_INTERVIEW.TEMPLATE_ID);
@@ -180,15 +195,15 @@ function forInterviewGeneratePDFs(targetFolderId) {
     
     // Use batch processing with key for For Interview
     const batchKey = 'forInterview_pdf_generation_' + SpreadsheetApp.getActiveSpreadsheet().getId();
-    const batchResult = processPDFBatch(batchKey, rows, header, templateFile, destinationFolder, 20); // Process 20 at a time
+    const batchResult = processInterviewPDFBatch(batchKey, rows, header, templateFile, destinationFolder, 20, sheet);
 
     let returnMessage = batchResult.message;
     
-    // If batch is still processing, suggest running again
-    if (!batchResult.completed) {
+    if (batchResult.status === 'cancelled') {
+      returnMessage = 'Process cancelled. ' + batchResult.totalProcessed + ' PDFs generated.';
+    } else if (!batchResult.completed) {
       returnMessage += '\n\nTo continue processing remaining applicants (total: ' + batchResult.totalRows + '), run this step again.';
     } else {
-      // Batch is complete, clear the state
       clearBatchState(batchKey);
       returnMessage = 'PDF generation completed! ' + batchResult.totalProcessed + ' PDFs generated.';
     }
@@ -197,7 +212,8 @@ function forInterviewGeneratePDFs(targetFolderId) {
       success: true,
       count: batchResult.totalProcessed,
       applicants: batchResult.allApplicants,
-      completed: batchResult.completed,
+      completed: batchResult.completed || batchResult.status === 'cancelled',
+      cancelled: batchResult.status === 'cancelled',
       message: returnMessage
     };
   } catch (e) {
@@ -205,9 +221,223 @@ function forInterviewGeneratePDFs(targetFolderId) {
   }
 }
 
-/**
- * Generate Google Drive links and insert into spreadsheet
- */
+function processInterviewPDFBatch(batchKey, rows, header, templateFile, destinationFolder, batchSize, sheet) {
+  let state = getBatchState(batchKey);
+
+  if (!state) {
+    PropertiesService.getDocumentProperties().deleteProperty('cancel_forInterview_run');
+    CacheService.getDocumentCache().remove('cancel_forInterview_run');
+    state = initializeBatchProcessing(batchKey, rows.length);
+  }
+
+  const startIndex = state.currentIndex;
+  const endIndex = Math.min(startIndex + batchSize, rows.length);
+  const startTime = new Date().getTime();
+  const timeLimit = 5 * 60 * 1000;
+
+  let processedInThisBatch = 0;
+  const newApplicants = [];
+
+  try {
+    for (let i = startIndex; i < endIndex; i++) {
+      const elapsedTime = new Date().getTime() - startTime;
+      if (elapsedTime > timeLimit) {
+        console.log('Time limit approaching, saving progress...');
+        break;
+      }
+
+      if (shouldCancelInterviewRun()) {
+        console.log('Cancellation requested for interview PDF generation');
+        state.status = 'cancelled';
+        break;
+      }
+
+      const rowObj = rows[i];
+      const row = rowObj.row;
+      const rowIndex = rowObj.rowIndex;
+      const lastName = String(row[0] || "").trim();
+      const firstName = String(row[1] || "").trim();
+      const fileName = lastName + ", " + firstName;
+
+      try {
+        const copy = templateFile.makeCopy(fileName, destinationFolder);
+
+        if (shouldCancelInterviewRun()) {
+          copy.setTrashed(true);
+          state.status = 'cancelled';
+          break;
+        }
+
+        const doc = DocumentApp.openById(copy.getId());
+        const body = doc.getBody();
+
+        header.forEach((label, j) => {
+          body.replaceText('{{' + label + '}}', row[j]);
+        });
+
+        doc.saveAndClose();
+
+        if (shouldCancelInterviewRun()) {
+          copy.setTrashed(true);
+          state.status = 'cancelled';
+          break;
+        }
+
+        const pdfBlob = copy.getAs(MimeType.PDF);
+        const pdfFile = destinationFolder.createFile(pdfBlob).setName(fileName + ".pdf");
+        pdfFile.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+        copy.setTrashed(true);
+
+        const pdfUrl = pdfFile.getUrl();
+        sheet.getRange(rowIndex, FOR_INTERVIEW.COL_INTERVIEW_LINK).setValue(pdfUrl);
+
+        state.currentIndex = i + 1;
+        state.completedCount++;
+        state.processedApplicants.push(lastName + ', ' + firstName);
+        newApplicants.push(lastName + ', ' + firstName);
+        processedInThisBatch++;
+      } catch (itemError) {
+        console.log('Error processing ' + fileName + ': ' + itemError.message);
+        state.currentIndex = i + 1;
+      }
+    }
+  } catch (e) {
+    console.log('Batch processing error: ' + e.message);
+  }
+
+  const isCompleted = state.currentIndex >= rows.length || state.status === 'cancelled';
+  if (state.status === 'cancelled') {
+    clearBatchState(batchKey);
+  } else if (isCompleted) {
+    state.status = 'completed';
+    clearBatchState(batchKey);
+  } else {
+    updateBatchState(batchKey, state);
+  }
+
+  return {
+    completed: isCompleted,
+    processed: processedInThisBatch,
+    totalProcessed: state.completedCount,
+    totalRows: rows.length,
+    applicants: newApplicants,
+    allApplicants: state.processedApplicants,
+    message: state.status === 'cancelled'
+      ? 'Process cancelled. Total: ' + state.completedCount + ' / ' + rows.length
+      : processedInThisBatch + ' applicants processed. Total: ' + state.completedCount + ' / ' + rows.length,
+    status: state.status
+  };
+}
+
+function forInterviewGenerateIndividualPDFs() {
+  try {
+    PropertiesService.getDocumentProperties().deleteProperty('cancel_forInterview_run');
+    CacheService.getDocumentCache().remove('cancel_forInterview_run');
+    
+    const props = PropertiesService.getDocumentProperties();
+    let folderId = props.getProperty('forInterviewSubFolderId');
+    let destinationFolder = null;
+
+    if (folderId) {
+      try {
+        destinationFolder = DriveApp.getFolderById(folderId);
+      } catch (folderError) {
+        const created = forInterviewCreateFolders();
+        folderId = created.forInterviewSubFolderId;
+        destinationFolder = DriveApp.getFolderById(folderId);
+      }
+    }
+
+    if (!destinationFolder) {
+      const created = forInterviewCreateFolders();
+      folderId = created.forInterviewSubFolderId;
+      destinationFolder = DriveApp.getFolderById(folderId);
+    }
+
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const sheet = ss.getSheetByName(FOR_INTERVIEW.SHEET_NAME);
+    if (!sheet) throw new Error('Sheet "' + FOR_INTERVIEW.SHEET_NAME + '" not found.');
+
+    const data = sheet.getDataRange().getDisplayValues();
+    const header = data[0] || [];
+    const rowsToProcess = [];
+
+    for (let i = 1; i < data.length; i++) {
+      const row = data[i];
+      const rowIndex = FOR_INTERVIEW.START_ROW + i - 1;
+      const regenerateVal = row[FOR_INTERVIEW.COL_REGENERATE - 1];
+      const shouldProcess = regenerateVal === true || String(regenerateVal).toLowerCase() === 'true';
+      if (!shouldProcess) continue;
+      if (!row[FOR_INTERVIEW.COL_TEMPLATE_COLS_START - 1] || row[FOR_INTERVIEW.COL_TEMPLATE_COLS_START - 1].toString().trim() === '') continue;
+      rowsToProcess.push({ row: row, rowIndex: rowIndex });
+    }
+
+    if (rowsToProcess.length === 0) {
+      throw new Error('No items checked in REGENERATE column (U). Please check at least one checkbox to proceed.');
+    }
+
+    const templateFile = DriveApp.getFileById(FOR_INTERVIEW.TEMPLATE_ID);
+    const processed = [];
+    let cancelled = false;
+
+    for (let k = 0; k < rowsToProcess.length; k++) {
+      if (shouldCancelInterviewRun()) {
+        console.log('Cancellation requested for individual interview PDF generation');
+        cancelled = true;
+        break;
+      }
+
+      const rowObj = rowsToProcess[k];
+      const row = rowObj.row;
+      const rowIndex = rowObj.rowIndex;
+      const lastName = String(row[FOR_INTERVIEW.COL_LAST_NAME - 1] || '').trim();
+      const firstName = String(row[FOR_INTERVIEW.COL_FIRST_NAME - 1] || '').trim();
+      const fileName = (lastName || 'Applicant') + (firstName ? (', ' + firstName) : '');
+
+      try {
+        const copy = templateFile.makeCopy(fileName, destinationFolder);
+
+        if (shouldCancelInterviewRun()) {
+          copy.setTrashed(true);
+          cancelled = true;
+          break;
+        }
+
+        const doc = DocumentApp.openById(copy.getId());
+        const body = doc.getBody();
+
+        header.forEach((label, j) => {
+          body.replaceText('{{' + label + '}}', row[j]);
+        });
+
+        doc.saveAndClose();
+
+        if (shouldCancelInterviewRun()) {
+          copy.setTrashed(true);
+          cancelled = true;
+          break;
+        }
+
+        const pdfBlob = copy.getAs(MimeType.PDF);
+        const pdfFile = destinationFolder.createFile(pdfBlob).setName(fileName + '.pdf');
+        pdfFile.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+        copy.setTrashed(true);
+
+        const pdfUrl = pdfFile.getUrl();
+        sheet.getRange(rowIndex, FOR_INTERVIEW.COL_INTERVIEW_LINK).setValue(pdfUrl);
+        sheet.getRange(rowIndex, FOR_INTERVIEW.COL_REGENERATE).setValue(false);
+        processed.push(fileName);
+      } catch (itemError) {
+        console.log('Error generating interview PDF for row ' + rowIndex + ': ' + itemError.message);
+      }
+    }
+
+    return { success: true, count: processed.length, applicants: processed, cancelled: cancelled };
+  } catch (e) {
+    throw new Error('Error generating individual interview PDFs: ' + e.message);
+  }
+}
+
 function forInterviewGenerateLinks() {
   try {
     const settings = PropertiesService.getDocumentProperties();
@@ -251,9 +481,6 @@ function forInterviewGenerateLinks() {
   }
 }
 
-/**
- * Get the For Interview folder URL
- */
 function forInterviewGetFolderUrl() {
   try {
     const settings = PropertiesService.getDocumentProperties();
@@ -270,9 +497,6 @@ function forInterviewGetFolderUrl() {
   }
 }
 
-/**
- * Backup the Letter - For Interview sheet to the For Interview folder
- */
 function forInterviewBackupSheet() {
   try {
     const ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -319,14 +543,13 @@ function forInterviewBackupSheet() {
   }
 }
 
-/**
- * Send emails to interview applicants
- */
 function forInterviewSendEmails() {
-  // PASTE YOUR DEPLOYED WEB APP URL HERE
   const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxJpyg6KPFUMxeHSOdOVnVe4WyN6JssT9DhoufEn2pE7vIp02joOQ6jZVD-FwZCLKW7FQ/exec";
 
   try {
+    PropertiesService.getDocumentProperties().deleteProperty('cancel_forInterview_send');
+    CacheService.getDocumentCache().remove('cancel_forInterview_send');
+    
     const ss = SpreadsheetApp.getActiveSpreadsheet();
     const sheet = ss.getSheetByName(FOR_INTERVIEW.SHEET_NAME);
 
@@ -340,8 +563,15 @@ function forInterviewSendEmails() {
     const data = sheet.getRange(FOR_INTERVIEW.START_ROW, 1, lastRow - FOR_INTERVIEW.START_ROW + 1, FOR_INTERVIEW.COL_INTERVIEW_PROGRESS).getValues();
     let emailCount = 0;
     const now = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd HH:mm:ss');
+    let cancelled = false;
 
     for (let i = 0; i < data.length; i++) {
+      if (shouldCancelInterviewSend()) {
+        console.log('Cancellation requested for interview email sending');
+        cancelled = true;
+        break;
+      }
+
       const row = data[i];
       const applicantName = row[0];
       const applicantLName = row[12]; // Column M
@@ -352,7 +582,10 @@ function forInterviewSendEmails() {
       const office = row[8]; // Column I
       const statusCell = sheet.getRange(FOR_INTERVIEW.START_ROW + i, FOR_INTERVIEW.COL_INTERVIEW_PROGRESS);
 
-      if (!applicantName || applicantName.toString().trim() === '') continue;
+      if (!applicantName || applicantName.toString().trim() === '') break;
+
+      const currentStatus = row[FOR_INTERVIEW.COL_INTERVIEW_PROGRESS - 1];
+      if (currentStatus && String(currentStatus).startsWith('Sent')) continue;
 
       if (!email || email.toString().trim() === '' || !driveLink || driveLink.toString().trim() === '') {
         statusCell.setValue('Not sent - missing email or link (' + now + ')');
@@ -368,7 +601,6 @@ function forInterviewSendEmails() {
         'Kindly acknowledge receipt of this email. If you have any questions, please do not hesitate to contact us.\n\n' +
         'Best regards,\nDOJ RPO V - Human Resource Unit';
 
-      // --- INTEGRATED PROXY CALL ---
       const payload = {
         recipient: email.toString().trim(),
         cc: 'orp05.hiring@gmail.com',
@@ -388,100 +620,24 @@ function forInterviewSendEmails() {
 
       if (response.getContentText() === "Success") {
         statusCell.setValue('Sent (' + now + ')');
-        // Log the sent letter
         logSentLetter('LETTER - FOR INTERVIEW', position || '', office || '', applicantName || '');
         emailCount++;
       } else {
         statusCell.setValue('Error: Proxy failed (' + now + ')');
       }
+
+      if (shouldCancelInterviewSend()) {
+        console.log('Cancellation requested for interview email sending before sleep');
+        cancelled = true;
+        break;
+      }
+
+      Utilities.sleep(1500);
     }
 
-    return { status: 'Emails sent', count: emailCount };
+    return { status: cancelled ? 'Cancelled' : 'Emails sent', count: emailCount, cancelled: cancelled };
   } catch (e) {
     throw new Error('Error sending email notifications: ' + e.message);
-  }
-}
-
-function forInterviewGenerateIndividualPDFs() {
-  try {
-    const props = PropertiesService.getDocumentProperties();
-    let folderId = props.getProperty('forInterviewSubFolderId');
-    let destinationFolder = null;
-
-    if (folderId) {
-      try {
-        destinationFolder = DriveApp.getFolderById(folderId);
-      } catch (folderError) {
-        const created = forInterviewCreateFolders();
-        folderId = created.forInterviewSubFolderId;
-        destinationFolder = DriveApp.getFolderById(folderId);
-      }
-    }
-
-    if (!destinationFolder) {
-      const created = forInterviewCreateFolders();
-      folderId = created.forInterviewSubFolderId;
-      destinationFolder = DriveApp.getFolderById(folderId);
-    }
-
-    const ss = SpreadsheetApp.getActiveSpreadsheet();
-    const sheet = ss.getSheetByName(FOR_INTERVIEW.SHEET_NAME);
-    if (!sheet) throw new Error('Sheet "' + FOR_INTERVIEW.SHEET_NAME + '" not found.');
-
-    const data = sheet.getDataRange().getDisplayValues();
-    const header = data[0] || [];
-    const rowsToProcess = [];
-
-    for (let i = 1; i < data.length; i++) {
-      const row = data[i];
-      const rowIndex = FOR_INTERVIEW.START_ROW + i - 1;
-      const regenerateVal = row[FOR_INTERVIEW.COL_REGENERATE - 1];
-      const shouldProcess = regenerateVal === true || String(regenerateVal).toLowerCase() === 'true';
-      if (!shouldProcess) continue;
-      if (!row[FOR_INTERVIEW.COL_TEMPLATE_COLS_START - 1] || row[FOR_INTERVIEW.COL_TEMPLATE_COLS_START - 1].toString().trim() === '') continue;
-      rowsToProcess.push({ row: row, rowIndex: rowIndex });
-    }
-
-    if (rowsToProcess.length === 0) {
-      throw new Error('No items checked in REGENERATE column (U). Please check at least one checkbox to proceed.');
-    }
-
-    const templateFile = DriveApp.getFileById(FOR_INTERVIEW.TEMPLATE_ID);
-    const processed = [];
-
-    rowsToProcess.forEach((rowObj) => {
-      const row = rowObj.row;
-      const rowIndex = rowObj.rowIndex;
-      const lastName = String(row[FOR_INTERVIEW.COL_LAST_NAME - 1] || '').trim();
-      const firstName = String(row[FOR_INTERVIEW.COL_FIRST_NAME - 1] || '').trim();
-      const fileName = (lastName || 'Applicant') + (firstName ? (', ' + firstName) : '');
-
-      try {
-        const copy = templateFile.makeCopy(fileName, destinationFolder);
-        const doc = DocumentApp.openById(copy.getId());
-        const body = doc.getBody();
-
-        header.forEach((label, j) => {
-          body.replaceText('{{' + label + '}}', row[j]);
-        });
-
-        doc.saveAndClose();
-        const pdfBlob = copy.getAs(MimeType.PDF);
-        const pdfFile = destinationFolder.createFile(pdfBlob).setName(fileName + '.pdf');
-        pdfFile.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
-        copy.setTrashed(true);
-
-        const pdfUrl = pdfFile.getUrl();
-        sheet.getRange(rowIndex, FOR_INTERVIEW.COL_INTERVIEW_LINK).setValue(pdfUrl);
-        processed.push(fileName);
-      } catch (itemError) {
-        console.log('Error generating interview PDF for row ' + rowIndex + ': ' + itemError.message);
-      }
-    });
-
-    return { success: true, count: processed.length, applicants: processed };
-  } catch (e) {
-    throw new Error('Error generating individual interview PDFs: ' + e.message);
   }
 }
 
@@ -489,6 +645,9 @@ function forInterviewSendSelectedEmails() {
   const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxJpyg6KPFUMxeHSOdOVnVe4WyN6JssT9DhoufEn2pE7vIp02joOQ6jZVD-FwZCLKW7FQ/exec";
 
   try {
+    PropertiesService.getDocumentProperties().deleteProperty('cancel_forInterview_send');
+    CacheService.getDocumentCache().remove('cancel_forInterview_send');
+    
     const ss = SpreadsheetApp.getActiveSpreadsheet();
     const sheet = ss.getSheetByName(FOR_INTERVIEW.SHEET_NAME);
     if (!sheet) throw new Error('Sheet "' + FOR_INTERVIEW.SHEET_NAME + '" not found.');
@@ -510,12 +669,19 @@ function forInterviewSendSelectedEmails() {
 
     let emailCount = 0;
     const now = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd HH:mm:ss');
+    let cancelled = false;
 
     for (let i = 0; i < data.length; i++) {
       const row = data[i];
       const regenerateVal = row[FOR_INTERVIEW.COL_REGENERATE - 1];
       const shouldSend = regenerateVal === true || String(regenerateVal).toLowerCase() === 'true';
       if (!shouldSend) continue;
+
+      if (shouldCancelInterviewSend()) {
+        console.log('Cancellation requested for selected interview email sending');
+        cancelled = true;
+        break;
+      }
 
       const applicantName = row[0];
       const applicantLName = row[12]; // Column M
@@ -571,18 +737,23 @@ function forInterviewSendSelectedEmails() {
       } else {
         statusCell.setValue('Error: Proxy failed (' + now + ')');
       }
+
+      if (shouldCancelInterviewSend()) {
+        console.log('Cancellation requested for selected interview email sending before sleep');
+        cancelled = true;
+        break;
+      }
+
+      Utilities.sleep(1500);
     }
 
-    return { status: 'Selected emails processed', count: emailCount };
+    return { status: cancelled ? 'Cancelled' : 'Selected emails processed', count: emailCount, cancelled: cancelled };
   } catch (e) {
     throw new Error('Error sending selected interview emails: ' + e.message);
   }
 }
 
-/**
- * Master function for For Interview workflow
- */
-function runInterviewCompleteProcess() {
+function forInterviewRunCompleteProcess() {
   try {
     const folderIds = forInterviewCreateFolders();
     const pdfResult = forInterviewGeneratePDFs(folderIds.forInterviewSubFolderId);
@@ -603,4 +774,39 @@ function runInterviewCompleteProcess() {
   } catch (e) {
     throw new Error('Error in complete process: ' + e.message);
   }
+}
+
+// ==========================================
+// CANCELLATION HELPERS FOR INTERVIEW
+// ==========================================
+
+function shouldCancelInterviewRun() {
+  const cache = CacheService.getDocumentCache();
+  if (cache.get('cancel_forInterview_run') === 'true') return true;
+  return PropertiesService.getDocumentProperties().getProperty('cancel_forInterview_run') === 'true';
+}
+
+function shouldCancelInterviewSend() {
+  const cache = CacheService.getDocumentCache();
+  if (cache.get('cancel_forInterview_send') === 'true') return true;
+  return PropertiesService.getDocumentProperties().getProperty('cancel_forInterview_send') === 'true';
+}
+
+function cancelInterviewRun() {
+  CacheService.getDocumentCache().put('cancel_forInterview_run', 'true', 21600);
+  PropertiesService.getDocumentProperties().setProperty('cancel_forInterview_run', 'true');
+}
+
+function cancelInterviewSend() {
+  CacheService.getDocumentCache().put('cancel_forInterview_send', 'true', 21600);
+  PropertiesService.getDocumentProperties().setProperty('cancel_forInterview_send', 'true');
+}
+
+function clearCancelInterviewFlags() {
+  const props = PropertiesService.getDocumentProperties();
+  props.deleteProperty('cancel_forInterview_run');
+  props.deleteProperty('cancel_forInterview_send');
+  const cache = CacheService.getDocumentCache();
+  cache.remove('cancel_forInterview_run');
+  cache.remove('cancel_forInterview_send');
 }
