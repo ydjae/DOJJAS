@@ -579,6 +579,16 @@
                 </button>
               </div>
             </div>
+            <!-- Progress Bar -->
+            <div id="forExamProgressBarContainer" class="mt-2 hidden space-y-1">
+              <div class="flex justify-between text-[10px] font-semibold text-gray-500">
+                <span>Generating letters...</span>
+                <span id="forExamProgressStats">0 / 0 (0%)</span>
+              </div>
+              <div class="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
+                <div id="forExamProgressBar" class="bg-progress-exam h-full rounded-full transition-all duration-300" style="width: 0%"></div>
+              </div>
+            </div>
             <div id="step2Status" class="empty:hidden"></div>
           </div>
         </div>
@@ -1819,11 +1829,13 @@
       setCancelButtonState('cancelRunBtn', true);
       lucide.createIcons();
       window.setProcessing(true);
+      startProgressPolling('forExam');
 
       google.script.run
         .withSuccessHandler((res) => {
           setCancelButtonState('cancelRunBtn', false);
           const isCancelled = res.cancelled || (res.pdfGeneration && res.pdfGeneration.cancelled);
+          stopProgressPolling('forExam', isCancelled ? 'cancelled' : 'completed');
           const generatedApplicants = (res && res.applicants) || (res && res.pdfGeneration && res.pdfGeneration.applicants) || [];
           const pdfCount = generatedApplicants.length;
           const lastApplicant = generatedApplicants.length > 0 ? generatedApplicants[generatedApplicants.length - 1] : '';
@@ -1892,6 +1904,7 @@
         })
         .withFailureHandler((err) => {
           setCancelButtonState('cancelRunBtn', false);
+          stopProgressPolling('forExam', 'failed');
           statusLabel.innerText = '❌ ' + err.message;
           statusLabel.className = 'ml-[0.75rem] text-[10px] px-2 mt-2 font-semibold text-left text-red-600';
           btn.disabled = false;
@@ -1918,6 +1931,7 @@
       setCancelButtonState('cancelRunBtn', true);
       lucide.createIcons();
       window.setProcessing(true);
+      startProgressPolling('forExam');
 
       google.script.run
         .withSuccessHandler((res) => {
@@ -1925,6 +1939,7 @@
           const pdfCount = (res && res.count) || 0;
           const lastApplicant = (res && res.applicants && res.applicants.length > 0) ? res.applicants[res.applicants.length - 1] : '';
           const isCancelled = res.cancelled;
+          stopProgressPolling('forExam', isCancelled ? 'cancelled' : 'completed');
 
           if (isCancelled) {
             statusLabel.innerHTML = `<span class="block text-red-600 font-semibold">❌ Process Cancelled</span>` +
@@ -2380,6 +2395,15 @@
         cancelSendBtn.innerHTML = '<i data-lucide="ban" class="w-4 h-4 text-red-500"></i> Cancel Process';
       }
 
+      const prefixes = ["finalNotice", "finalNoticeEmail"];
+      prefixes.forEach(p => {
+        const c = document.getElementById(p + 'ProgressBarContainer');
+        if (c) c.classList.add('hidden');
+        const b = document.getElementById(p + 'ProgressBar');
+        if (b) b.style.width = '0%';
+        const s = document.getElementById(p + 'ProgressStats');
+        if (s) s.innerText = '0 / 0 (0%)';
+      });
       lucide.createIcons();
     }
 
@@ -3460,6 +3484,15 @@
         cancelSendBtn.innerHTML = '<i data-lucide="ban" class="w-4 h-4 text-red-500"></i> Cancel Process';
       }
 
+      const prefixes = ["forExam", "forExamEmail"];
+      prefixes.forEach(p => {
+        const c = document.getElementById(p + 'ProgressBarContainer');
+        if (c) c.classList.add('hidden');
+        const b = document.getElementById(p + 'ProgressBar');
+        if (b) b.style.width = '0%';
+        const s = document.getElementById(p + 'ProgressStats');
+        if (s) s.innerText = '0 / 0 (0%)';
+      });
       lucide.createIcons();
     }
 
@@ -3506,11 +3539,82 @@
       }
     }
 
+    // --- Global Progress Bar Polling Helpers ---
+    window.progressIntervals = window.progressIntervals || {};
+    window.hasSeenProcessing = window.hasSeenProcessing || {};
+
+    function startProgressPolling(pageKey) {
+      const container = document.getElementById(pageKey + 'ProgressBarContainer');
+      const stats = document.getElementById(pageKey + 'ProgressStats');
+      const bar = document.getElementById(pageKey + 'ProgressBar');
+      
+      if (!container || !stats || !bar) return;
+      
+      // Reset progress UI & state flags
+      container.classList.remove('hidden');
+      stats.innerText = '0 / 0 (0%)';
+      bar.style.width = '0%';
+      window.hasSeenProcessing[pageKey] = false;
+      
+      // Clear any existing interval
+      if (window.progressIntervals[pageKey]) {
+        clearInterval(window.progressIntervals[pageKey]);
+      }
+      
+      // Start polling
+      window.progressIntervals[pageKey] = setInterval(() => {
+        google.script.run
+          .withSuccessHandler((progress) => {
+            if (progress) {
+              if (progress.status === 'processing') {
+                window.hasSeenProcessing[pageKey] = true;
+              }
+
+              const current = progress.currentIndex || 0;
+              const total = progress.totalRows || 0;
+              const pct = total > 0 ? Math.round((current / total) * 100) : 0;
+              
+              stats.innerText = `${current} / ${total} (${pct}%)`;
+              bar.style.width = `${pct}%`;
+              
+              // Only stop polling if we've transitioned to the new run's states
+              if (window.hasSeenProcessing[pageKey] && (progress.status === 'completed' || progress.status === 'failed' || progress.status === 'cancelled')) {
+                stopProgressPolling(pageKey, progress.status);
+              }
+            }
+          })
+          .getGenerationProgress(pageKey);
+      }, 1500);
+    }
+
+    function stopProgressPolling(pageKey, status) {
+      if (window.progressIntervals[pageKey]) {
+        clearInterval(window.progressIntervals[pageKey]);
+        delete window.progressIntervals[pageKey];
+      }
+      
+      const container = document.getElementById(pageKey + 'ProgressBarContainer');
+      const stats = document.getElementById(pageKey + 'ProgressStats');
+      const bar = document.getElementById(pageKey + 'ProgressBar');
+      
+      if (container && stats && bar) {
+        if (status === 'completed') {
+          bar.style.width = '100%';
+          stats.innerText = 'Completed!';
+        } else if (status === 'cancelled') {
+          stats.innerText = 'Cancelled';
+        } else if (status === 'failed') {
+          stats.innerText = 'Failed';
+        }
+        
+        // Progress bar remains always visible after generation starts
+      }
+    }
+
     document.getElementById('cancelRunBtn')?.addEventListener('click', function () {
       window.isRunCancelled = true;
-
-      // Update UI immediately
       setCancelButtonState('cancelRunBtn', false);
+      stopProgressPolling('forExam', 'cancelled');
 
       const statusLabel = document.getElementById('step2Status');
       if (statusLabel) {
@@ -3781,6 +3885,15 @@
       window.isUQRunCancelled = false;
       window.isUQSendCancelled = false;
 
+      const prefixes = ["unqualified", "unqualifiedEmail"];
+      prefixes.forEach(p => {
+        const c = document.getElementById(p + 'ProgressBarContainer');
+        if (c) c.classList.add('hidden');
+        const b = document.getElementById(p + 'ProgressBar');
+        if (b) b.style.width = '0%';
+        const s = document.getElementById(p + 'ProgressStats');
+        if (s) s.innerText = '0 / 0 (0%)';
+      });
       if (typeof lucide !== 'undefined') lucide.createIcons();
     }
 
@@ -4419,6 +4532,15 @@
       window.isInterviewRunCancelled = false;
       window.isInterviewSendCancelled = false;
 
+      const prefixes = ["interview", "interviewEmail"];
+      prefixes.forEach(p => {
+        const c = document.getElementById(p + 'ProgressBarContainer');
+        if (c) c.classList.add('hidden');
+        const b = document.getElementById(p + 'ProgressBar');
+        if (b) b.style.width = '0%';
+        const s = document.getElementById(p + 'ProgressStats');
+        if (s) s.innerText = '0 / 0 (0%)';
+      });
       if (typeof lucide !== 'undefined') lucide.createIcons();
     }
 
@@ -5061,6 +5183,15 @@
       window.isFailedRunCancelled = false;
       window.isFailedSendCancelled = false;
 
+      const prefixes = ["failed", "failedEmail"];
+      prefixes.forEach(p => {
+        const c = document.getElementById(p + 'ProgressBarContainer');
+        if (c) c.classList.add('hidden');
+        const b = document.getElementById(p + 'ProgressBar');
+        if (b) b.style.width = '0%';
+        const s = document.getElementById(p + 'ProgressStats');
+        if (s) s.innerText = '0 / 0 (0%)';
+      });
       if (typeof lucide !== 'undefined') lucide.createIcons();
     }
 

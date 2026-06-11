@@ -181,7 +181,27 @@ function forInterviewGeneratePDFs(targetFolderId) {
       };
     }
 
-    rows.sort((a, b) => {
+    // Check target column for existing links
+    const lastRowWithValue = getLastRowWithValueInColumn(sheet, FOR_INTERVIEW.COL_INTERVIEW_LINK);
+    let alreadyProcessedCount = 0;
+    if (lastRowWithValue > 1) {
+      alreadyProcessedCount = rows.filter(r => r.rowIndex <= lastRowWithValue).length;
+    }
+
+    const unprocessedRows = rows.filter(r => r.rowIndex > lastRowWithValue);
+
+    if (unprocessedRows.length === 0) {
+      setGenerationProgress('interview', rows.length, rows.length, 'completed');
+      return {
+        success: true,
+        count: 0,
+        applicants: [],
+        completed: true,
+        message: 'All eligible rows already have generated PDFs.'
+      };
+    }
+
+    unprocessedRows.sort((a, b) => {
       const lastNameA = String(a.row[0] || "").trim().toLowerCase();
       const lastNameB = String(b.row[0] || "").trim().toLowerCase();
       if (lastNameA !== lastNameB) return lastNameA.localeCompare(lastNameB);
@@ -195,7 +215,7 @@ function forInterviewGeneratePDFs(targetFolderId) {
     
     // Use batch processing with key for For Interview
     const batchKey = 'forInterview_pdf_generation_' + SpreadsheetApp.getActiveSpreadsheet().getId();
-    const batchResult = processInterviewPDFBatch(batchKey, rows, header, templateFile, destinationFolder, 20, sheet);
+    const batchResult = processInterviewPDFBatch(batchKey, unprocessedRows, header, templateFile, destinationFolder, 20, sheet, rows.length, alreadyProcessedCount);
 
     let returnMessage = batchResult.message;
     
@@ -221,16 +241,17 @@ function forInterviewGeneratePDFs(targetFolderId) {
   }
 }
 
-function processInterviewPDFBatch(batchKey, rows, header, templateFile, destinationFolder, batchSize, sheet) {
+function processInterviewPDFBatch(batchKey, rows, header, templateFile, destinationFolder, batchSize, sheet, totalRows, alreadyProcessedCount) {
   let state = getBatchState(batchKey);
 
   if (!state) {
     PropertiesService.getDocumentProperties().deleteProperty('cancel_forInterview_run');
     CacheService.getDocumentCache().remove('cancel_forInterview_run');
-    state = initializeBatchProcessing(batchKey, rows.length);
+    state = initializeBatchProcessing(batchKey, totalRows, alreadyProcessedCount);
   }
 
   const startIndex = state.currentIndex;
+  setGenerationProgress('interview', state.completedCount, state.totalRows, 'processing');
   const endIndex = Math.min(startIndex + batchSize, rows.length);
   const startTime = new Date().getTime();
   const timeLimit = 5 * 60 * 1000;
@@ -290,16 +311,19 @@ function processInterviewPDFBatch(batchKey, rows, header, templateFile, destinat
 
         const pdfUrl = pdfFile.getUrl();
         sheet.getRange(rowIndex, FOR_INTERVIEW.COL_INTERVIEW_LINK).setValue(pdfUrl);
+        SpreadsheetApp.flush();
 
         state.currentIndex = i + 1;
-        state.completedCount++;
+        state.completedCount = state.alreadyProcessedCount + state.currentIndex;
         state.processedApplicants.push(lastName + ', ' + firstName);
         newApplicants.push(lastName + ', ' + firstName);
         processedInThisBatch++;
       } catch (itemError) {
         console.log('Error processing ' + fileName + ': ' + itemError.message);
         state.currentIndex = i + 1;
+        state.completedCount = state.alreadyProcessedCount + state.currentIndex;
       }
+      setGenerationProgress('interview', state.completedCount, state.totalRows, 'processing');
     }
   } catch (e) {
     console.log('Batch processing error: ' + e.message);
@@ -314,17 +338,18 @@ function processInterviewPDFBatch(batchKey, rows, header, templateFile, destinat
   } else {
     updateBatchState(batchKey, state);
   }
+  setGenerationProgress('interview', state.completedCount, state.totalRows, state.status === 'cancelled' ? 'cancelled' : (state.currentIndex >= rows.length ? 'completed' : 'processing'));
 
   return {
     completed: isCompleted,
     processed: processedInThisBatch,
     totalProcessed: state.completedCount,
-    totalRows: rows.length,
+    totalRows: state.totalRows,
     applicants: newApplicants,
     allApplicants: state.processedApplicants,
     message: state.status === 'cancelled'
-      ? 'Process cancelled. Total: ' + state.completedCount + ' / ' + rows.length
-      : processedInThisBatch + ' applicants processed. Total: ' + state.completedCount + ' / ' + rows.length,
+      ? 'Process cancelled. Total: ' + state.completedCount + ' / ' + state.totalRows
+      : processedInThisBatch + ' applicants processed. Total: ' + state.completedCount + ' / ' + state.totalRows,
     status: state.status
   };
 }
@@ -375,6 +400,7 @@ function forInterviewGenerateIndividualPDFs() {
     if (rowsToProcess.length === 0) {
       throw new Error('No items checked in REGENERATE column (U). Please check at least one checkbox to proceed.');
     }
+    setGenerationProgress('interview', 0, rowsToProcess.length, 'processing');
 
     const templateFile = DriveApp.getFileById(FOR_INTERVIEW.TEMPLATE_ID);
     const processed = [];
@@ -425,12 +451,15 @@ function forInterviewGenerateIndividualPDFs() {
 
         const pdfUrl = pdfFile.getUrl();
         sheet.getRange(rowIndex, FOR_INTERVIEW.COL_INTERVIEW_LINK).setValue(pdfUrl);
+        SpreadsheetApp.flush();
         sheet.getRange(rowIndex, FOR_INTERVIEW.COL_REGENERATE).setValue(false);
         processed.push(fileName);
       } catch (itemError) {
         console.log('Error generating interview PDF for row ' + rowIndex + ': ' + itemError.message);
       }
+      setGenerationProgress('interview', k + 1, rowsToProcess.length, 'processing');
     }
+    setGenerationProgress('interview', processed.length, rowsToProcess.length, cancelled ? 'cancelled' : 'completed');
 
     return { success: true, count: processed.length, applicants: processed, cancelled: cancelled };
   } catch (e) {
@@ -561,11 +590,20 @@ function forInterviewSendEmails() {
     }
 
     const data = sheet.getRange(FOR_INTERVIEW.START_ROW, 1, lastRow - FOR_INTERVIEW.START_ROW + 1, FOR_INTERVIEW.COL_INTERVIEW_PROGRESS).getValues();
+    let validRowCount = 0;
+    for (let i = 0; i < data.length; i++) {
+      if (data[i][0] && data[i][0].toString().trim() !== '') validRowCount++;
+      else break;
+    }
     let emailCount = 0;
     const now = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd HH:mm:ss');
     let cancelled = false;
 
+    setGenerationProgress('interviewEmail', 0, validRowCount, 'processing');
+
     for (let i = 0; i < data.length; i++) {
+      setGenerationProgress('interviewEmail', i, validRowCount, 'processing');
+
       if (shouldCancelInterviewSend()) {
         console.log('Cancellation requested for interview email sending');
         cancelled = true;
@@ -635,6 +673,8 @@ function forInterviewSendEmails() {
       Utilities.sleep(1500);
     }
 
+    setGenerationProgress('interviewEmail', validRowCount, validRowCount, cancelled ? 'cancelled' : 'completed');
+
     return { status: cancelled ? 'Cancelled' : 'Emails sent', count: emailCount, cancelled: cancelled };
   } catch (e) {
     throw new Error('Error sending email notifications: ' + e.message);
@@ -659,6 +699,12 @@ function forInterviewSendSelectedEmails() {
 
     const data = sheet.getRange(FOR_INTERVIEW.START_ROW, 1, lastRow - FOR_INTERVIEW.START_ROW + 1, FOR_INTERVIEW.COL_REGENERATE).getValues();
 
+    let validRowCount = 0;
+    for (let i = 0; i < data.length; i++) {
+      if (data[i][0] && data[i][0].toString().trim() !== '') validRowCount++;
+      else break;
+    }
+
     const hasSelected = data.some(row => {
       const val = row[FOR_INTERVIEW.COL_REGENERATE - 1];
       return val === true || String(val).toLowerCase() === 'true';
@@ -671,7 +717,11 @@ function forInterviewSendSelectedEmails() {
     const now = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd HH:mm:ss');
     let cancelled = false;
 
+    setGenerationProgress('interviewEmail', 0, validRowCount, 'processing');
+
     for (let i = 0; i < data.length; i++) {
+      setGenerationProgress('interviewEmail', i, validRowCount, 'processing');
+
       const row = data[i];
       const regenerateVal = row[FOR_INTERVIEW.COL_REGENERATE - 1];
       const shouldSend = regenerateVal === true || String(regenerateVal).toLowerCase() === 'true';
@@ -746,6 +796,8 @@ function forInterviewSendSelectedEmails() {
 
       Utilities.sleep(1500);
     }
+
+    setGenerationProgress('interviewEmail', validRowCount, validRowCount, cancelled ? 'cancelled' : 'completed');
 
     return { status: cancelled ? 'Cancelled' : 'Selected emails processed', count: emailCount, cancelled: cancelled };
   } catch (e) {

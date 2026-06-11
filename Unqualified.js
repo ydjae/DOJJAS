@@ -169,7 +169,27 @@ function unqualifiedGeneratePDFs(targetFolderId) {
       };
     }
 
-    rows.sort((a, b) => {
+    // Check target column for existing links
+    const lastRowWithValue = getLastRowWithValueInColumn(sheet, UNQUALIFIED.COL_LINK);
+    let alreadyProcessedCount = 0;
+    if (lastRowWithValue > 1) {
+      alreadyProcessedCount = rows.filter(r => r.rowIndex <= lastRowWithValue).length;
+    }
+
+    const unprocessedRows = rows.filter(r => r.rowIndex > lastRowWithValue);
+
+    if (unprocessedRows.length === 0) {
+      setGenerationProgress('unqualified', rows.length, rows.length, 'completed');
+      return {
+        success: true,
+        count: 0,
+        applicants: [],
+        completed: true,
+        message: 'All eligible rows already have generated PDFs.'
+      };
+    }
+
+    unprocessedRows.sort((a, b) => {
       const lastNameA = String(a.row[0] || "").trim().toLowerCase();
       const lastNameB = String(b.row[0] || "").trim().toLowerCase();
       if (lastNameA !== lastNameB) return lastNameA.localeCompare(lastNameB);
@@ -183,7 +203,7 @@ function unqualifiedGeneratePDFs(targetFolderId) {
     
     // Use batch processing with key for Unqualified
     const batchKey = 'unqualified_pdf_generation_' + SpreadsheetApp.getActiveSpreadsheet().getId();
-    const batchResult = processUnqualifiedPDFBatch(batchKey, rows, header, templateFile, destinationFolder, 20, sheet);
+    const batchResult = processUnqualifiedPDFBatch(batchKey, unprocessedRows, header, templateFile, destinationFolder, 20, sheet, rows.length, alreadyProcessedCount);
 
     let returnMessage = batchResult.message;
     
@@ -209,16 +229,17 @@ function unqualifiedGeneratePDFs(targetFolderId) {
   }
 }
 
-function processUnqualifiedPDFBatch(batchKey, rows, header, templateFile, destinationFolder, batchSize, sheet) {
+function processUnqualifiedPDFBatch(batchKey, rows, header, templateFile, destinationFolder, batchSize, sheet, totalRows, alreadyProcessedCount) {
   let state = getBatchState(batchKey);
 
   if (!state) {
     PropertiesService.getDocumentProperties().deleteProperty('cancel_unqualified_run');
     CacheService.getDocumentCache().remove('cancel_unqualified_run');
-    state = initializeBatchProcessing(batchKey, rows.length);
+    state = initializeBatchProcessing(batchKey, totalRows, alreadyProcessedCount);
   }
 
   const startIndex = state.currentIndex;
+  setGenerationProgress('unqualified', state.completedCount, state.totalRows, 'processing');
   const endIndex = Math.min(startIndex + batchSize, rows.length);
   const startTime = new Date().getTime();
   const timeLimit = 5 * 60 * 1000;
@@ -278,16 +299,19 @@ function processUnqualifiedPDFBatch(batchKey, rows, header, templateFile, destin
 
         const pdfUrl = pdfFile.getUrl();
         sheet.getRange(rowIndex, UNQUALIFIED.COL_LINK).setValue(pdfUrl);
+        SpreadsheetApp.flush();
 
         state.currentIndex = i + 1;
-        state.completedCount++;
+        state.completedCount = state.alreadyProcessedCount + state.currentIndex;
         state.processedApplicants.push(lastName + ', ' + firstName);
         newApplicants.push(lastName + ', ' + firstName);
         processedInThisBatch++;
       } catch (itemError) {
         console.log('Error processing ' + fileName + ': ' + itemError.message);
         state.currentIndex = i + 1;
+        state.completedCount = state.alreadyProcessedCount + state.currentIndex;
       }
+      setGenerationProgress('unqualified', state.completedCount, state.totalRows, 'processing');
     }
   } catch (e) {
     console.log('Batch processing error: ' + e.message);
@@ -302,17 +326,18 @@ function processUnqualifiedPDFBatch(batchKey, rows, header, templateFile, destin
   } else {
     updateBatchState(batchKey, state);
   }
+  setGenerationProgress('unqualified', state.completedCount, state.totalRows, state.status === 'cancelled' ? 'cancelled' : (state.currentIndex >= rows.length ? 'completed' : 'processing'));
 
   return {
     completed: isCompleted,
     processed: processedInThisBatch,
     totalProcessed: state.completedCount,
-    totalRows: rows.length,
+    totalRows: state.totalRows,
     applicants: newApplicants,
     allApplicants: state.processedApplicants,
     message: state.status === 'cancelled'
-      ? 'Process cancelled. Total: ' + state.completedCount + ' / ' + rows.length
-      : processedInThisBatch + ' applicants processed. Total: ' + state.completedCount + ' / ' + rows.length,
+      ? 'Process cancelled. Total: ' + state.completedCount + ' / ' + state.totalRows
+      : processedInThisBatch + ' applicants processed. Total: ' + state.completedCount + ' / ' + state.totalRows,
     status: state.status
   };
 }
@@ -348,6 +373,7 @@ function unqualifiedGenerateIndividualPDFs() {
     if (selectedRows.length === 0) {
       throw new Error('No items checked in REGENERATE column (S). Please check at least one checkbox to proceed.');
     }
+    setGenerationProgress('unqualified', 0, selectedRows.length, 'processing');
 
     const templateFile = DriveApp.getFileById(UNQUALIFIED.TEMPLATE_ID);
     const destinationFolder = DriveApp.getFolderById(targetFolderId);
@@ -397,12 +423,15 @@ function unqualifiedGenerateIndividualPDFs() {
 
         const pdfUrl = pdfFile.getUrl();
         sheet.getRange(rowIndex, UNQUALIFIED.COL_LINK).setValue(pdfUrl);
+        SpreadsheetApp.flush();
         sheet.getRange(rowIndex, UNQUALIFIED.COL_REGENERATE).setValue(false);
         processed.push(fileName);
       } catch (itemError) {
         console.log('Error generating unqualified PDF for row ' + rowIndex + ': ' + itemError.message);
       }
+      setGenerationProgress('unqualified', k + 1, selectedRows.length, 'processing');
     }
+    setGenerationProgress('unqualified', processed.length, selectedRows.length, cancelled ? 'cancelled' : 'completed');
 
     return { success: true, count: processed.length, applicants: processed, cancelled: cancelled };
   } catch (e) {
@@ -518,11 +547,20 @@ function unqualifiedSendEmails() {
     }
 
     const data = sheet.getRange(UNQUALIFIED.START_ROW, 1, lastRow - UNQUALIFIED.START_ROW + 1, UNQUALIFIED.COL_STATUS).getValues();
+    let validRowCount = 0;
+    for (let i = 0; i < data.length; i++) {
+      if (data[i][0] && data[i][0].toString().trim() !== '') validRowCount++;
+      else break;
+    }
     let emailCount = 0;
     const now = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd HH:mm:ss');
     let cancelled = false;
 
+    setGenerationProgress('unqualifiedEmail', 0, validRowCount, 'processing');
+
     for (let i = 0; i < data.length; i++) {
+      setGenerationProgress('unqualifiedEmail', i, validRowCount, 'processing');
+
       if (shouldCancelUnqualifiedSend()) {
         console.log('Cancellation requested for unqualified email sending');
         cancelled = true;
@@ -592,6 +630,8 @@ function unqualifiedSendEmails() {
       Utilities.sleep(1500);
     }
 
+    setGenerationProgress('unqualifiedEmail', validRowCount, validRowCount, cancelled ? 'cancelled' : 'completed');
+
     return { status: cancelled ? 'Cancelled' : 'Emails sent', count: emailCount, cancelled: cancelled };
   } catch (e) {
     throw new Error('Error sending email notifications: ' + e.message);
@@ -616,6 +656,12 @@ function unqualifiedSendSelectedEmails() {
 
     const data = sheet.getRange(UNQUALIFIED.START_ROW, 1, lastRow - UNQUALIFIED.START_ROW + 1, UNQUALIFIED.COL_REGENERATE).getValues();
 
+    let validRowCount = 0;
+    for (let i = 0; i < data.length; i++) {
+      if (data[i][0] && data[i][0].toString().trim() !== '') validRowCount++;
+      else break;
+    }
+
     const hasSelected = data.some(row => {
       const val = row[UNQUALIFIED.COL_REGENERATE - 1];
       return val === true || String(val).toLowerCase() === 'true';
@@ -628,7 +674,11 @@ function unqualifiedSendSelectedEmails() {
     const now = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd HH:mm:ss');
     let cancelled = false;
 
+    setGenerationProgress('unqualifiedEmail', 0, validRowCount, 'processing');
+
     for (let i = 0; i < data.length; i++) {
+      setGenerationProgress('unqualifiedEmail', i, validRowCount, 'processing');
+
       const row = data[i];
       const regenerateVal = row[UNQUALIFIED.COL_REGENERATE - 1];
       const shouldSend = regenerateVal === true || String(regenerateVal).toLowerCase() === 'true';
@@ -703,6 +753,8 @@ function unqualifiedSendSelectedEmails() {
 
       Utilities.sleep(1500);
     }
+
+    setGenerationProgress('unqualifiedEmail', validRowCount, validRowCount, cancelled ? 'cancelled' : 'completed');
 
     return { status: cancelled ? 'Cancelled' : 'Selected emails processed', count: emailCount, cancelled: cancelled };
   } catch (e) {

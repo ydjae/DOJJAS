@@ -182,7 +182,10 @@ function forExamGeneratePDFs(targetFolderId) {
       };
     }
 
-    rows.sort((a, b) => {
+    // We simply pass all rows now!
+    const unprocessedRows = rows;
+
+    unprocessedRows.sort((a, b) => {
       const lastNameA = String(a.row[0] || "").trim().toLowerCase();
       const lastNameB = String(b.row[0] || "").trim().toLowerCase();
       if (lastNameA !== lastNameB) return lastNameA.localeCompare(lastNameB);
@@ -194,9 +197,9 @@ function forExamGeneratePDFs(targetFolderId) {
     const templateFile = DriveApp.getFileById(FOR_EXAM.TEMPLATE_ID);
     const destinationFolder = DriveApp.getFolderById(targetFolderId);
     
-    // Use batch processing with key for For Exam
+    // Use simplified batch processing for For Exam
     const batchKey = 'forExam_pdf_generation_' + SpreadsheetApp.getActiveSpreadsheet().getId();
-    const batchResult = processForExamPDFBatch(batchKey, rows, header, templateFile, destinationFolder, 20, sheet);
+    const batchResult = processForExamPDFBatch(batchKey, unprocessedRows, header, templateFile, destinationFolder, 20, sheet, rows.length, 0);
 
     let returnMessage = batchResult.message;
     
@@ -205,8 +208,7 @@ function forExamGeneratePDFs(targetFolderId) {
     } else if (!batchResult.completed) {
       returnMessage += '\n\nTo continue processing remaining applicants (total: ' + batchResult.totalRows + '), run this step again.';
     } else {
-      // Batch is complete, clear the state
-      clearBatchState(batchKey);
+      // It is completed, skip clear batch state
       returnMessage = 'PDF generation completed! ' + batchResult.totalProcessed + ' PDFs generated.';
     }
 
@@ -223,39 +225,51 @@ function forExamGeneratePDFs(targetFolderId) {
   }
 }
 
-function processForExamPDFBatch(batchKey, rows, header, templateFile, destinationFolder, batchSize, sheet) {
-  let state = getBatchState(batchKey);
-
-  if (!state) {
-    PropertiesService.getDocumentProperties().deleteProperty('cancel_forExam_run');
-    state = initializeBatchProcessing(batchKey, rows.length);
+function processForExamPDFBatch(batchKey, rows, header, templateFile, destinationFolder, batchSize, sheet, totalRows, alreadyProcessedCount) {
+  // Simplified Algorithm: Count total rows and how many already have links.
+  let completedCount = 0;
+  for (let i = 0; i < rows.length; i++) {
+    const rowObj = rows[i];
+    const existingLink = String(rowObj.row[FOR_EXAM.COL_EXAM_LINK - 1] || "").trim();
+    if (existingLink !== "") completedCount++;
   }
 
-  const startIndex = state.currentIndex;
-  const endIndex = Math.min(startIndex + batchSize, rows.length);
+  // We determine totalRows based on the length of rows array
+  const totalItems = rows.length;
+  setGenerationProgress('forExam', completedCount, totalItems, 'processing');
+
   const startTime = new Date().getTime();
   const timeLimit = 5 * 60 * 1000;
-
+  
   let processedInThisBatch = 0;
   const newApplicants = [];
-
+  let status = 'processing';
+  let isTimeLimitExceeded = false;
+  
   try {
-    for (let i = startIndex; i < endIndex; i++) {
+    for (let i = 0; i < rows.length; i++) {
       const elapsedTime = new Date().getTime() - startTime;
       if (elapsedTime > timeLimit) {
         console.log('Time limit approaching, saving progress...');
+        isTimeLimitExceeded = true;
         break;
       }
 
       if (PropertiesService.getDocumentProperties().getProperty('cancel_forExam_run') === 'true') {
         console.log('Cancellation requested for PDF generation');
-        state.status = 'cancelled';
+        status = 'cancelled';
         break;
       }
 
       const rowObj = rows[i];
       const row = rowObj.row;
       const rowIndex = rowObj.rowIndex;
+      
+      const existingLink = String(row[FOR_EXAM.COL_EXAM_LINK - 1] || "").trim();
+      if (existingLink !== "") {
+        continue; // Skip if already generated
+      }
+
       const lastName = String(row[0] || "").trim();
       const firstName = String(row[1] || "").trim();
       const fileName = lastName + ", " + firstName;
@@ -265,7 +279,7 @@ function processForExamPDFBatch(batchKey, rows, header, templateFile, destinatio
 
         if (PropertiesService.getDocumentProperties().getProperty('cancel_forExam_run') === 'true') {
           copy.setTrashed(true);
-          state.status = 'cancelled';
+          status = 'cancelled';
           break;
         }
 
@@ -280,7 +294,7 @@ function processForExamPDFBatch(batchKey, rows, header, templateFile, destinatio
 
         if (PropertiesService.getDocumentProperties().getProperty('cancel_forExam_run') === 'true') {
           copy.setTrashed(true);
-          state.status = 'cancelled';
+          status = 'cancelled';
           break;
         }
 
@@ -291,42 +305,41 @@ function processForExamPDFBatch(batchKey, rows, header, templateFile, destinatio
 
         const pdfUrl = pdfFile.getUrl();
         sheet.getRange(rowIndex, FOR_EXAM.COL_EXAM_LINK).setValue(pdfUrl);
+        SpreadsheetApp.flush(); // ensure it saves immediately
 
-        state.currentIndex = i + 1;
-        state.completedCount++;
-        state.processedApplicants.push(lastName + ', ' + firstName);
+        completedCount++;
         newApplicants.push(lastName + ', ' + firstName);
         processedInThisBatch++;
+        
+        // Update progress each time a link is generated!
+        setGenerationProgress('forExam', completedCount, totalItems, 'processing');
+        
       } catch (itemError) {
         console.log('Error processing ' + fileName + ': ' + itemError.message);
-        state.currentIndex = i + 1;
       }
     }
   } catch (e) {
     console.log('Batch processing error: ' + e.message);
   }
 
-  const isCompleted = state.currentIndex >= rows.length || state.status === 'cancelled';
-  if (state.status === 'cancelled') {
-    clearBatchState(batchKey);
-  } else if (isCompleted) {
-    state.status = 'completed';
-    clearBatchState(batchKey);
-  } else {
-    updateBatchState(batchKey, state);
+  const isCompleted = completedCount >= totalItems || status === 'cancelled';
+  if (isCompleted && status !== 'cancelled') {
+    status = 'completed';
   }
+  
+  setGenerationProgress('forExam', completedCount, totalItems, status);
 
   return {
-    completed: isCompleted,
+    completed: !isTimeLimitExceeded && isCompleted,
     processed: processedInThisBatch,
-    totalProcessed: state.completedCount,
-    totalRows: rows.length,
+    totalProcessed: completedCount,
+    totalRows: totalItems,
     applicants: newApplicants,
-    allApplicants: state.processedApplicants,
-    message: state.status === 'cancelled'
-      ? 'Process cancelled. Total: ' + state.completedCount + ' / ' + rows.length
-      : processedInThisBatch + ' applicants processed. Total: ' + state.completedCount + ' / ' + rows.length,
-    status: state.status
+    allApplicants: newApplicants, // Since we don't track all processed applicants globally anymore, just return new ones
+    message: status === 'cancelled'
+      ? 'Process cancelled. Total: ' + completedCount + ' / ' + totalItems
+      : processedInThisBatch + ' applicants processed. Total: ' + completedCount + ' / ' + totalItems,
+    status: status
   };
 }
 
@@ -379,6 +392,7 @@ function forExamGenerateIndividualPDFs() {
     if (rowsToProcess.length === 0) {
       throw new Error('No items checked in REGENERATE column (U). Please check at least one checkbox to proceed.');
     }
+    setGenerationProgress('forExam', 0, rowsToProcess.length, 'processing');
 
     let templateFile;
     try {
@@ -438,12 +452,15 @@ function forExamGenerateIndividualPDFs() {
 
         const pdfUrl = pdfFile.getUrl();
         sheet.getRange(rowIndex, FOR_EXAM.COL_EXAM_LINK).setValue(pdfUrl);
+        SpreadsheetApp.flush();
 
         processed.push(lastName + (firstName ? (', ' + firstName) : ''));
       } catch (itemError) {
         console.log('Error generating individual PDF for row ' + rowIndex + ': ' + itemError.message);
       }
+      setGenerationProgress('forExam', k + 1, rowsToProcess.length, 'processing');
     }
+    setGenerationProgress('forExam', processed.length, rowsToProcess.length, cancelled ? 'cancelled' : 'completed');
 
     return { success: true, count: processed.length, applicants: processed, cancelled: cancelled };
   } catch (e) {
@@ -582,11 +599,20 @@ function forExamSendEmails() {
     }
 
     const data = sheet.getRange(FOR_EXAM.START_ROW, 1, lastRow - FOR_EXAM.START_ROW + 1, FOR_EXAM.COL_EXAM_PROGRESS).getValues();
+    let validRowCount = 0;
+    for (let i = 0; i < data.length; i++) {
+      if (data[i][0] && data[i][0].toString().trim() !== '') validRowCount++;
+      else break;
+    }
     let emailCount = 0;
     const now = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd HH:mm:ss');
     let cancelled = false;
 
+    setGenerationProgress('forExamEmail', 0, validRowCount, 'processing');
+
     for (let i = 0; i < data.length; i++) {
+      setGenerationProgress('forExamEmail', i, validRowCount, 'processing');
+      
       if (PropertiesService.getDocumentProperties().getProperty('cancel_forExam_send') === 'true') {
         console.log('Cancellation requested for email sending');
         cancelled = true;
@@ -663,6 +689,8 @@ function forExamSendEmails() {
       Utilities.sleep(1500);
     }
 
+    setGenerationProgress('forExamEmail', validRowCount, validRowCount, cancelled ? 'cancelled' : 'completed');
+
     return { status: cancelled ? 'Cancelled' : 'Emails sent', count: emailCount, cancelled: cancelled };
   } catch (e) {
     throw new Error('Error sending email notifications: ' + e.message);
@@ -688,6 +716,12 @@ function forExamSendIndividualEmails() {
     // Read up through the regenerate column (U)
     const data = sheet.getRange(FOR_EXAM.START_ROW, 1, lastRow - FOR_EXAM.START_ROW + 1, FOR_EXAM.COL_REGENERATE).getValues();
 
+    let validRowCount = 0;
+    for (let i = 0; i < data.length; i++) {
+      if (data[i][0] && data[i][0].toString().trim() !== '') validRowCount++;
+      else break;
+    }
+
     const hasSelected = data.some(row => {
       const val = row[FOR_EXAM.COL_REGENERATE - 1];
       return val === true || String(val).toLowerCase() === 'true';
@@ -700,7 +734,11 @@ function forExamSendIndividualEmails() {
     const now = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd HH:mm:ss');
     let cancelled = false;
 
+    setGenerationProgress('forExamEmail', 0, validRowCount, 'processing');
+
     for (let i = 0; i < data.length; i++) {
+      setGenerationProgress('forExamEmail', i, validRowCount, 'processing');
+      
       const row = data[i];
       const regenerateVal = row[FOR_EXAM.COL_REGENERATE - 1];
       const shouldProcess = regenerateVal === true || String(regenerateVal).toLowerCase() === 'true';
@@ -783,6 +821,8 @@ function forExamSendIndividualEmails() {
       // 1.5-second delay between each email to avoid rate limits
       Utilities.sleep(1500);
     }
+
+    setGenerationProgress('forExamEmail', validRowCount, validRowCount, cancelled ? 'cancelled' : 'completed');
 
     return { status: cancelled ? 'Cancelled' : 'Individual emails processed', count: emailCount, cancelled: cancelled };
   } catch (e) {

@@ -183,7 +183,27 @@ function finalNoticeGeneratePDFs(targetFolderId) {
       };
     });
 
-    rows.sort((a, b) => {
+    // Check target column for existing links
+    const lastRowWithValue = getLastRowWithValueInColumn(sheet, FINAL_NOTICE.COL_LINK);
+    let alreadyProcessedCount = 0;
+    if (lastRowWithValue > 1) {
+      alreadyProcessedCount = rows.filter(r => r.rowIndex <= lastRowWithValue).length;
+    }
+
+    const unprocessedRows = rows.filter(r => r.rowIndex > lastRowWithValue);
+
+    if (unprocessedRows.length === 0) {
+      setGenerationProgress('finalNotice', rows.length, rows.length, 'completed');
+      return {
+        success: true,
+        count: 0,
+        applicants: [],
+        completed: true,
+        message: 'All eligible rows already have generated PDFs.'
+      };
+    }
+
+    unprocessedRows.sort((a, b) => {
       const lastNameA = String(a.row[0] || '').trim().toLowerCase();
       const lastNameB = String(b.row[0] || '').trim().toLowerCase();
       if (lastNameA !== lastNameB) return lastNameA.localeCompare(lastNameB);
@@ -194,7 +214,7 @@ function finalNoticeGeneratePDFs(targetFolderId) {
     const destinationFolder = DriveApp.getFolderById(targetFolderId);
 
     const batchKey = 'finalNotice_pdf_generation_' + ss.getId();
-    const batchResult = processFinalNoticePDFBatch(batchKey, rows, header, templateFile, destinationFolder, 20, sheet);
+    const batchResult = processFinalNoticePDFBatch(batchKey, unprocessedRows, header, templateFile, destinationFolder, 20, sheet, rows.length, alreadyProcessedCount);
 
     let returnMessage = batchResult.message;
     if (!batchResult.completed) {
@@ -217,16 +237,17 @@ function finalNoticeGeneratePDFs(targetFolderId) {
   }
 }
 
-function processFinalNoticePDFBatch(batchKey, rows, header, templateFile, destinationFolder, batchSize, sheet) {
+function processFinalNoticePDFBatch(batchKey, rows, header, templateFile, destinationFolder, batchSize, sheet, totalRows, alreadyProcessedCount) {
   let state = getBatchState(batchKey);
 
   if (!state) {
     PropertiesService.getDocumentProperties().deleteProperty('cancel_finalNotice_run');
     CacheService.getDocumentCache().remove('cancel_finalNotice_run');
-    state = initializeBatchProcessing(batchKey, rows.length);
+    state = initializeBatchProcessing(batchKey, totalRows, alreadyProcessedCount);
   }
 
   const startIndex = state.currentIndex;
+  setGenerationProgress('finalNotice', state.completedCount, state.totalRows, 'processing');
   const endIndex = Math.min(startIndex + batchSize, rows.length);
   const startTime = new Date().getTime();
   const timeLimit = 5 * 60 * 1000;
@@ -292,16 +313,19 @@ function processFinalNoticePDFBatch(batchKey, rows, header, templateFile, destin
 
         const pdfUrl = pdfFile.getUrl();
         sheet.getRange(rowIndex, FINAL_NOTICE.COL_LINK).setValue(pdfUrl);
+        SpreadsheetApp.flush();
 
         state.currentIndex = i + 1;
-        state.completedCount++;
+        state.completedCount = state.alreadyProcessedCount + state.currentIndex;
         state.processedApplicants.push(lastName + ', ' + firstName);
         newApplicants.push(lastName + ', ' + firstName);
         processedInThisBatch++;
       } catch (itemError) {
         console.log('Error processing ' + fileName + ': ' + itemError.message);
         state.currentIndex = i + 1;
+        state.completedCount = state.alreadyProcessedCount + state.currentIndex;
       }
+      setGenerationProgress('finalNotice', state.completedCount, state.totalRows, 'processing');
     }
   } catch (e) {
     console.log('Batch processing error: ' + e.message);
@@ -316,12 +340,13 @@ function processFinalNoticePDFBatch(batchKey, rows, header, templateFile, destin
   } else {
     updateBatchState(batchKey, state);
   }
+  setGenerationProgress('finalNotice', state.completedCount, state.totalRows, state.status === 'cancelled' ? 'cancelled' : (state.currentIndex >= rows.length ? 'completed' : 'processing'));
 
   return {
     completed: isCompleted,
     processed: processedInThisBatch,
     totalProcessed: state.completedCount,
-    totalRows: rows.length,
+    totalRows: state.totalRows,
     applicants: newApplicants,
     allApplicants: state.processedApplicants,
     message: state.status === 'cancelled'
@@ -380,6 +405,7 @@ function finalNoticeGenerateIndividualPDFs() {
     if (rowsToProcess.length === 0) {
       throw new Error('No items checked in REGENERATE column (R). Please check at least one checkbox to proceed.');
     }
+    setGenerationProgress('finalNotice', 0, rowsToProcess.length, 'processing');
 
     let templateFile = DriveApp.getFileById(FINAL_NOTICE.TEMPLATE_ID);
     const processed = [];
@@ -436,12 +462,15 @@ function finalNoticeGenerateIndividualPDFs() {
 
         const pdfUrl = pdfFile.getUrl();
         sheet.getRange(rowIndex, FINAL_NOTICE.COL_LINK).setValue(pdfUrl);
+        SpreadsheetApp.flush();
 
         processed.push(lastName + (firstName ? (', ' + firstName) : ''));
       } catch (itemError) {
         console.log('Error generating individual PDF for row ' + rowIndex + ': ' + itemError.message);
       }
+      setGenerationProgress('finalNotice', k + 1, rowsToProcess.length, 'processing');
     }
+    setGenerationProgress('finalNotice', processed.length, rowsToProcess.length, cancelled ? 'cancelled' : 'completed');
 
     return { success: true, count: processed.length, applicants: processed, cancelled: cancelled };
   } catch (e) {
@@ -580,11 +609,20 @@ function finalNoticeSendEmails() {
     }
 
     const data = sheet.getRange(FINAL_NOTICE.START_ROW, 1, lastRow - FINAL_NOTICE.START_ROW + 1, FINAL_NOTICE.COL_STATUS).getValues();
+    let validRowCount = 0;
+    for (let i = 0; i < data.length; i++) {
+      if (data[i][0] && data[i][0].toString().trim() !== '') validRowCount++;
+      else break;
+    }
     let emailCount = 0;
     const now = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd HH:mm:ss');
     let cancelled = false;
 
+    setGenerationProgress('finalNoticeEmail', 0, validRowCount, 'processing');
+
     for (let i = 0; i < data.length; i++) {
+      setGenerationProgress('finalNoticeEmail', i, validRowCount, 'processing');
+
       if (shouldCancelFinalNoticeSend()) {
         console.log('Cancellation requested for email sending');
         cancelled = true;
@@ -655,6 +693,8 @@ function finalNoticeSendEmails() {
       Utilities.sleep(1500); // 1.5 second delay
     }
 
+    setGenerationProgress('finalNoticeEmail', validRowCount, validRowCount, cancelled ? 'cancelled' : 'completed');
+
     return { status: cancelled ? 'Cancelled' : 'Emails sent', count: emailCount, cancelled: cancelled };
   } catch (e) {
     throw new Error('Error sending email notifications: ' + e.message);
@@ -679,6 +719,12 @@ function finalNoticeSendIndividualEmails() {
 
     const data = sheet.getRange(FINAL_NOTICE.START_ROW, 1, lastRow - FINAL_NOTICE.START_ROW + 1, FINAL_NOTICE.COL_REGENERATE).getValues();
 
+    let validRowCount = 0;
+    for (let i = 0; i < data.length; i++) {
+      if (data[i][0] && data[i][0].toString().trim() !== '') validRowCount++;
+      else break;
+    }
+
     const hasSelected = data.some(row => {
       const val = row[FINAL_NOTICE.COL_REGENERATE - 1];
       return val === true || String(val).toLowerCase() === 'true';
@@ -691,7 +737,11 @@ function finalNoticeSendIndividualEmails() {
     const now = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd HH:mm:ss');
     let cancelled = false;
 
+    setGenerationProgress('finalNoticeEmail', 0, validRowCount, 'processing');
+
     for (let i = 0; i < data.length; i++) {
+      setGenerationProgress('finalNoticeEmail', i, validRowCount, 'processing');
+
       const row = data[i];
       const regenerateVal = row[FINAL_NOTICE.COL_REGENERATE - 1];
       const shouldProcess = regenerateVal === true || String(regenerateVal).toLowerCase() === 'true';
@@ -767,6 +817,8 @@ function finalNoticeSendIndividualEmails() {
 
       Utilities.sleep(1500); // 1.5 second delay
     }
+
+    setGenerationProgress('finalNoticeEmail', validRowCount, validRowCount, cancelled ? 'cancelled' : 'completed');
 
     return { status: cancelled ? 'Cancelled' : 'Individual emails processed', count: emailCount, cancelled: cancelled };
   } catch (e) {

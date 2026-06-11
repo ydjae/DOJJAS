@@ -360,13 +360,14 @@ function checkAndClearPositionChangedFlag() {
 /**
  * Initialize batch processing for PDF generation
  */
-function initializeBatchProcessing(batchKey, totalRows) {
+function initializeBatchProcessing(batchKey, totalRows, alreadyProcessedCount) {
   const props = PropertiesService.getDocumentProperties();
   const state = {
     batchKey: batchKey,
     totalRows: totalRows,
+    alreadyProcessedCount: alreadyProcessedCount || 0,
     currentIndex: 0,
-    completedCount: 0,
+    completedCount: alreadyProcessedCount || 0,
     processedApplicants: [],
     startTime: new Date().getTime(),
     status: 'processing'
@@ -529,4 +530,62 @@ function logSentLetter(letterType, position, office, lastName) {
     console.log('Error logging sent letter: ' + e.message);
   }
 }
+
+/**
+ * Set PDF generation progress in DocumentProperties
+ */
+function setGenerationProgress(pageKey, currentIndex, totalRows, status) {
+  try {
+    const props = PropertiesService.getDocumentProperties();
+    const progress = {
+      currentIndex: currentIndex,
+      totalRows: totalRows,
+      status: status
+    };
+    const stateJson = JSON.stringify(progress);
+    props.setProperty(pageKey + '_generation_progress', stateJson);
+    CacheService.getDocumentCache().put(pageKey + '_generation_progress', stateJson, 600);
+  } catch (e) {
+    console.log('Error setting generation progress: ' + e.message);
+  }
+}
+
+/**
+ * Get PDF generation progress from DocumentProperties
+ */
+function getGenerationProgress(pageKey) {
+  try {
+    const cache = CacheService.getDocumentCache();
+    let stateJson = cache.get(pageKey + '_generation_progress');
+    
+    if (!stateJson) {
+      const props = PropertiesService.getDocumentProperties();
+      stateJson = props.getProperty(pageKey + '_generation_progress');
+    }
+    
+    if (!stateJson) return null;
+    return JSON.parse(stateJson);
+  } catch (e) {
+    console.log('Error getting generation progress: ' + e.message);
+    return null;
+  }
+}
+
+/**
+ * Helper to get the 1-based row index of the last row containing a non-empty value in a column
+ */
+function getLastRowWithValueInColumn(sheet, colIndex) {
+  const lastRow = sheet.getLastRow();
+  if (lastRow < 2) return 1;
+  const values = sheet.getRange(2, colIndex, lastRow - 1, 1).getValues();
+  let lastRowWithValue = 1;
+  for (let i = values.length - 1; i >= 0; i--) {
+    if (values[i][0] && String(values[i][0]).trim() !== "") {
+      lastRowWithValue = i + 2; // Convert 0-based array index to 1-based sheet row
+      break;
+    }
+  }
+  return lastRowWithValue;
+}
+
 

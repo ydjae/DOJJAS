@@ -203,11 +203,20 @@ function failedSendEmails() {
     }
 
     const data = sheet.getRange(FAILED.START_ROW, 1, lastRow - FAILED.START_ROW + 1, FAILED.COL_STATUS).getValues();
+    let validRowCount = 0;
+    for (let i = 0; i < data.length; i++) {
+      if (data[i][0] && data[i][0].toString().trim() !== '') validRowCount++;
+      else break;
+    }
     let emailCount = 0;
     const now = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd HH:mm:ss');
     let cancelled = false;
 
+    setGenerationProgress('failedEmail', 0, validRowCount, 'processing');
+
     for (let i = 0; i < data.length; i++) {
+      setGenerationProgress('failedEmail', i, validRowCount, 'processing');
+
       if (shouldCancelFailedSend()) {
         console.log('Cancellation requested for failed email sending');
         cancelled = true;
@@ -278,6 +287,8 @@ function failedSendEmails() {
       Utilities.sleep(1500);
     }
 
+    setGenerationProgress('failedEmail', validRowCount, validRowCount, cancelled ? 'cancelled' : 'completed');
+
     return { status: cancelled ? 'Cancelled' : 'Emails sent', count: emailCount, cancelled: cancelled };
   } catch (e) {
     throw new Error('Error sending email notifications: ' + e.message);
@@ -323,6 +334,7 @@ function failedGenerateIndividualPDFs() {
     if (selectedRows.length === 0) {
       throw new Error('No items checked in REGENERATE column (P). Please check at least one checkbox to proceed.');
     }
+    setGenerationProgress('failed', 0, selectedRows.length, 'processing');
 
     const templateFile = DriveApp.getFileById(FAILED.TEMPLATE_ID);
     const destinationFolder = DriveApp.getFolderById(targetFolderId);
@@ -372,12 +384,15 @@ function failedGenerateIndividualPDFs() {
 
         const pdfUrl = pdfFile.getUrl();
         sheet.getRange(rowIndex, FAILED.COL_LINK).setValue(pdfUrl);
+        SpreadsheetApp.flush();
         sheet.getRange(rowIndex, FAILED.COL_REGENERATE).setValue(false);
         processed.push(fileName);
       } catch (itemError) {
         console.log('Error generating failed PDF for row ' + rowIndex + ': ' + itemError.message);
       }
+      setGenerationProgress('failed', k + 1, selectedRows.length, 'processing');
     }
+    setGenerationProgress('failed', processed.length, selectedRows.length, cancelled ? 'cancelled' : 'completed');
 
     return { success: true, count: processed.length, applicants: processed, cancelled: cancelled };
   } catch (e) {
@@ -405,6 +420,12 @@ function failedSendSelectedEmails() {
 
     const data = sheet.getRange(FAILED.START_ROW, 1, lastRow - FAILED.START_ROW + 1, FAILED.COL_REGENERATE).getValues();
 
+    let validRowCount = 0;
+    for (let i = 0; i < data.length; i++) {
+      if (data[i][0] && data[i][0].toString().trim() !== '') validRowCount++;
+      else break;
+    }
+
     const hasSelected = data.some(row => {
       const val = row[FAILED.COL_REGENERATE - 1];
       return val === true || String(val).toLowerCase() === 'true';
@@ -417,7 +438,11 @@ function failedSendSelectedEmails() {
     const now = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd HH:mm:ss');
     let cancelled = false;
 
+    setGenerationProgress('failedEmail', 0, validRowCount, 'processing');
+
     for (let i = 0; i < data.length; i++) {
+      setGenerationProgress('failedEmail', i, validRowCount, 'processing');
+
       const row = data[i];
       const regenerateVal = row[FAILED.COL_REGENERATE - 1];
       const shouldSend = regenerateVal === true || String(regenerateVal).toLowerCase() === 'true';
@@ -493,6 +518,8 @@ function failedSendSelectedEmails() {
       Utilities.sleep(1500);
     }
 
+    setGenerationProgress('failedEmail', validRowCount, validRowCount, cancelled ? 'cancelled' : 'completed');
+
     return { status: cancelled ? 'Cancelled' : 'Selected emails processed', count: emailCount, cancelled: cancelled };
   } catch (e) {
     throw new Error('Error sending selected emails: ' + e.message);
@@ -527,17 +554,27 @@ function failedGeneratePDFs(targetFolderId) {
       }
     }
 
-    if (rows.length === 0) {
+    // Check target column for existing links
+    const lastRowWithValue = getLastRowWithValueInColumn(sheet, FAILED.COL_LINK);
+    let alreadyProcessedCount = 0;
+    if (lastRowWithValue > 1) {
+      alreadyProcessedCount = rows.filter(r => r.rowIndex <= lastRowWithValue).length;
+    }
+
+    const unprocessedRows = rows.filter(r => r.rowIndex > lastRowWithValue);
+
+    if (unprocessedRows.length === 0) {
+      setGenerationProgress('failed', rows.length, rows.length, 'completed');
       return {
         success: true,
         count: 0,
         applicants: [],
         completed: true,
-        message: 'No eligible rows found for PDF generation.'
+        message: 'All eligible rows already have generated PDFs.'
       };
     }
 
-    rows.sort((a, b) => {
+    unprocessedRows.sort((a, b) => {
       const lastNameA = String(a.row[0] || '').trim().toLowerCase();
       const lastNameB = String(b.row[0] || '').trim().toLowerCase();
       if (lastNameA !== lastNameB) return lastNameA.localeCompare(lastNameB);
@@ -548,7 +585,7 @@ function failedGeneratePDFs(targetFolderId) {
     const destinationFolder = DriveApp.getFolderById(targetFolderId);
     
     const batchKey = 'failed_pdf_generation_' + SpreadsheetApp.getActiveSpreadsheet().getId();
-    const batchResult = processFailedPDFBatch(batchKey, rows, header, templateFile, destinationFolder, 20, sheet);
+    const batchResult = processFailedPDFBatch(batchKey, unprocessedRows, header, templateFile, destinationFolder, 20, sheet, rows.length, alreadyProcessedCount);
 
     let returnMessage = batchResult.message;
     
@@ -574,16 +611,17 @@ function failedGeneratePDFs(targetFolderId) {
   }
 }
 
-function processFailedPDFBatch(batchKey, rows, header, templateFile, destinationFolder, batchSize, sheet) {
+function processFailedPDFBatch(batchKey, rows, header, templateFile, destinationFolder, batchSize, sheet, totalRows, alreadyProcessedCount) {
   let state = getBatchState(batchKey);
 
   if (!state) {
     PropertiesService.getDocumentProperties().deleteProperty('cancel_failed_run');
     CacheService.getDocumentCache().remove('cancel_failed_run');
-    state = initializeBatchProcessing(batchKey, rows.length);
+    state = initializeBatchProcessing(batchKey, totalRows, alreadyProcessedCount);
   }
 
   const startIndex = state.currentIndex;
+  setGenerationProgress('failed', state.completedCount, state.totalRows, 'processing');
   const endIndex = Math.min(startIndex + batchSize, rows.length);
   const startTime = new Date().getTime();
   const timeLimit = 5 * 60 * 1000;
@@ -643,16 +681,19 @@ function processFailedPDFBatch(batchKey, rows, header, templateFile, destination
 
         const pdfUrl = pdfFile.getUrl();
         sheet.getRange(rowIndex, FAILED.COL_LINK).setValue(pdfUrl);
+        SpreadsheetApp.flush();
 
         state.currentIndex = i + 1;
-        state.completedCount++;
+        state.completedCount = state.alreadyProcessedCount + state.currentIndex;
         state.processedApplicants.push(lastName + ', ' + firstName);
         newApplicants.push(lastName + ', ' + firstName);
         processedInThisBatch++;
       } catch (itemError) {
         console.log('Error processing ' + fileName + ': ' + itemError.message);
         state.currentIndex = i + 1;
+        state.completedCount = state.alreadyProcessedCount + state.currentIndex;
       }
+      setGenerationProgress('failed', state.completedCount, state.totalRows, 'processing');
     }
   } catch (e) {
     console.log('Batch processing error: ' + e.message);
@@ -667,17 +708,18 @@ function processFailedPDFBatch(batchKey, rows, header, templateFile, destination
   } else {
     updateBatchState(batchKey, state);
   }
+  setGenerationProgress('failed', state.completedCount, state.totalRows, state.status === 'cancelled' ? 'cancelled' : (state.currentIndex >= rows.length ? 'completed' : 'processing'));
 
   return {
     completed: isCompleted,
     processed: processedInThisBatch,
     totalProcessed: state.completedCount,
-    totalRows: rows.length,
+    totalRows: state.totalRows,
     applicants: newApplicants,
     allApplicants: state.processedApplicants,
     message: state.status === 'cancelled'
-      ? 'Process cancelled. Total: ' + state.completedCount + ' / ' + rows.length
-      : processedInThisBatch + ' applicants processed. Total: ' + state.completedCount + ' / ' + rows.length,
+      ? 'Process cancelled. Total: ' + state.completedCount + ' / ' + state.totalRows
+      : processedInThisBatch + ' applicants processed. Total: ' + state.completedCount + ' / ' + state.totalRows,
     status: state.status
   };
 }
