@@ -154,10 +154,16 @@ function clearAllWorkingSheets() {
   }
 
   const sheetFailed = ss.getSheetByName('LETTER - FAILED');
-    if (sheetFailed && sheetFailed.getLastRow() >= 2) {
-      // Clear M through O in the failed sheet
-      sheetFailed.getRange(2, 13, sheetFailed.getLastRow() - 1, 3).clearContent();
-    }
+  if (sheetFailed && sheetFailed.getLastRow() >= 2) {
+    // Clear M through O in the failed sheet
+    sheetFailed.getRange(2, 13, sheetFailed.getLastRow() - 1, 3).clearContent();
+  }
+
+  const sheetFinalNotice = ss.getSheetByName('LETTER - FINAL NOTICE');
+  if (sheetFinalNotice && sheetFinalNotice.getLastRow() >= 2) {
+    // Clear O through Q in the final notice sheet
+    sheetFinalNotice.getRange(2, 15, sheetFinalNotice.getLastRow() - 1, 3).clearContent();
+  }
 }
 
 

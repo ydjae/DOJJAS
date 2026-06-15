@@ -36,7 +36,7 @@
   <style>
     /* Minimal theme reset */
     body {
-      background: #fafafa;
+      background: radial-gradient(circle at top left, #f3f4f6 0%, #ffffff 50%, #eff6ff 100%);
       font-family: 'Inter', sans-serif;
       color: #333333;
     }
@@ -127,6 +127,47 @@
     .step-container button span,
     .step-container button p {
       text-align: left;
+    }
+
+    /* Toast Notifications */
+    .toast {
+      transform: translateY(100%);
+      opacity: 0;
+      animation: slideInUp 0.3s forwards cubic-bezier(0.16, 1, 0.3, 1);
+      transition: all 0.3s ease;
+      pointer-events: auto;
+    }
+    
+    .toast.hiding {
+      opacity: 0;
+      transform: scale(0.95);
+    }
+
+    @keyframes slideInUp {
+      from { transform: translateY(20px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+
+    /* Glassmorphism utility */
+    .glass-card {
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.6);
+      box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.05);
+    }
+
+    .step-action-element {
+      background: rgba(255, 255, 255, 0.85) !important;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.6) !important;
+      box-shadow: 0 4px 16px 0 rgba(31, 38, 135, 0.03);
+    }
+
+    .step-action-element:hover {
+      box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.08);
+      transform: translateY(-1px);
     }
 
     .header-animated-bg {
@@ -224,11 +265,13 @@
       pointer-events: none;
     }
 
-    /* Layer 2 (middle): solid white inner card - covers glow center, leaves edge glowing */
+    /* Layer 2 (middle): frosted white inner card - covers glow center, leaves edge glowing */
     .btn-glow-hover-inner {
       position: absolute;
       inset: 0;
-      background: #ffffff;
+      background: rgba(255, 255, 255, 0.9);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
       border-radius: inherit;
       z-index: -1;
       pointer-events: none;
@@ -1858,6 +1901,7 @@
           const lastApplicant = generatedApplicants.length > 0 ? generatedApplicants[generatedApplicants.length - 1] : '';
 
           if (isCancelled) {
+            if (typeof showToast === 'function') showToast("Generation Cancelled. " + pdfCount + " PDFs created.", "warning");
             statusLabel.innerHTML = `<span class="block text-red-600 font-semibold">❌ Process Cancelled</span>` +
               `<span class="block text-gray-700">PDF Created: ${pdfCount}</span>` +
               (lastApplicant ? `<span class="block mt-0.5 uppercase tracking-wider">LAST: ${lastApplicant}</span>` : '');
@@ -1895,6 +1939,7 @@
             .getFolderUrl('forExam');
 
           if (isCompleted) {
+            if (typeof showToast === 'function') showToast("Generation Completed! " + pdfCount + " PDFs created.", "success");
             btn.innerHTML = '<i data-lucide="users" class="w-4 h-4 text-blue-500"></i> Generate All';
             btn.disabled = true;
             btn.classList.add('opacity-50', 'cursor-default');
@@ -1911,6 +1956,7 @@
 
             unlockNextStep(5); // Unlock Step 6
           } else {
+            if (typeof showToast === 'function') showToast("Batch processed. " + pdfCount + " PDFs created so far.", "info");
             btn.innerHTML = '<i data-lucide="repeat" class="w-4 h-4"></i> Continue Processing';
             btn.className = "group flex items-left justify-start gap-2 w-full py-2 px-2 bg-prismatic text-white border-0 hover:opacity-90 transition-opacity rounded-xl text-sm font-bold shadow-sm  transition cursor-pointer";
             btn.disabled = false;
@@ -1920,6 +1966,7 @@
           lucide.createIcons();
         })
         .withFailureHandler((err) => {
+          if (typeof showToast === 'function') showToast(err.message || 'An error occurred', 'error');
           setCancelButtonState('cancelRunBtn', false);
           statusLabel.innerText = '❌ ' + err.message;
           statusLabel.className = 'ml-[0.75rem] text-[10px] px-2 mt-2 font-semibold text-left text-red-600';
@@ -5344,6 +5391,50 @@
       modal.classList.remove('hidden');
     }
 
+    // --- Toast Notification System ---
+    function showToast(message, type = 'success') {
+      const container = document.getElementById('toast-container');
+      if (!container) return;
+
+      const toast = document.createElement('div');
+      
+      let icon = '';
+      let colors = '';
+      
+      if (type === 'success') {
+        icon = '<i data-lucide="check-circle" class="w-5 h-5 text-green-500"></i>';
+        colors = 'bg-white border-l-4 border-green-500 text-gray-800';
+      } else if (type === 'error') {
+        icon = '<i data-lucide="alert-circle" class="w-5 h-5 text-red-500"></i>';
+        colors = 'bg-white border-l-4 border-red-500 text-gray-800';
+      } else if (type === 'warning') {
+        icon = '<i data-lucide="alert-triangle" class="w-5 h-5 text-yellow-500"></i>';
+        colors = 'bg-white border-l-4 border-yellow-500 text-gray-800';
+      } else {
+        icon = '<i data-lucide="info" class="w-5 h-5 text-blue-500"></i>';
+        colors = 'bg-white border-l-4 border-blue-500 text-gray-800';
+      }
+
+      toast.className = `toast flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg border border-gray-100 ${colors} min-w-[280px] max-w-sm`;
+      toast.innerHTML = `
+        <div class="flex-shrink-0">${icon}</div>
+        <div class="flex-1 text-sm font-medium leading-tight">${message}</div>
+        <button class="flex-shrink-0 text-gray-400 hover:text-gray-600 transition-colors cursor-pointer" onclick="this.parentElement.classList.add('hiding'); setTimeout(() => this.parentElement.remove(), 300)">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      `;
+
+      container.appendChild(toast);
+      if (typeof lucide !== 'undefined') lucide.createIcons({ root: toast });
+
+      setTimeout(() => {
+        if (toast.parentElement) {
+          toast.classList.add('hiding');
+          setTimeout(() => toast.remove(), 300);
+        }
+      }, 4000);
+    }
+
   </script>
   <!-- Generic Confirmation Modal -->
   <div id="confirmModal"
@@ -5376,8 +5467,12 @@
           OK
         </button>
       </div>
+      </div>
     </div>
   </div>
+
+  <!-- Toast Container -->
+  <div id="toast-container" class="fixed bottom-4 right-4 z-50 flex flex-col gap-2 pointer-events-none"></div>
 
 </body>
 
